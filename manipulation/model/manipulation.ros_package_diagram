@@ -99,6 +99,20 @@
       <element xmi:type="ros:ServiceClient" href="manipulation.ros_package#//@node.0/@serviceClient.0"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_IR4U1NtrEeOgjblgvPn0Dg"/>
     </children>
+    <children xmi:type="notation:Node" xmi:id="_uPnwANtuEeOTmI1x4-_Xtw" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="_uPo-INtuEeOTmI1x4-_Xtw" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="_uPnwAdtuEeOTmI1x4-_Xtw"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="_uPnwAttuEeOTmI1x4-_Xtw" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.5"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="_uPnwA9tuEeOTmI1x4-_Xtw"/>
+    </children>
+    <children xmi:type="notation:Node" xmi:id="__BLosNtuEeOTmI1x4-_Xtw" type="3004">
+      <children xmi:type="notation:DecorationNode" xmi:id="__BMPwNtuEeOTmI1x4-_Xtw" type="5004"/>
+      <styles xmi:type="notation:DescriptionStyle" xmi:id="__BLosdtuEeOTmI1x4-_Xtw"/>
+      <styles xmi:type="notation:FontStyle" xmi:id="__BLosttuEeOTmI1x4-_Xtw" fontName="Ubuntu"/>
+      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.6"/>
+      <layoutConstraint xmi:type="notation:Bounds" xmi:id="__BLos9tuEeOTmI1x4-_Xtw"/>
+    </children>
     <element xmi:type="ros:Node" href="manipulation.ros_package#//@node.0"/>
     <layoutConstraint xmi:type="notation:Bounds" xmi:id="_BP85QdtiEeOmAKmt3Ru8HA" x="312" y="204"/>
   </children>
@@ -113,6 +127,54 @@
     <styles xmi:type="notation:LineTypeStyle" xmi:id="_55aTEtttEeOdwfdyYcOaiA"/>
     <element xsi:nil="true"/>
     <layoutConstraint xmi:type="notation:Bounds" xmi:id="_55aTE9ttEeOdwfdyYcOaiA" x="768" y="288"/>
+  </children>
+  <children xmi:type="notation:Shape" xmi:id="_z9VgwNtuEeOTmI1x4-_Xtw" type="Note" fontName="Ubuntu" description="direct connection to planner? " fillColor="13369343" transparency="0" lineColor="6737151" lineWidth="1">
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_z9ZLINtuEeOTmI1x4-_Xtw" type="DiagramName">
+      <element xsi:nil="true"/>
+    </children>
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_z9ZyMNtuEeOTmI1x4-_Xtw" type="Description">
+      <element xsi:nil="true"/>
+    </children>
+    <styles xmi:type="notation:TextStyle" xmi:id="_z9VgwdtuEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_z9VgwttuEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_z9Vgw9tuEeOTmI1x4-_Xtw" x="516" y="48"/>
+  </children>
+  <children xmi:type="notation:Shape" xmi:id="_CgdzANtvEeOTmI1x4-_Xtw" type="Note" fontName="Ubuntu" description="reinvoke planner if task needs further subplanning (navigation, ...)" fillColor="13369343" transparency="0" lineColor="6737151" lineWidth="1">
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_CgeaENtvEeOTmI1x4-_Xtw" type="DiagramName">
+      <element xsi:nil="true"/>
+    </children>
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_CgfBINtvEeOTmI1x4-_Xtw" type="Description">
+      <element xsi:nil="true"/>
+    </children>
+    <styles xmi:type="notation:TextStyle" xmi:id="_CgdzAdtvEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_CgdzAttvEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_CgdzA9tvEeOTmI1x4-_Xtw" x="24" y="60" width="253"/>
+  </children>
+  <children xmi:type="notation:Shape" xmi:id="_sSsT0NtvEeOTmI1x4-_Xtw" type="Note" fontName="Ubuntu" description="object model, class, pose, ..." fillColor="13369343" transparency="0" lineColor="6737151" lineWidth="1">
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_sSuwENtvEeOTmI1x4-_Xtw" type="DiagramName">
+      <element xsi:nil="true"/>
+    </children>
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_sSuwEdtvEeOTmI1x4-_Xtw" type="Description">
+      <element xsi:nil="true"/>
+    </children>
+    <styles xmi:type="notation:TextStyle" xmi:id="_sSsT0dtvEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_sSsT0ttvEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_sSsT09tvEeOTmI1x4-_Xtw" x="48" y="288" width="131"/>
+  </children>
+  <children xmi:type="notation:Shape" xmi:id="_K08VMNtwEeOTmI1x4-_Xtw" type="Note" fontName="Ubuntu" description="feedback planner" fillColor="13369343" transparency="0" lineColor="6737151" lineWidth="1">
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_K0-xcNtwEeOTmI1x4-_Xtw" type="DiagramName">
+      <element xsi:nil="true"/>
+    </children>
+    <children xmi:type="notation:BasicDecorationNode" xmi:id="_K0-xcdtwEeOTmI1x4-_Xtw" type="Description">
+      <element xsi:nil="true"/>
+    </children>
+    <styles xmi:type="notation:TextStyle" xmi:id="_K08VMdtwEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_K08VMttwEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <layoutConstraint xmi:type="notation:Bounds" xmi:id="_K08VM9twEeOTmI1x4-_Xtw" x="732" y="144"/>
   </children>
   <styles xmi:type="notation:DiagramStyle" xmi:id="_qW-9cdthEeOmAKmt3Ru8HA"/>
   <element xmi:type="ros:Package" href="manipulation.ros_package#/"/>
@@ -198,5 +260,36 @@
     <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_IgR109tuEeOdwfdyYcOaiA" points="[0, 0, -359, -100]$[330, 90, -29, -10]"/>
     <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_IgTrANtuEeOdwfdyYcOaiA" id="(0.6875,1.0)"/>
     <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_IgTrAdtuEeOdwfdyYcOaiA" id="(0.2265625,0.30357142857142855)"/>
+  </edges>
+  <edges xmi:type="notation:Connector" xmi:id="_v0654NtuEeOTmI1x4-_Xtw" type="NoteAttachment" source="_uPnwANtuEeOTmI1x4-_Xtw" target="_55aTENttEeOdwfdyYcOaiA" lineWidth="1">
+    <styles xmi:type="notation:ArrowStyle" xmi:id="_v0654dtuEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_v0654ttuEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_v06549tuEeOTmI1x4-_Xtw" points="[0, 0, -550, -91]$[613, 91, 63, 0]"/>
+    <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_v0-kQNtuEeOTmI1x4-_Xtw" id="(0.6125,1.0)"/>
+  </edges>
+  <edges xmi:type="notation:Connector" xmi:id="_z9fRwNtuEeOTmI1x4-_Xtw" type="NoteAttachment" source="_hyujwNtpEeOgjblgvPn0Dg" target="_z9VgwNtuEeOTmI1x4-_Xtw" lineWidth="1">
+    <styles xmi:type="notation:ArrowStyle" xmi:id="_z9fRwdtuEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_z9fRwttuEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_z9fRw9tuEeOTmI1x4-_Xtw" points="[-22, -10, 569, 266]$[-591, -276, 0, 0]"/>
+  </edges>
+  <edges xmi:type="notation:Connector" xmi:id="_Cgj5oNtvEeOTmI1x4-_Xtw" type="NoteAttachment" source="__BLosNtuEeOTmI1x4-_Xtw" target="_CgdzANtvEeOTmI1x4-_Xtw" lineWidth="1">
+    <styles xmi:type="notation:ArrowStyle" xmi:id="_Cgj5odtvEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_CgkgsNtvEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_CgkgsdtvEeOTmI1x4-_Xtw" points="[-12, -10, 261, 233]$[-273, -243, 0, 0]"/>
+  </edges>
+  <edges xmi:type="notation:Connector" xmi:id="_sSzokNtvEeOTmI1x4-_Xtw" type="NoteAttachment" source="_6RU9cNtlEeO-RN-Vw8hkHQ" target="_sSsT0NtvEeOTmI1x4-_Xtw" lineWidth="1">
+    <styles xmi:type="notation:ArrowStyle" xmi:id="_sSzokdtvEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_sSzokttvEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_sSzok9tvEeOTmI1x4-_Xtw" points="[-9, -10, 264, 322]$[-273, -332, 0, 0]"/>
+  </edges>
+  <edges xmi:type="notation:Connector" xmi:id="_K1GGMNtwEeOTmI1x4-_Xtw" type="NoteAttachment" source="_AAKdoNtoEeOKN_lQ_FIFhA" target="_K08VMNtwEeOTmI1x4-_Xtw" lineWidth="1">
+    <styles xmi:type="notation:ArrowStyle" xmi:id="_K1GGMdtwEeOTmI1x4-_Xtw"/>
+    <styles xmi:type="notation:LineTypeStyle" xmi:id="_K1GGMttwEeOTmI1x4-_Xtw"/>
+    <element xsi:nil="true"/>
+    <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_K1GGM9twEeOTmI1x4-_Xtw" points="[-20, -10, 571, 294]$[-591, -304, 0, 0]"/>
   </edges>
 </notation:Diagram>

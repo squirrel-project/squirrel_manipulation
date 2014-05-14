@@ -6,6 +6,8 @@
     <publisher name="move_arm_joint" msg="std_msgs::Empty"/>
     <publisher name="move_hand" msg="std_msgs::Float64MultiArray"/>
     <publisher name="move_arm_cart" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="move_base" msg="std_msgs::Empty"/>
+    <publisher name="invoke_planner" msg="planning_knowledge_msgs::KnowledgeItem"/>
     <subscriber name="octomap" msg="octomap_msgs::OctomapWithPose"/>
     <subscriber name="object_poses" msg="geometry_msgs::PoseArray"/>
     <subscriber name="goal" msg="planning_knowledge_msgs::KnowledgeItem"/>
