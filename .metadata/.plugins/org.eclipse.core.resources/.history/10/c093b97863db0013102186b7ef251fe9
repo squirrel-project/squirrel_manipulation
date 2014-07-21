@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="manipulation" author="c7031109" author_email="simon.hangl@uibk.ac.at" description="The manipulation package" license="TODO">
-  <node name="manipulation"/>
-  <depend>std_msgs</depend>
-  <depend>octomap_msgs</depend>
-</ros:Package>

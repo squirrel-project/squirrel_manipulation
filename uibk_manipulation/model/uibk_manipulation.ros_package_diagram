@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<notation:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:ros="http://ros/1.0" xmi:id="_qW-9cNthEeOmAKmt3Ru8HA" type="RosPackage" name="manipulation.ros_package_diagram" measurementUnit="Pixel">
+<notation:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:ros="http://ros/1.0" xmi:id="_qW-9cNthEeOmAKmt3Ru8HA" type="RosPackage" name="uibk_manipulation.ros_package_diagram" measurementUnit="Pixel">
   <children xmi:type="notation:Shape" xmi:id="_BP85QNtiEeOmAKmt3Ru8HA" type="2001" fontName="Ubuntu">
     <children xmi:type="notation:DecorationNode" xmi:id="_BP-ucNtiEeOmAKmt3Ru8HA" type="5008"/>
     <children xmi:type="notation:BasicCompartment" xmi:id="_BP_8kNtiEeOmAKmt3Ru8HA" type="7001">
@@ -11,84 +11,84 @@
       <children xmi:type="notation:DecorationNode" xmi:id="_nXf4ENtiEeO-RN-Vw8hkHQ" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_nXfRAdtiEeO-RN-Vw8hkHQ"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_nXfRAttiEeO-RN-Vw8hkHQ" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.0"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.0"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_nXfRA9tiEeO-RN-Vw8hkHQ"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_6RU9cNtlEeO-RN-Vw8hkHQ" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_6RVkgNtlEeO-RN-Vw8hkHQ" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_6RU9cdtlEeO-RN-Vw8hkHQ"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_6RU9cttlEeO-RN-Vw8hkHQ" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.1"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.1"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_6RU9c9tlEeO-RN-Vw8hkHQ"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_GPIWwNtnEeOKN_lQ_FIFhA" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_GPI90NtnEeOKN_lQ_FIFhA" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_GPIWwdtnEeOKN_lQ_FIFhA"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_GPIWwttnEeOKN_lQ_FIFhA" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.2"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.2"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_GPIWw9tnEeOKN_lQ_FIFhA"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_AAKdoNtoEeOKN_lQ_FIFhA" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_AAKdpNtoEeOKN_lQ_FIFhA" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_AAKdodtoEeOKN_lQ_FIFhA"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_AAKdottoEeOKN_lQ_FIFhA" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.0"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.0"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_AAKdo9toEeOKN_lQ_FIFhA"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_hyujwNtpEeOgjblgvPn0Dg" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_hyvx4NtpEeOgjblgvPn0Dg" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_hyujwdtpEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_hyujwttpEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.1"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.1"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_hyujw9tpEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_BgShsNtqEeOgjblgvPn0Dg" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_BgShtNtqEeOgjblgvPn0Dg" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_BgShsdtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_BgShsttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.2"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.2"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_BgShs9tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_GbEZoNtqEeOgjblgvPn0Dg" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_GbFAsNtqEeOgjblgvPn0Dg" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_GbEZodtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_GbEZottqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.3"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.3"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_GbEZo9tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_Kf5hANtqEeOgjblgvPn0Dg" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_Kf6IENtqEeOgjblgvPn0Dg" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_Kf5hAdtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_Kf5hAttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.4"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.4"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_Kf5hA9tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_pcy3ANtqEeOgjblgvPn0Dg" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_pcy3BNtqEeOgjblgvPn0Dg" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_pcy3AdtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_pcy3AttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.3"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.3"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_pcy3A9tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_tJ6pANtqEeOgjblgvPn0Dg" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_tJ6pBNtqEeOgjblgvPn0Dg" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_tJ6pAdtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_tJ6pAttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.4"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.4"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_tJ6pA9tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_wAZt8NtqEeOgjblgvPn0Dg" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_wAaVANtqEeOgjblgvPn0Dg" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_wAZt8dtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_wAZt8ttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.5"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.5"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_wAZt89tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_xh4u0NtqEeOgjblgvPn0Dg" type="3007">
       <children xmi:type="notation:DecorationNode" xmi:id="_xh5V4NtqEeOgjblgvPn0Dg" type="5007"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_xh4u0dtqEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_xh4u0ttqEeOgjblgvPn0Dg" fontName="Ubuntu"/>
-      <element xmi:type="ros:Subscriber" href="manipulation.ros_package#//@node.0/@subscriber.6"/>
+      <element xmi:type="ros:Subscriber" href="uibk_manipulation.ros_package#//@node.0/@subscriber.6"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_xh4u09tqEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_IR4U0NtrEeOgjblgvPn0Dg" type="3003">
@@ -96,24 +96,24 @@
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_IR4U0dtrEeOgjblgvPn0Dg"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_IR4U0ttrEeOgjblgvPn0Dg" fontName="Ubuntu"/>
       <styles xmi:type="notation:LineStyle" xmi:id="_IR4U09trEeOgjblgvPn0Dg"/>
-      <element xmi:type="ros:ServiceClient" href="manipulation.ros_package#//@node.0/@serviceClient.0"/>
+      <element xmi:type="ros:ServiceClient" href="uibk_manipulation.ros_package#//@node.0/@serviceClient.0"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_IR4U1NtrEeOgjblgvPn0Dg"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="_uPnwANtuEeOTmI1x4-_Xtw" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="_uPo-INtuEeOTmI1x4-_Xtw" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="_uPnwAdtuEeOTmI1x4-_Xtw"/>
       <styles xmi:type="notation:FontStyle" xmi:id="_uPnwAttuEeOTmI1x4-_Xtw" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.5"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.5"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="_uPnwA9tuEeOTmI1x4-_Xtw"/>
     </children>
     <children xmi:type="notation:Node" xmi:id="__BLosNtuEeOTmI1x4-_Xtw" type="3004">
       <children xmi:type="notation:DecorationNode" xmi:id="__BMPwNtuEeOTmI1x4-_Xtw" type="5004"/>
       <styles xmi:type="notation:DescriptionStyle" xmi:id="__BLosdtuEeOTmI1x4-_Xtw"/>
       <styles xmi:type="notation:FontStyle" xmi:id="__BLosttuEeOTmI1x4-_Xtw" fontName="Ubuntu"/>
-      <element xmi:type="ros:Publisher" href="manipulation.ros_package#//@node.0/@publisher.6"/>
+      <element xmi:type="ros:Publisher" href="uibk_manipulation.ros_package#//@node.0/@publisher.6"/>
       <layoutConstraint xmi:type="notation:Bounds" xmi:id="__BLos9tuEeOTmI1x4-_Xtw"/>
     </children>
-    <element xmi:type="ros:Node" href="manipulation.ros_package#//@node.0"/>
+    <element xmi:type="ros:Node" href="uibk_manipulation.ros_package#//@node.0"/>
     <layoutConstraint xmi:type="notation:Bounds" xmi:id="_BP85QdtiEeOmAKmt3Ru8HA" x="312" y="204"/>
   </children>
   <children xmi:type="notation:Shape" xmi:id="_55aTENttEeOdwfdyYcOaiA" type="Note" fontName="Ubuntu" description="type not known yet" fillColor="13369343" transparency="0" lineColor="6737151" lineWidth="1">
@@ -177,7 +177,7 @@
     <layoutConstraint xmi:type="notation:Bounds" xmi:id="_K08VM9twEeOTmI1x4-_Xtw" x="732" y="144"/>
   </children>
   <styles xmi:type="notation:DiagramStyle" xmi:id="_qW-9cdthEeOmAKmt3Ru8HA"/>
-  <element xmi:type="ros:Package" href="manipulation.ros_package#/"/>
+  <element xmi:type="ros:Package" href="uibk_manipulation.ros_package#/"/>
   <edges xmi:type="notation:Connector" xmi:id="_55t1ENttEeOdwfdyYcOaiA" type="NoteAttachment" source="_55aTENttEeOdwfdyYcOaiA" target="_hyujwNtpEeOgjblgvPn0Dg" lineWidth="1">
     <styles xmi:type="notation:ArrowStyle" xmi:id="_55ucINttEeOdwfdyYcOaiA"/>
     <styles xmi:type="notation:LineTypeStyle" xmi:id="_55ucIdttEeOdwfdyYcOaiA"/>
