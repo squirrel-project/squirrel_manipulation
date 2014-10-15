@@ -1,1 +1,32 @@
-/opt/ros/hydro/share/catkin/cmake/toplevel.cmake
+cmake_minimum_required(VERSION 2.8.3)
+project(manipulation)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS roscpp)
+
+catkin_package()
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+	${catkin_INCLUDE_DIRS}
+)
+
+#find_package(rostest REQUIRED)
+#find_package(gtest)
+
+catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
+target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
+
+#if(CATKIN_ENABLE_TESTING)
+#  find_package(rostest REQUIRED)
+#  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
+#  target_link_libraries(test_mynode ${catkin_LIBRARIES})
+#endif()
+
