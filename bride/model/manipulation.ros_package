@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="manipulation" author="c7031109" author_email="simon.hangl@uibk.ac.at" description="The manipulation package" license="TODO">
+  <node name="manipulation">
+    <publisher name="navigate" msg="std_msgs::Empty"/>
+    <publisher name="move_arm_joint" msg="std_msgs::Empty"/>
+    <publisher name="move_hand" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="move_arm_cart" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="move_base" msg="std_msgs::Empty"/>
+    <publisher name="invoke_planner" msg="planning_knowledge_msgs::KnowledgeItem"/>
+    <subscriber name="octomap" msg="octomap_msgs::OctomapWithPose"/>
+    <subscriber name="object_poses" msg="geometry_msgs::PoseArray"/>
+    <subscriber name="arm_forces" msg="std_msgs::Empty"/>
+    <subscriber name="arm_pos" msg="std_msgs::Empty"/>
+    <subscriber name="hand_pos" msg="std_msgs::Empty"/>
+    <subscriber name="hand_sensors" msg="std_msgs::Empty"/>
+    <serviceClient name="collission_check" msg="octomap_msgs::GetOctomap"/>
+    <actionserver name="push" ActionType="action_msgs_manipulation::push"/>
+    <actionserver name="blindGrasp" ActionType="action_msgs_manipulation::blindGrasp"/>
+    <actionserver name="pickUp" ActionType="action_msgs_manipulation::pickUp"/>
+    <actionserver name="lean" ActionType="action_msgs_manipulation::lean"/>
+    <actionserver name="drop" ActionType="action_msgs_manipulation::drop"/>
+    <actionserver name="inspect" ActionType="action_msgs_manipulation::inspect"/>
+    <actionserver name="putDown" ActionType="action_msgs_manipulation::putDown"/>
+  </node>
+  <depend>std_msgs</depend>
+  <depend>octomap_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>manipulation_msgs</depend>
+  <depend>planning_knowledge_msgs</depend>
+  <depend>planning_dispatch_msgs</depend>
+  <depend>action_msgs_manipulation</depend>
+</ros:Package>
