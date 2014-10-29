@@ -30,6 +30,17 @@ include_directories(
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
 target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
 
+add_library(librobotino
+   src/RobotinoControl.cpp
+)
+
+## Declare a cpp executable
+add_executable(testrobotino src/TestRobotino.cpp)
+target_link_libraries(testrobotino librobotino ${catkin_LIBRARIES})
+
+add_executable(ardemo src/ARDemo.cpp)
+target_link_libraries(ardemo librobotino ${catkin_LIBRARIES})
+
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
 #  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
