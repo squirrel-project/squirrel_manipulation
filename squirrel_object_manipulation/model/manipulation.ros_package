@@ -39,7 +39,6 @@
   <depend>std_msgs</depend>
   <depend>octomap_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>manipulation_msgs</depend>
   <depend>planning_knowledge_msgs</depend>
   <depend>planning_dispatch_msgs</depend>
   <depend>action_msgs_manipulation</depend>
