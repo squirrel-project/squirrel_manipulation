@@ -28,13 +28,13 @@
     <subscriber name="robotino/sensors/distance_sensors" msg="sensor_msgs::PointCloud"/>
     <subscriber name="robotino/sensors/joint_states" msg="sensor_msgs::JointState"/>
     <subscriber name="robotino/sensors/odom" msg="nav_msgs::Odometry"/>
-    <actionserver name="push" ActionType="action_msgs_manipulation::push"/>
-    <actionserver name="blindGrasp" ActionType="action_msgs_manipulation::blindGrasp"/>
-    <actionserver name="pickUp" ActionType="action_msgs_manipulation::pickUp"/>
-    <actionserver name="lean" ActionType="action_msgs_manipulation::lean"/>
-    <actionserver name="drop" ActionType="action_msgs_manipulation::drop"/>
-    <actionserver name="inspect" ActionType="action_msgs_manipulation::inspect"/>
-    <actionserver name="putDown" ActionType="action_msgs_manipulation::putDown"/>
+    <actionserver name="push" ActionType="squirrel_manipulation_msgs::push"/>
+    <actionserver name="blindGrasp" ActionType="squirrel_manipulation_msgs::blindGrasp"/>
+    <actionserver name="pickUp" ActionType="squirrel_manipulation_msgs::pickUp"/>
+    <actionserver name="lean" ActionType="squirrel_manipulation_msgs::lean"/>
+    <actionserver name="drop" ActionType="squirrel_manipulation_msgs::drop"/>
+    <actionserver name="inspect" ActionType="squirrel_manipulation_msgs::inspect"/>
+    <actionserver name="putDown" ActionType="squirrel_manipulation_msgs::putDown"/>
   </node>
   <depend>std_msgs</depend>
   <depend>octomap_msgs</depend>
