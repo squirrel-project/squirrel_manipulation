@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ros:Package xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ros="http://ros/1.0" name="manipulation" author="c7031109" author_email="simon.hangl@uibk.ac.at" description="The manipulation package" license="TODO">
+  <node name="manipulation">
+    <publisher name="hand/settings/set_max_velocity" eventHandler="" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="hand/joint_control/move" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="hand/joint_control/ptp" msg="std_msgs::Int64MultiArray"/>
+    <publisher name="hand/cartesian_control/ptp" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="hand/cartesian_control/move" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="arm/joint_control/move" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="arm/joint_control/ptp" msg="std_msgs::Float64MultiArray"/>
+    <publisher name="arm/cartesian_control/move" msg="geometry_msgs::Pose"/>
+    <publisher name="arm/cartesian_control/ptp" msg="geometry_msgs::Pose"/>
+    <publisher name="robotino/cmd_vel" msg="geometry_msgs::Twist"/>
+    <subscriber name="octomap" msg="octomap_msgs::OctomapWithPose"/>
+    <subscriber name="object_poses" msg="geometry_msgs::PoseArray"/>
+    <subscriber name="hand/joint_control/state" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="hand/cartesian_control/state" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="hand/sensors/motor_currents" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="hand/settings/calibrated" msg="std_msgs::Bool"/>
+    <subscriber name="hand/sensors/tactile" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="hand/sensors/distance" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="hand/sensors/tempature" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="arm/sensors/force_torque" msg="std_msgs::Int64MultiArray"/>
+    <subscriber name="arm/sensors/motor_currents" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="arm/joint_control/state" msg="std_msgs::Float64MultiArray"/>
+    <subscriber name="arm/cartesian_control/state" msg="geometry_msgs::Pose"/>
+    <subscriber name="robotino/sensors/bumper" msg="std_msgs::Bool"/>
+    <subscriber name="robotino/sensors/distance_sensors" msg="sensor_msgs::PointCloud"/>
+    <subscriber name="robotino/sensors/joint_states" msg="sensor_msgs::JointState"/>
+    <subscriber name="robotino/sensors/odom" msg="nav_msgs::Odometry"/>
+    <actionserver name="push" ActionType="squirrel_manipulation_msgs::push"/>
+    <actionserver name="blindGrasp" ActionType="squirrel_manipulation_msgs::blindGrasp"/>
+    <actionserver name="pickUp" ActionType="squirrel_manipulation_msgs::pickUp"/>
+    <actionserver name="lean" ActionType="squirrel_manipulation_msgs::lean"/>
+    <actionserver name="drop" ActionType="squirrel_manipulation_msgs::drop"/>
+    <actionserver name="inspect" ActionType="squirrel_manipulation_msgs::inspect"/>
+    <actionserver name="putDown" ActionType="squirrel_manipulation_msgs::putDown"/>
+  </node>
+  <depend>std_msgs</depend>
+  <depend>octomap_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>planning_knowledge_msgs</depend>
+  <depend>planning_dispatch_msgs</depend>
+  <depend>action_msgs_manipulation</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+</ros:Package>
