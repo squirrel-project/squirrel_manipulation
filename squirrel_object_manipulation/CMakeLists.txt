@@ -12,7 +12,27 @@ nav_msgs
 tf2
 )
 
-catkin_package()
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES squirrel_mhand_msgs
+  CATKIN_DEPENDS 
+	roscpp
+    sensor_msgs
+    std_msgs
+    nav_msgs
+    tf2
+	#other_catkin_pkg
+#  DEPENDS system_lib
+)
 
 ###########
 ## Build ##
@@ -30,16 +50,16 @@ include_directories(
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
 target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
 
-add_library(librobotino
+add_library(robotino
    src/RobotinoControl.cpp
 )
 
 ## Declare a cpp executable
 add_executable(testrobotino src/TestRobotino.cpp)
-target_link_libraries(testrobotino librobotino ${catkin_LIBRARIES})
+target_link_libraries(testrobotino robotino ${catkin_LIBRARIES})
 
 add_executable(ardemo src/ARDemo.cpp)
-target_link_libraries(ardemo librobotino ${catkin_LIBRARIES})
+target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
