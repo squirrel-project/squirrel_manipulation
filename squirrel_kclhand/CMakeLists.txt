@@ -46,10 +46,10 @@ include_directories(common/include)
 include_directories(common/src)
 include_directories(common/src/include)
 include_directories(${catkin_INCLUDE_DIRS})
-
+include_directories(include/squirrel_kclhand/include)
 
 ## Declare a cpp executable
-add_executable(kclhand ros/src/kclhand_ros.cpp common/src/KCLTCPDataClient.cpp)
+add_executable(kclhand ros/src/kclhand_ros.cpp include/squirrel_kclhand/KCLTCPDataClient.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

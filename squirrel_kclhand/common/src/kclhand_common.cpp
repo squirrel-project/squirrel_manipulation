@@ -1,7 +1,8 @@
 // ROS message includes
 #include "ros/ros.h"
 #include <squirrel_kclhand_msgs/Joints.h>
-#include <include/KCLTCPDataClient.h>
+#include <KCLTCPDataClient.h>
+
 /* protected region user include files on begin */
 /* protected region user include files end */
 
