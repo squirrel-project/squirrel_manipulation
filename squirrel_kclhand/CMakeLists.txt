@@ -25,15 +25,15 @@ generate_dynamic_reconfigure_options(cfg/kclhand.cfg )
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+#dynamic_reconfigure
 catkin_package(
   INCLUDE_DIRS
     common/src
   CATKIN_DEPENDS 
   	roscpp
-    dynamic_reconfigure
 	std_msgs
-	squirrel_kclhand_msgs
-   
+        dynamic_reconfigure
+	squirrel_kclhand_msgs   
 )
 
 ###########
@@ -42,9 +42,10 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(common/include)
+
+#include_directories(include/squirrel_kclhand)
 include_directories(common/src)
-include_directories(common/src/include)
+#include_directories(common/src/include)
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(include/squirrel_kclhand/include)
 
