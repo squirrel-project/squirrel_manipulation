@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <iostream>
 
-#include "RobotinoControl.hpp"
+#include "squirrel_object_manipulation/RobotinoControl.hpp"
 
 using namespace std;
 using namespace ros;
