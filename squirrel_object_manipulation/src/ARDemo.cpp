@@ -8,7 +8,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <tf/transform_datatypes.h>
 
-#include "RobotinoControl.hpp"
+#include "squirrel_object_manipulation/RobotinoControl.hpp"
 
 using namespace std;
 using namespace ros;

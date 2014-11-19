@@ -1,0 +1,6 @@
+#Generated once for configuration of goals
+#Config testdata_kclhand_set_joint_controller_target.yaml
+joint_name: ''
+new_setpoint: 0.0
+joint_effort_control_enabled: false
+track_now: false

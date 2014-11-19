@@ -1,4 +1,4 @@
-#include "RobotinoControl.hpp"
+#include "squirrel_object_manipulation/RobotinoControl.hpp"
 
 using namespace ros;
 using namespace std;
