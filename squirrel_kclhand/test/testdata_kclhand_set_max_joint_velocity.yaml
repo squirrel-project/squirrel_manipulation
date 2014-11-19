@@ -1,0 +1,5 @@
+#Generated once for configuration of goals
+#Config testdata_kclhand_set_max_joint_velocity.yaml
+joint_name: ''
+joint_max_velocity: 0.0
+set_now: false
