@@ -2,21 +2,23 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
-#include <squirrel_object_manipulation/RobotinoControl.hpp>
-#include <squirrel_manipulation_msgs/PickUpAction.h>
-#include <actionlib/server/simple_action_server.h>
+
 #include <squirrel_object_manipulation/pickup.hpp>
 
 using namespace std;
 
-PickupAction::PickupAction(std::string name) : as(nh, name, boost::bind(&PickupAction::executeCB, this, _1), false), actionName(name) {
-    as.start();
+PickupAction::PickupAction(const std::string std_pickupServerActionName, const std::string std_blindServerActionName) :
+                            pickServer(nh, std_pickupServerActionName, boost::bind(&PickupAction::executePickUp, this, _1), false),
+                            blindServer(nh, std_blindServerActionName, boost::bind(&PickupAction::executeBlindGrasp, this, _1))
+{
+    pickServer.start();
+    blindServer.start();
 }
 
 PickupAction::~PickupAction() {
 }
 
-void PickupAction::executeCB(const squirrel_manipulation_msgs::PickUpGoalConstPtr &goal) {
+void PickupAction::executePickUp(const squirrel_manipulation_msgs::PickUpGoalConstPtr &goal) {
 
     ros::Rate rate(1);
 
@@ -26,23 +28,27 @@ void PickupAction::executeCB(const squirrel_manipulation_msgs::PickUpGoalConstPt
     for(int i = 1; i <= 10; ++i) {
 
         rate.sleep();
-        feedback.percent_completed = i * 10;
-        as.publishFeedback(feedback);
+        pickupFeedback.percent_completed = i * 10;
+        pickServer.publishFeedback(pickupFeedback);
 
     }
 
-    result.result_status = "done";
-    as.setSucceeded(result);
+    pickupResult.result_status = "done";
+    pickServer.setSucceeded(pickupResult);
+
+}
+
+void PickupAction::executeBlindGrasp(const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal) {
 
 }
 
 int main(int argc, char** argv) {
 
-  ros::init(argc, argv, "pickup");
+    ros::init(argc, argv, "manipulation");
 
-  PickupAction pick(ros::this_node::getName());
-  ros::spin();
+    PickupAction pick(PICKUP_NAME, BLIND_GRASP_NAME);
+    ros::spin();
 
-  return 0;
+    return 0;
 
 }
