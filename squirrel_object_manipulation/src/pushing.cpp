@@ -9,8 +9,9 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Vector3.h>
 #include <tf/transform_datatypes.h>
-#include "squirrel_object_manipulation/RobotinoControl.hpp"
-#include "squirrel_rgbd_mapping_msgs/GetPushingPlan.h"
+#include <nav_msgs/Odometry.h>
+#include <squirrel_object_manipulation/RobotinoControl.hpp>
+#include <squirrel_rgbd_mapping_msgs/GetPushingPlan.h>
 
 using namespace std;
 using namespace ros;
