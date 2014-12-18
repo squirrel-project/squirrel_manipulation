@@ -12,9 +12,11 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
     subTf = node.subscribe(ROBOTINO_TF_TOPIC, 1, &RobotinoControl::callbackTf, this);
     subCameraInfo = node.subscribe(ROBOTINO_CAMERAINFO_TOPIC, 1, &RobotinoControl::callbackCameraInfo, this);
     subImageRaw = node.subscribe(ROBOTINO_IMAGERAW_TOPIC, 1, &RobotinoControl::callbackImageRaw, this);
-    subImageCompressed = node.subscribe(ROBOTINO_IMAGECOMPRESSED_TOPIC, 1, &RobotinoControl::callbackImageCompressed, this);
+   // subImageCompressed = node.subscribe(ROBOTINO_IMAGECOMPRESSED_TOPIC, 1, &RobotinoControl::callbackImageCompressed, this);
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
+
+
 
     spinRateVal = 10;
 
@@ -176,3 +178,83 @@ void RobotinoControl::rotateDistance(double rot) {
 
 
 //=========senkas space=========
+void  RobotinoControl::moveFwd(double speed){
+
+    geometry_msgs::Twist twist;
+    twist.linear.z=0;
+    twist.linear.x=speed;
+    twist.linear.y=0;
+    twist.angular.z=0;
+    twist.angular.x=0;
+    twist.angular.y=0;
+    singleMove(twist);
+}
+
+void  RobotinoControl::moveFwd(){
+    moveFwd(0.2);
+}
+
+void RobotinoControl::stopRobot(){
+    moveFwd(0.0);
+}
+
+void RobotinoControl::turnRobot(double val){
+    geometry_msgs::Twist twist;
+    twist.linear.z=0;
+    twist.linear.x=0;
+    twist.linear.y=0;
+    twist.angular.z=val;
+    twist.angular.x=0;
+    twist.angular.y=0;
+    singleMove(twist);
+}
+
+bool RobotinoControl::checkDistances(double maxDist) {
+
+   if(distances.points.size() > 0){
+        geometry_msgs::Point32 currentFrontDistance = distances.points.at(0);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(1);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(2);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(3);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(4);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(5);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(6);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(7);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+
+        currentFrontDistance = distances.points.at(8);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
+            return false;
+   }
+
+        return true;
+
+    }
+nav_msgs::Odometry RobotinoControl::getOdom(){
+    return odometry;
+}
+
+void RobotinoControl::reset_odometry(){
+}
