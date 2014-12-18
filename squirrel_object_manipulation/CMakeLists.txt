@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   nav_msgs
   tf2
+  tf
   squirrel_rgbd_mapping_msgs
   genmsg
   actionlib_msgs
