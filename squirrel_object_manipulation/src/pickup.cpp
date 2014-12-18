@@ -5,29 +5,44 @@
 #include <squirrel_object_manipulation/RobotinoControl.hpp>
 #include <squirrel_manipulation_msgs/PickUpAction.h>
 #include <actionlib/server/simple_action_server.h>
+#include <squirrel_object_manipulation/pickup.hpp>
 
 using namespace std;
-using namespace ros;
 
-typedef actionlib::SimpleActionServer<squirrel_manipulation_msgs::PickUpAction> Server;
-
-void execute(const squirrel_manipulation_msgs::PickUpGoalConstPtr& goal, Server* as) {
-    // Do lots of awesome groundbreaking robot stuff here
-    as->setSucceeded();
+PickupAction::PickupAction(std::string name) : as(nh, name, boost::bind(&PickupAction::executeCB, this, _1), false), actionName(name) {
+    as.start();
 }
 
-int main(int argc, char** args) {
+PickupAction::~PickupAction() {
+}
 
-    ros::init(argc, args, "pickup_server");
-    ros::NodeHandle n;
-    sleep(0.5);
+void PickupAction::executeCB(const squirrel_manipulation_msgs::PickUpGoalConstPtr &goal) {
 
-    Server server(n, "pickup", boost::bind(&execute, _1, &server), false);
-    sleep(0.5);
+    ros::Rate rate(1);
 
-    server.start();
-    ros::spin();
+    // publish info to the console for the user
+    ROS_INFO("(pick up action) started pick up of %s for manipulation %s",  goal->object_id.c_str(), goal->next_manipulation.c_str());
 
-    return 0;
+    for(int i = 1; i <= 10; ++i) {
+
+        rate.sleep();
+        feedback.percent_completed = i * 10;
+        as.publishFeedback(feedback);
+
+    }
+
+    result.result_status = "done";
+    as.setSucceeded(result);
+
+}
+
+int main(int argc, char** argv) {
+
+  ros::init(argc, argv, "pickup");
+
+  PickupAction pick(ros::this_node::getName());
+  ros::spin();
+
+  return 0;
 
 }
