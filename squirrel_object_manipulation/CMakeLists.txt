@@ -66,6 +66,8 @@ target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 add_executable(push src/pushing.cpp)
 target_link_libraries(push robotino ${catkin_LIBRARIES})
+add_dependencies(push squirrel_rgbd_mapping_msgs_generate_messages_cpp)
+
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
 #  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
