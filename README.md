@@ -2,7 +2,7 @@ manipulation
 ============
 [![Build Status](https://magnum.travis-ci.com/squirrel-project/manipulation.svg?token=3yXoCRsCegowgzzpPuqw)](https://magnum.travis-ci.com/squirrel-project/manipulation)
 
-Repository for manipulation related SQUIRREL packages.
+Technical Maintainer: shangl (Simon Hangl, University of Innsbruck)
+[never commit to the main repository. Instead send pull request to the technical maintainer --> shangl/manipulation]
 
-[maintainer] simon hangl (simon.hangl@uibk.ac.at, gibhub: shangl)
-[never commit to the main repository but to my fork --> shangl/manipulation]
+Repository for manipulation related SQUIRREL packages.
