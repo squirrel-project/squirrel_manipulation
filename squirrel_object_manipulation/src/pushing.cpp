@@ -10,13 +10,10 @@
 #include <geometry_msgs/Vector3.h>
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
-#include <squirrel_object_manipulation/RobotinoControl.hpp>
-#include <squirrel_rgbd_mapping_msgs/GetPushingPlan.h>
+#include <squirrel_object_manipulation/pushing.hpp>
+
 
 using namespace std;
-using namespace ros;
-
-
 
 bool firstSet = false;
 double Rx0, Ry0, Rz0;
@@ -29,21 +26,29 @@ double string_to_double(const std::string& s);
 
 geometry_msgs::TransformStamped t;
 
-int main(int argc, char** args) {
+PushAction::PushAction(const std::string std_PushServerActionName) : pushServer(nh, std_PushServerActionName, boost::bind(&PushAction::executePush, this, _1), false)
+{
+    pushServer.start();
 
-   
+}
 
-    ros::init(argc, args, "push");
-    ros::NodeHandle node;
-    usleep(1e6);
+PushAction::~PushAction() {
+}
 
-  
-    RobotinoControl robotino(node);
+void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal) {
 
-    ros::Subscriber markerSub = node.subscribe("arMarker/tf", 1, arCallback);
+    ros::Rate rate(1);
+
+    // publish info to the console for the user
+    ROS_INFO("(push up action) started push up of %s for manipulation %s",  goal->object_id.c_str());
+
+
+    RobotinoControl robotino(nh);
+
+    ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
     ros::Rate lRate(5);
 
-    cout << "everything initialized" << endl;
+   // cout << "everything initialized" << endl;
 
     while(!firstSet) {
         ros::spinOnce();
@@ -51,84 +56,103 @@ int main(int argc, char** args) {
     }
 
     ros::spinOnce();
-  
+
     nav_msgs::Odometry Odometry = robotino.getOdom();
-    double initX = Odometry.pose.pose.position.x ; double initY = Odometry.pose.pose.position.y ; double initZ = Odometry.pose.pose.position.z ;
-   
+    double initX = Odometry.pose.pose.position.x ; double initY = Odometry.pose.pose.position.y ;
+
     geometry_msgs::Quaternion rotation = t.transform.rotation;
-    
+
     squirrel_rgbd_mapping_msgs::GetPushingPlan srvPlan;
-    
-    
-    
+
+
+
 
     ///only pusghing and object tracking -> for tetsing
 
 
     double x=initX; double  y=initY;  double th=tf::getYaw(Odometry.pose.pose.orientation);
-    double  initth=th;
     double  yaw=th;
-    
 
-    cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
-    
+
+   // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
+
     srvPlan.request.start.x=initX;
     srvPlan.request.start.y=initY;
     srvPlan.request.start.theta=th;
-    
 
-     double errX,errY,errTh, eOX,eOY,eOTh;
-     vector<double> X,Y,TH,Xo,Yo,THo;
+
+    srvPlan.request.goal.x=goal->pose.position.x;
+    srvPlan.request.goal.y=goal->pose.position.y;
+    srvPlan.request.goal.theta=tf::getYaw(goal->pose.orientation);
+
+
+    geometry_msgs::Point32 p1, p2, p3, p4;
+
+    p1.x = 0.22; p1.y = -0.15;
+    p2.x = 0.22; p1.y = 0.15;
+    p3.x = 0.62; p1.y = -0.15;
+    p4.x = 0.62; p1.y = 0.15;
+
+    srvPlan.request.object.points.push_back(p1);
+    srvPlan.request.object.points.push_back(p2);
+    srvPlan.request.object.points.push_back(p3);
+    srvPlan.request.object.points.push_back(p4);
+
+
+
+      if ( ros::service::call("/getPushingPlan", srvPlan) ) {
+        if ( srvPlan.response.plan.poses.empty() ) {
+          ROS_WARN("got an empty plan");
+        } else {
+          srvPlan.response.plan.header.frame_id = "/map";
+          ROS_INFO("got a path for pushing");
+        }
+      } else {
+        ROS_ERROR("unable to communicate with /getPushingPlan");
+      }
+
+
+      nav_msgs::Path pushing_path=srvPlan.response.plan;
+
+      int path_length= pushing_path.poses.size();
+
+     double errX,errY,errTh;
+     vector<double> X,Y,TH;
 
      double Xo1,Yo1,Tho1, Tho;
 
-     //pushing on the path
+     int i=0;
 
-    x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
+
+   //getting coordinates separately
+
+    while(i<path_length) {
+
+        X.push_back(pushing_path.poses[i].pose.position.x);
+        Y.push_back(pushing_path.poses[i].pose.position.y);
+        TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
+        i++;
+    }
 
 
     sleep(2);
-
- 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // call service for geting vector of X, Y and TH
-    //apply transformation matrix to set it in odometry??
-
-    double n = 0;
-
-    /*while(!inFile.eof()) {
-
-        for(int i = 0; i < 3; ++i) {
-           inFile>>val;
-
-         //  cout<<val<<endl;
-
-            n = string_to_double(val);
-            if(i == 0) { X.push_back(n); }
-            else if(i == 1) { Y.push_back(n); }
-            else { TH.push_back(n); }
-        }
-        fflush(stdout);
-    }*/
-
-
 
     rotation = t.transform.rotation;
     Xo1 =t.transform.translation.x; Yo1=t.transform.translation.y; Tho1=tf::getYaw(rotation);
 
     //path tracking
-    vector<double> Ex,Ey,Eth, dEx,dEy,dEth, Eox,Eoy,EoTh;
+    vector<double> Ex,Ey,Eth, dEx,dEy,dEth;
 
     double vx,vy,omega,derrX,derrY,derrTh;
     int p=X.size();
-    int i=0;
+
+    i=0;
     while(i<p){
 
         ros::spinOnce();
 
         Odometry = robotino.getOdom();
         x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
-
 
 
        errX=X[i]-x;
@@ -138,7 +162,7 @@ int main(int argc, char** args) {
        th=yaw;
 
        rotation = t.transform.rotation;
-      
+
 
        Ex.push_back(errX);
        Ey.push_back(errY);
@@ -157,22 +181,12 @@ int main(int argc, char** args) {
        dEy.push_back(derrY);
        dEth.push_back(derrTh);
 
-       vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));//*sgn(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th));
+       vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));
        vy=0.2*(errY*cos(th)-errX*sin(th))+0.1*(derrY*cos(th)-derrX*sin(th));
        omega=0.5*errTh;
 
        Tho=tf::getYaw(rotation);
 
-      /* if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
-           robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, omega);
-           i=i-1;
-
-       }*/
-       /* else if(sgn(Tho)*Tho>0.3){
-           robotino.singleMove(0, -1*Tho, 0, 0, 0, omega);
-           i=i-1;
-
-       }*/
        if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
            robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, omega);
            i=i-1;
@@ -180,17 +194,17 @@ int main(int argc, char** args) {
        }
        else if (sgn(errTh)*errTh> 0.05){
            robotino.singleMove( 0, 0, 0, 0, 0, omega);
-          
-        
+
+
        }
        else if (sgn(errY)*errY> 0.05){
            robotino.singleMove( vx, vy, 0, 0, 0, 0);
-          
+
        }
        else
        {
         robotino.singleMove( vx, 0, 0, 0, 0, 0);
-       
+
        }
 
        i++;
@@ -198,7 +212,34 @@ int main(int argc, char** args) {
 
      }
 
+
+    /* for(int i = 1; i <= 10; ++i) {
+
+        rate.sleep();
+        PushFeedback.percent_completed = i * 10;
+        pushServer.publishFeedback(PushFeedback);
+
+    }*/
+
+    pushResult.result_status = "done";
+    pushServer.setSucceeded(pushResult);
+
 }
+
+
+
+int main(int argc, char** argv) {
+
+    ros::init(argc, argv, "manipulation");
+
+    PushAction push(PUSH_NAME);
+    ros::spin();
+
+    return 0;
+
+}
+
+
 
 void arCallback(tf::tfMessage msg) {
 
