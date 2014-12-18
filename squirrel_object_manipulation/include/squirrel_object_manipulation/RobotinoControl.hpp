@@ -12,6 +12,7 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
 
+
 #define ROBOTINO_MOVE_TOPIC "/cmd_vel"
 #define ROBOTINO_BUMPER_TOPIC "/bumper"
 #define ROBOTINO_DISTANCE_TOPIC "/distance_sensors"
@@ -57,6 +58,9 @@ private:
 
     ros::Publisher pubDigitalValues;
 
+    ros::ServiceClient reset_odom;
+
+
     bool bumper;
     sensor_msgs::PointCloud distances;
     sensor_msgs::JointState joints;
@@ -76,6 +80,8 @@ private:
     void callbackCameraInfo(sensor_msgs::CameraInfo msg);
     void callbackImageRaw(sensor_msgs::Image msg);
     void callbackImageCompressed(sensor_msgs::CompressedImage msg);
+
+    void reset_odometry();
 
     //=========simons space=========
 
@@ -99,7 +105,12 @@ public:
     int sign(double d);
 
     //=========senkas space=========
-
+    void moveFwd(double speed);
+    void moveFwd();
+    void turnRobot(double val);
+    void stopRobot();
+    bool checkDistances(double maxDist);
+    nav_msgs::Odometry getOdom();
 
 };
 
