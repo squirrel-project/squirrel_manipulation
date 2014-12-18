@@ -5,11 +5,14 @@ project(squirrel_object_manipulation)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-roscpp
-sensor_msgs
-std_msgs
-nav_msgs
-tf2
+  geometry_msgs
+  roscpp
+  rospy
+  sensor_msgs
+  std_msgs
+  nav_msgs
+  tf2
+  squirrel_rgbd_mapping_msgs
 )
 
 ###################################
@@ -24,14 +27,13 @@ tf2
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES squirrel_mhand_msgs
-  CATKIN_DEPENDS 
-	roscpp
+  CATKIN_DEPENDS
+    squirrel_rgbd_mapping_msgs
+    roscpp
     sensor_msgs
     std_msgs
     nav_msgs
     tf2
-	#other_catkin_pkg
-#  DEPENDS system_lib
 )
 
 ###########
@@ -61,6 +63,9 @@ target_link_libraries(testrobotino robotino ${catkin_LIBRARIES})
 
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
+
+add_executable(push src/pushing.cpp)
+target_link_libraries(push robotino ${catkin_LIBRARIES})
 
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
