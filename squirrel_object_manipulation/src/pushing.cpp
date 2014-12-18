@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <tf/tfMessage.h>
+#include<tf/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Quaternion.h>
@@ -64,21 +65,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     squirrel_rgbd_mapping_msgs::GetPushingPlan srvPlan;
 
-
-
-
     ///only pusghing and object tracking -> for tetsing
 
 
-    double x=initX; double  y=initY;  double th=tf::getYaw(Odometry.pose.pose.orientation);
-    double  yaw=th;
+    double x=initX;
+    double y=initY;
+    double th=tf::getYaw(Odometry.pose.pose.orientation);
+    double yaw=th;
+
+    geometry_msgs::PoseStamped np, op;
+
+    op.pose.position=Odometry.pose.pose.position;
+    op.pose.orientation=Odometry.pose.pose.orientation;
+    op.header.frame_id="/odom";
+    tf::TransformListener tf2;
+
+
+    tf2.transformPose("/map",op, np);
 
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
 
-    srvPlan.request.start.x=initX;
-    srvPlan.request.start.y=initY;
-    srvPlan.request.start.theta=th;
+    srvPlan.request.start.x=np.pose.position.x;
+    srvPlan.request.start.y=np.pose.position.y;
+    srvPlan.request.start.theta=tf::getYaw(np.pose.orientation);
 
 
     srvPlan.request.goal.x=goal->pose.position.x;
