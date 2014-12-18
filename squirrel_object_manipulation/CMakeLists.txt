@@ -13,6 +13,10 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   tf2
   squirrel_rgbd_mapping_msgs
+  genmsg
+  actionlib_msgs
+  actionlib
+  squirrel_manipulation_msgs
 )
 
 ###################################
@@ -34,6 +38,7 @@ catkin_package(
     std_msgs
     nav_msgs
     tf2
+    squirrel_manipulation_msgs
 )
 
 ###########
@@ -66,6 +71,9 @@ target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 add_executable(push src/pushing.cpp)
 target_link_libraries(push robotino ${catkin_LIBRARIES})
+
+add_executable(pickup src/pickup.cpp)
+target_link_libraries(pickup robotino ${catkin_LIBRARIES})
 
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
