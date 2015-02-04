@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>manipulation</name>
+  <name>squirrel_manipulation</name>
   <version>0.0.0</version>
   <description>manipulation metapackage</description>
 
