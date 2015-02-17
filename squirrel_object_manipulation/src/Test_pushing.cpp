@@ -16,10 +16,11 @@ using namespace std;
 using namespace ros;
 
 
-string expN="s2d1102";
+string expN="s2d1202";
 
 string tr="trajL2.txt";
 bool firstSet = false;
+bool object_lost=false;
 double Rx0, Ry0, Rz0;
 double Ox0, Oy0, Oz0;
 double offsetTh, offsetX,offsetY; // ar tags calibration. inital offset
@@ -46,11 +47,15 @@ int main(int argc, char** args) {
     //execute=2; //modified pid with fixed parameters. path tracking for objectu in odometry
    //execute=3; //testing object tracking
    // execute=4; //elipse movement
-    execute=5;// modified pid with fixed parameters. path tracking for robot in odometry + elipse movement //hardcoded some parameters
+    //execute=5;// modified pid with fixed parameters. path tracking for robot in odometry + elipse movement //hardcoded some parameters
     //execute=6;// modified pid with fixed parameters. path tracking for object in odometry + elipse movement //hardcoded some parameters
-   // execute=7;// modified pid with fixed parameters. path tracking for object in odometry + elipse movement //hardcoded some parameters
+    execute=7;// modified pid with fixed parameters. path tracking for object in odometry + elipse movement //hardcoded some parameters
               //added reaching the goal
-    //  execute=6; //MPC
+              //added detection of loosing object
+     //execute=8; //test ar tags
+    execute =9; //test freiburg code
+
+
 
     ros::init(argc, args, "push");
     ros::NodeHandle node;
@@ -1079,12 +1084,12 @@ int main(int argc, char** args) {
          Xo1 =t.transform.translation.x; Yo1=t.transform.translation.y; Tho1=tf::getYaw(rotation);
 
          //path tracking
-         vector<double> Ex,Ey,Eth, dEx,dEy,dEth;
+         vector<double> Ex,Ey,Eth, dEx,dEy,dEth,vOlx,vOly,vOlth;
 
          double vx,vy,omega,derrX,derrY,derrTh;
          int p=X.size();
          int i=0;
-         while ((i<p)||((i==p-1)&&(abs(X[p-1]-Ox)>0.05)&&(abs(Y[i]-Oy)>0.05))){ //error tolerance of 5 cm
+         while ((i<p-1)||((i==p-1)&&((abs(X[p-1]-Ox)>0.05)||(abs(Y[p-1]-Oy)>0.05)))){ //error tolerance of 5 cm
 
              ros::spinOnce();
              //robotino position in /odom world
@@ -1106,38 +1111,64 @@ int main(int argc, char** args) {
             }
              }
 
+
+
             //global position of object in /odom
             Ox=x - Oly*cos(th)-Olx*sin(th);
             Oy=y + Oly*sin(th)-Olx*cos(th);
             Oth=th - Olth;
 
+            vOlx.push_back(Olx);
+            vOly.push_back(Oly);
+            vOlth.push_back(Olth);
+
+            if(i>3){
+             bool lost=1;
+            for (int k=1;k<4;k++){
+
+              //  cout<<"testing object lost i-k: "<<i-k<<" x(i-k): "<<vOlx[i-k]<<" x: "<<Olx<<" y(i-k): "<<vOly[i-k]<<" x: "<<Oly<<  endl;
+                if ((vOlx[i-k]!=Olx)||(vOly[i-k]!=Oly)||(vOlth[i-k]!=Olth)) lost=0;
+
+            }
+            object_lost=lost;
+            if(lost){
+                robotino.singleMove(0, 0, 0, 0, 0, 0);
+                lRate.sleep();
+                ros:spinOnce();
+
+            }
+
+            }
+
+            if (!object_lost){
+
 
             //calculating errors
 
-            if (i==p-i){
-                int pom=0;
+            if (i==p-1){
+                cout<<"recalculating plan"<<endl;
+                int pom=p-i;
                 double relx, rely;
                 relx=100; rely=100;
                 for(int j=0; j<p-1; j++)
                 {
-                    cout<<"tren "<<sqrt(relx*relx+rely*rely)<<endl;
-                    cout<<"moguca "<<sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy))<<endl;
+                   // cout<<"tren "<<sqrt(relx*relx+rely*rely)<<endl;
+                    //cout<<"moguca "<<sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy))<<endl;
                         if (sqrt(relx*relx+rely*rely)>sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy)))
                         {
                             relx=X[j]-Ox;
                             rely=Y[j]-Oy;
                             pom=j;
                         }
-
+                }
                 i=pom;
-            }
             }
 
 
             errTh=TH[i]-Oth;
             errX=X[i]-Ox;
             errY=Y[i]-Oy;
-            {cout<<"current errors x: "<<errX<<" y:" <<errY<<" errTh: "<<errTh<<endl;}
+           // {cout<<"current errors x: "<<errX<<" y:" <<errY<<" errTh: "<<errTh<<endl;}
 
 
 
@@ -1172,7 +1203,7 @@ int main(int argc, char** args) {
             oFileER << "\t" << errX << "\t" << errY << "\t" <<errTh<<endl;
 
 
-           /* if(sgn(Olx)*Olx>0.10){
+            if(sgn(Olx)*Olx>0.10){
                cout<<"turn Olx: "<<Olx<< endl;
                temp=0;
                while(temp<3.2){
@@ -1189,10 +1220,9 @@ int main(int argc, char** args) {
                }
 
            }
-           else*/
-                if(sgn(Olx)*Olx>0.02){
+           else if(sgn(Olx)*Olx>0.04){
                 cout<<"here 1"<<endl;
-                robotino.singleMove( 0, -1*Olx, 0, 0, 0, omega);
+                robotino.singleMove( 0, -1*Olx, 0, 0, 0, 0);
                 i=i-1;
                  oFileVR << "\t" << 0 << "\t" << -1*Olx<< "\t" <<omega<<endl;
 
@@ -1211,7 +1241,22 @@ int main(int argc, char** args) {
                  oFileVR << "\t" << vx << "\t" << vy << "\t" <<0<<endl;
                // cout<<"here 2"<<endl;
             }
-            else
+           /* else if (errX<-0.05)
+            {
+                while(temp<6.4){
+                    //  cout<< "here 2"<<endl;
+                    ros::spinOnce();
+                    //  cout<< "here 3"<<endl;
+                    if(sgn(Olx)>0) robotino.singleMove(-1*Olx*cos(temp), -1*Olx*sin(temp), 0, 0, 0, 0.1); //udesno i unazad
+                  else robotino.singleMove( -1*Olx*cos(temp), Olx*sin(temp), 0, 0, 0, -0.1);
+
+                   // cout <<"cos "<<cos(temp)<<" sin "<<sin(temp)<<endl;
+                    temp=temp+deltat;
+                    lRate.sleep();
+
+                }
+            }*/
+                else
             {
                 cout<<"here 4"<<endl;
                //if(vx>0.2)vx=0.2;
@@ -1221,17 +1266,35 @@ int main(int argc, char** args) {
               // }
             }
 
-           if (i<p)i++;
+           if (i<p-1)i++;
            else
            {cout<<"end"<<endl<<"current errors x: "<<errX<<" y:" <<errY<<endl;}
             lRate.sleep();
 
-
-
           }
+         }
+
          break;
           }
-      }
+
+     case 8:{
+         while(1){
+              ros::spinOnce();
+         cout<<"TAG: x: " <<t.transform.translation.x<<" y: "<<t.transform.translation.y<<" z: "<<t.transform.translation.z<<" yaw: "<<tf::getYaw(rotation)<<endl<<endl;
+          lRate.sleep();
+
+         }
+         break;
+     }
+     case 9:{
+         while(1){
+              ros::spinOnce();
+         lRate.sleep();
+
+         }
+         break;
+     }
+     }
 }
 
 void arCallback(tf::tfMessage msg) {
