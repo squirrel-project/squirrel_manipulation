@@ -1286,14 +1286,324 @@ int main(int argc, char** args) {
          }
          break;
      }
-     case 9:{
-         while(1){
-              ros::spinOnce();
-         lRate.sleep();
+     case 9:
+          {
 
+         x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
+
+         sleep(2);
+
+         if( rO.call(R))
+         {cout<<"call success"<<endl;}
+         else{ cout<<"call not successful"<<endl; }
+         sleep(5);
+
+         cout<<"PUT THE OBJECT IN FRONT OF THE ROBOT"<<endl<<endl;
+
+         //reading from file
+         ifstream inFile;
+         string filei="/home/c7031098/testing/robotino/"+tr;
+         inFile.open (filei.c_str(),ios::in);
+         string val;
+
+         string pathR="/home/c7031098/testing/robotino/pathR"+expN;
+         ofstream oFileR;
+         oFileR.open(pathR.c_str());
+
+         string errR="/home/c7031098/testing/robotino/errR"+expN;
+         ofstream oFileER;
+         oFileER.open(errR.c_str());
+
+         string velR="/home/c7031098/testing/robotino/velR"+expN;
+         ofstream oFileVR;
+         oFileVR.open(velR.c_str());
+
+         string pathO="/home/c7031098/testing/robotino/pathO"+expN;
+         ofstream oFileO;
+         oFileO.open(pathO.c_str());
+
+         cout<<"file open"<<endl;
+
+         double n = 0;
+
+         while(!inFile.eof()) {
+
+             for(int i = 0; i < 3; ++i) {
+                inFile>>val;
+                 n = string_to_double(val);
+                 if(i == 0) { X.push_back(n); }
+                 else if(i == 1) { Y.push_back(n); }
+                 else { TH.push_back(n); }
+             }
+             fflush(stdout);
          }
+
+
+
+         rotation = t.transform.rotation;
+         Xo1 =t.transform.translation.x; Yo1=t.transform.translation.y; Tho1=tf::getYaw(rotation);
+
+         //path tracking
+         vector<double> Ex,Ey,Eth, dEx,dEy,dEth,vOlx,vOly,vOlth;
+
+         double vx,vy,omega,derrX,derrY,derrTh;
+         int p=X.size();
+         int i=0;
+        // while ((i<p-1)||((i==p-1)&&((abs(X[p-1]-Ox)>0.05)||(abs(Y[p-1]-Oy)>0.05)))){ //error tolerance of 5 cm
+
+
+         X[i]=0;
+         Y[i]=0.30;
+
+             ros::spinOnce();
+             //robotino position in /odom world
+             Odometry = robotino.getOdom();
+             x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
+             th=tf::getYaw(Odometry.pose.pose.orientation);
+
+             //relative position of the object
+             int check=0;
+             while(!check){
+          //  Olx=t.transform.translation.x -offsetX;
+           // Oly=t.transform.translation.y -offsetY;
+            Olx=t.transform.translation.x ;
+            Oly=t.transform.translation.y ;
+            Olth=tf::getYaw(t.transform.rotation) -offsetTh;
+            if(!isnan(Olth))check=1;
+            else {
+                cout<<"reading nan"<<endl;
+                ros::spinOnce();
+                lRate.sleep();
+            }
+             }
+
+
+
+            //global position of object in /odom
+            Ox=x - Oly*cos(th)-Olx*sin(th);
+            Oy=y + Oly*sin(th)-Olx*cos(th);
+            Oth=th - Olth;
+
+            vOlx.push_back(Olx);
+            vOly.push_back(Oly);
+            vOlth.push_back(Olth);
+
+            if(i>3){
+             bool lost=1;
+            for (int k=1;k<4;k++){
+
+              //  cout<<"testing object lost i-k: "<<i-k<<" x(i-k): "<<vOlx[i-k]<<" x: "<<Olx<<" y(i-k): "<<vOly[i-k]<<" x: "<<Oly<<  endl;
+                if ((vOlx[i-k]!=Olx)||(vOly[i-k]!=Oly)||(vOlth[i-k]!=Olth)) lost=0;
+
+            }
+            object_lost=lost;
+            if(lost){
+                robotino.singleMove(0, 0, 0, 0, 0, 0);
+                lRate.sleep();
+                ros::spinOnce();
+
+            }
+
+            }
+
+            if (!object_lost){
+
+
+            //calculating errors
+
+
+                // reaching goal adaptation
+            if (i==p-1){
+                cout<<"recalculating plan"<<endl;
+                int pom=p-i;
+                double relx, rely;
+                relx=100; rely=100;
+                for(int j=0; j<p-1; j++)
+                {
+                   // cout<<"tren "<<sqrt(relx*relx+rely*rely)<<endl;
+                    //cout<<"moguca "<<sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy))<<endl;
+                        if (sqrt(relx*relx+rely*rely)>sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy)))
+                        {
+                            relx=X[j]-Ox;
+                            rely=Y[j]-Oy;
+                            pom=j;
+                        }
+                }
+                i=pom;
+            }
+
+
+
+            //approach witouth observing object relative orintation
+
+
+            errTh=TH[i]-Oth;
+            errX=X[i]-Ox;
+            errY=Y[i]-Oy;
+           // {cout<<"current errors x: "<<errX<<" y:" <<errY<<" errTh: "<<errTh<<endl;}
+
+
+            //robot has to be on the line created from point from path and object
+                                                                       //to push object towards path
+
+            double aO2P=atan2(errY,errX); //angle which form object and desired path  with X
+
+            double aR2P=atan2(Y[i]-y,X[i]-x); //angle which form robot and desired path  with X
+
+
+
+            //checking distance of robot to the path and  robot to the object
+            //distance between robot and path has to be longer then robot to the object
+
+            double dR2O= sqrt((x-Ox)*(x-Ox)+(y-Oy)*(y-Oy)); //d(robot, object)
+            double dR2P= sqrt((x-X[i])*(x-X[i])+(y-Y[i])*(y-Y[i]));  //d(robot, path point)
+            double dO2P= sqrt(errX*errX+errY*errY);
+
+            cout<<"distances: r-o "<< dR2O<<" r-p "<< dR2P <<" o-p "<<dO2P<<endl;
+
+            double aRPO=acos((dR2P*dR2P+dO2P*dO2P-dR2O*dR2O)/(2*dO2P*dR2P));  //angle which is formed by this triangle with center in P
+            if (abs(aRPO)>3.14) aRPO=2*3.14-aRPO;
+
+            cout<<"angle: "<<aRPO<<endl;
+
+            Ex.push_back(errX);
+            Ey.push_back(errY);
+            Eth.push_back(errTh);
+
+            if(i==1){
+                derrX=0; derrY=0; derrTh=0;
+            }
+            else{
+                derrX=errX-Ex[i-1];//derivatives
+                derrY=errY-Ey[i-1];
+                derrTh=errTh-Eth[i-1];
+            }
+
+            dEx.push_back(derrX);
+            dEy.push_back(derrY);
+            dEth.push_back(derrTh);
+
+            Tho=tf::getYaw(rotation);
+
+            oFileR << "\t" << x << "\t" << y << "\t" <<yaw<<endl;
+            oFileO << "\t" <<Olx << "\t" <<Oly << "\t" <<Olth<<endl;
+            oFileER << "\t" << errX << "\t" << errY << "\t" <<errTh<<endl;
+
+
+            //if robot is in not in good position compared with object and path
+            if ((dR2O-dR2P)<0){
+            //executing rotational motion to place rob on right direction
+                while(abs(aRPO)>0.1){
+                    //  cout<< "here 2"<<endl;
+                    ros::spinOnce();
+                    //  cout<< "here 3"<<endl;
+                  if(sgn(Olx)>0) robotino.singleMove(dR2O*cos(temp/2), dR2O*sin(temp), 0, 0, 0, 0); //udesno i unazad
+                  else robotino.singleMove( dR2O*cos(temp), dR2O*sin(temp), 0, 0, 0, 0);
+
+                // cout <<"cos "<<cos(temp)<<" sin "<<sin(temp)<<endl;
+                  x = Odometry.pose.pose.position.x  ; //getting new position of robot (it is assumed that object is not moving)
+                  y = Odometry.pose.pose.position.y ;
+
+                    temp=temp+deltat;
+                    dR2O= sqrt((x-Ox)*(x-Ox)+(y-Oy)*(y-Oy)); //d(robot, object)
+                    dR2P= sqrt((x-X[i])*(x-X[i])+(y-Y[i])*(y-Y[i]));  //d(robot, path point)
+                    dO2P= sqrt(errX*errX+errY*errY);
+
+                    aRPO=acos((dR2P*dR2P+dO2P*dO2P-dR2O*dR2O)/(2*dO2P*dR2P));  //angle which is formed by this triangle with center in P
+                    if (abs(aRPO)>3.14) aRPO=2*3.14-aRPO;
+                    lRate.sleep();
+
+                }
+
+            }
+
+
+/*
+
+            vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));//*sgn(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th));
+            vy=0.2*(errY*cos(th)-errX*sin(th))+0.1*(derrY*cos(th)-derrX*sin(th));
+            omega=0.5*errTh;
+
+
+
+
+
+
+
+            if(sgn(Olx)*Olx>0.10){
+               cout<<"turn Olx: "<<Olx<< endl;
+               temp=0;
+               while(temp<3.2){
+                   //  cout<< "here 2"<<endl;
+                   ros::spinOnce();
+                   //  cout<< "here 3"<<endl;
+                   if(sgn(Olx)>0) robotino.singleMove(-1*Oly/2*cos(temp), -1*Olx/2*sin(temp), 0, 0, 0, 0.1); //udesno i unazad
+                 else robotino.singleMove( -1*Oly/2*cos(temp), Olx/2*sin(temp), 0, 0, 0, -0.1);
+
+                  // cout <<"cos "<<cos(temp)<<" sin "<<sin(temp)<<endl;
+                   temp=temp+deltat;
+                   lRate.sleep();
+
+               }
+
+           }
+           else if(sgn(Olx)*Olx>0.04){
+                cout<<"here 1"<<endl;
+                robotino.singleMove( 0, -1*Olx, 0, 0, 0, 0);
+                i=i-1;
+                 oFileVR << "\t" << 0 << "\t" << -1*Olx<< "\t" <<omega<<endl;
+
+            }
+            else if (sgn(errTh)*errTh> 0.5){
+                cout<<"here 2"<<endl;
+                robotino.singleMove( 0, 0, 0, 0, 0, omega);
+                 oFileVR << "\t" << 0 << "\t" << 0 << "\t" <<omega<<endl;
+              //  cout<<"here 1"<<endl;
+            }
+            else if (sgn(errY)*errY> 0.05){
+                cout<<"here 3"<<endl;
+               //if(vx>0.2)vx=0.2;
+               //if(vy>0.2)vy=0.2;
+                robotino.singleMove( vx, vy, 0, 0, 0, 0);
+                 oFileVR << "\t" << vx << "\t" << vy << "\t" <<0<<endl;
+               // cout<<"here 2"<<endl;
+            }
+           /* else if (errX<-0.05)
+            {
+                while(temp<6.4){
+                    //  cout<< "here 2"<<endl;
+                    ros::spinOnce();
+                    //  cout<< "here 3"<<endl;
+                    if(sgn(Olx)>0) robotino.singleMove(-1*Olx*cos(temp), -1*Olx*sin(temp), 0, 0, 0, 0.1); //udesno i unazad
+                  else robotino.singleMove( -1*Olx*cos(temp), Olx*sin(temp), 0, 0, 0, -0.1);
+
+                   // cout <<"cos "<<cos(temp)<<" sin "<<sin(temp)<<endl;
+                    temp=temp+deltat;
+                    lRate.sleep();
+
+                }
+            }*/
+          /*      else
+            {
+                cout<<"here 4"<<endl;
+               //if(vx>0.2)vx=0.2;
+              // if( vx>0){ //da ne ide unazad
+             robotino.singleMove( vx, 0, 0, 0, 0, 0);
+             oFileVR << "\t" <<vx << "\t" << 0 << "\t" <<0<<endl;
+              // }
+            }
+
+           if (i<p-1)i++;
+           else
+           {cout<<"end"<<endl<<"current errors x: "<<errX<<" y:" <<errY<<endl;}
+            lRate.sleep();
+
+          } */
+         //}
+         }
+
          break;
-     }
+          }
      }
 }
 
