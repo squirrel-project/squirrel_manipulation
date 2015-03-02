@@ -12,7 +12,7 @@
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
 #include <squirrel_object_manipulation/pushing.hpp>
-
+#include <boost/assert.hpp>
 
 using namespace std;
 
@@ -65,7 +65,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     squirrel_rgbd_mapping_msgs::GetPushingPlan srvPlan;
 
-    ///only pusghing and object tracking -> for tetsing
+    ///only pusghing and object tracking -> for testing
 
 
     double x=initX;
@@ -79,8 +79,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     op.pose.orientation=Odometry.pose.pose.orientation;
     op.header.frame_id="/odom";
     tf::TransformListener tf2;
-
-
     tf2.transformPose("/map",op, np);
 
 
@@ -98,10 +96,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     geometry_msgs::Point32 p1, p2, p3, p4;
 
-    p1.x = 0.22; p1.y = -0.15;
-    p2.x = 0.22; p1.y = 0.15;
-    p3.x = 0.62; p1.y = -0.15;
-    p4.x = 0.62; p1.y = 0.15;
+    p1.x = 0.23; p1.y = -0.08;
+    p2.x = 0.23; p1.y = 0.08;
+    p3.x = 0.33; p1.y = -0.08;
+    p4.x = 0.33; p1.y = 0.08;
 
     srvPlan.request.object.points.push_back(p1);
     srvPlan.request.object.points.push_back(p2);
@@ -114,7 +112,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         if ( srvPlan.response.plan.poses.empty() ) {
           ROS_WARN("got an empty plan");
         } else {
-          srvPlan.response.plan.header.frame_id = "/map";
+		  BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
+		                    srvPlan.response.plan.header.frame_id == "odom" , 
+		                    "returned path is not in '/odom' frame");
           ROS_INFO("got a path for pushing");
         }
       } else {
