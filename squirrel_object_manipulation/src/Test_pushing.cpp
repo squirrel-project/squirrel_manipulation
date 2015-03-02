@@ -16,12 +16,12 @@ using namespace std;
 using namespace ros;
 
 
-string expN="s2d1202";
+string expN="trajOlog3";
 
 //string tr="trajObjectL.txt";
 //string tr="trajL2.txt"; //for robot
 //string tr="trajL4.txt"; //for object
-string tr="trajS.txt";
+string tr="trajO.txt";
 bool firstSet = false;
 bool object_lost=false;
 double Rx0, Ry0, Rz0;
@@ -2592,6 +2592,11 @@ int main(int argc, char** args) {
          ofstream oFileO;
          oFileO.open(pathO.c_str());
 
+
+         string pathOg="/home/c7031098/testing/robotino/pathOg"+expN;
+         ofstream oFileOg;
+         oFileOg.open(pathOg.c_str());
+
          cout<<"file open"<<endl;
 
          double n = 0;
@@ -2733,7 +2738,8 @@ int main(int argc, char** args) {
 
             oFileR << "\t" << x << "\t" << y << "\t" <<yaw<<endl;
             oFileO << "\t" <<Olx << "\t" <<Oly << "\t" <<Olth<<endl;
-            oFileER << "\t" << errX << "\t" << errY << "\t" <<errTh<<endl;
+            oFileOg << "\t" <<Ox << "\t" <<Oy << "\t" <<Oth<<endl;
+            oFileER << "\t" << X[i] << "\t" << Y[i] << "\t" <<errTh<<endl;
 
 
            /* if((sgn(Olx)*Olx>0.04)&&((Plx-Olx)<0)){
@@ -2771,6 +2777,7 @@ b
                  //if (Olx-Plx<0) robotino.singleMove( 0, Plx-Olx, 0, 0, 0, 0);//turn left with respect to object
                 // else robotino.singleMove( 0, -(Plx-Olx), 0, 0, 0, 0);//turn right  with respect to object
                  robotino.singleMove( 0, 1.5*(Plx-Olx), 0, 0, 0, 0);//turn left with respect to object
+                 oFileVR << "\t" <<0 << "\t" << 1.5*(Plx-Olx) << "\t" <<0<<"\t"<<3<<"\t"<<i<<endl;
 
 
                   i=i-1;
@@ -2779,7 +2786,13 @@ b
                  cout<<"action 0 "<<endl;
                  cout<<"aO2P "<<aO2P<<" robot th: "<<th<< " difference "<<th-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<th-aR2O<< endl;
                  //face_object(&robotino,aR2O);
+                 double vth;
+                 if ((aO2P-th)<3.14 && (sgn(aO2P)!=sgn(th)))vth=0.3*(6.28-aO2P-th);
+                 else if ((aO2P-th)>3.14 && (sgn(aO2P)!=sgn(th)))vth=0.3*(aO2P-6.28-th);
+                 else vth=0.3*(aO2P-th);
                  robotino.singleMove(0,0,0,0,0,0.3*(aO2P-th));
+                 oFileVR << "\t" <<0 << "\t" << 0 << "\t" <<0.3*(aO2P-th)<<"\t"<<0<<"\t"<<i<<endl;
+
                  i=i-1;
             }
              //else if((abs(th-aR2O)>0.1)||(abs(th-aO2P))>0.2){
@@ -2788,6 +2801,7 @@ b
                  cout<<"aR2O"<<aR2O<<" robot th: "<<th<< "difference"<<th-aR2O<<endl;
                  //face_object(&robotino,aR2O);
                  robotino.singleMove(0,0,0,0,0,0.3*(aR2O-th));
+                  oFileVR << "\t" <<0 << "\t" << 0 << "\t" <<0.3*(aR2O-th)<<"\t"<<1<<"\t"<<i<<endl;
                  i=i-1;
             }
            // else if ((abs(Olx)>0.15)||(abs(Olx)>0.10)&&((Olx>0)&&(Plx<Olx)||(Olx<0)&&(Plx>Olx))||(Oly<-(d+0.10))){
@@ -2799,6 +2813,7 @@ b
                  cout<<"action 2 "<<endl;
                  cout<<"x "<<0.5*(abs(Oly)-d)<<" y "<<-Olx<<endl;
                  robotino.singleMove( 0.3*(abs(Oly)-d), -1*Olx, 0, 0, 0,0);
+                 oFileVR << "\t" <<0.3*(abs(Oly)-d) << "\t" << -1*Olx<< "\t" <<0<<"\t"<<2<<"\t"<<i<<endl;
                  i=i-1;
 
             }
@@ -2809,7 +2824,7 @@ b
                //if(vy>0.2)vy=0.2;
                 cout<<"vx "<<vx<<" vy "<<vy<<endl;
                 robotino.singleMove( vx, vy, 0, 0, 0, 0);
-                 oFileVR << "\t" << vx << "\t" << vy << "\t" <<0<<endl;
+                 oFileVR << "\t" <<vx << "\t" << vy<< "\t" <<0<<"\t"<<4<<"\t"<<i<<endl;
                // cout<<"here 2"<<endl;
             }
            /* else if (errX<-0.05)
