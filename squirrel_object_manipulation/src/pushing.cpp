@@ -75,6 +75,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     double th=tf::getYaw(Odometry.pose.pose.orientation);
     double yaw=th;
 
+    x=pose_m_.x;
+    y=pose_m_.y;
+
     ROS_INFO("current pose in odometry",  goal->object_id.c_str());
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
@@ -104,8 +107,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
       if ( srvPlan.response.plan.poses.empty() ) {
         ROS_WARN("got an empty plan");
       } else {
-        BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
-                          srvPlan.response.plan.header.frame_id == "odom" ,
+        BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/map" ||
+                          srvPlan.response.plan.header.frame_id == "map" ,
                           "returned path is not in '/odom' frame");
         ROS_INFO("got a path for pushing");
       }
@@ -159,11 +162,14 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     i=0;
     while((i<p-1)||((i==p-1)&&((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))){
 
+        if(((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))break;
+
         ros::spinOnce();
 
-        Odometry = robotino.getOdom();
-        x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
-
+      //  Odometry = robotino.getOdom();
+       // x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
+          x=pose_m_.x;
+          y=pose_m_.y;
 
         if (i==p-1){
                         ROS_INFO("recalculating plan");
