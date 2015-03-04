@@ -51,6 +51,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
     ros::Rate lRate(5);
 
+     tf::TransformListener tf_listener;
+
    // cout << "everything initialized" << endl;
 
     while(!firstSet) {
@@ -162,7 +164,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     i=0;
     while((i<p-1)||((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1))){
 
-       // if(((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))break;
 
         ros::spinOnce();
 
@@ -192,9 +193,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
        errX=X[i]-x;
        errY=Y[i]-y;
-       yaw=tf::getYaw(Odometry.pose.pose.orientation);
-       errTh=TH[i]-yaw;
+
+        ROS_INFO("errX: %lf errY: %lf", errX, errY);
+       //yaw=tf::getYaw(Odometry.pose.pose.orientation);
+      // errTh=TH[i]-yaw;
+
+        geometry_msgs::PoseStamped Emap, Eloc;
+
+          Emap.pose.position.x=pose_m_.x;
+          Emap.pose.position.y=pose_m_.y;
+          Emap.header.frame_id="/map";
+       try {
+           tf_listener.transformPose("/base_link",Emap,Eloc);
+       } catch (tf::TransformException& ex) {
+         std::string ns = ros::this_node::getNamespace();
+         std::string node_name = ros::this_node::getName();
+         ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+         return;
+       }
+
+
+
        th=yaw;
+
 
        rotation = t.transform.rotation;
 
@@ -216,11 +238,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
        dEy.push_back(derrY);
        dEth.push_back(derrTh);
 
-       vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));
-       vy=0.2*(errY*cos(th)-errX*sin(th))+0.1*(derrY*cos(th)-derrX*sin(th));
-       omega=0.5*errTh;
 
-       Tho=tf::getYaw(rotation);
+       geometry_msgs::PoseStamped dEmap, dEloc;
+
+         dEmap.pose.position.x=derrX;
+         dEmap.pose.position.y=derrY;
+         dEmap.header.frame_id="/map";
+      try {
+          tf_listener.transformPose("/base_link",dEmap,dEloc);
+      } catch (tf::TransformException& ex) {
+        std::string ns = ros::this_node::getNamespace();
+        std::string node_name = ros::this_node::getName();
+        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+        return;
+      }
+
+      // vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));
+       //vy=0.2*(errY*cos(th)-errX*sin(th))+0.1*(derrY*cos(th)-derrX*sin(th));
+       //omega=0.5*errTh;
+         vx=0.4*Eloc.pose.position.x+0.1*dEloc.pose.position.x;
+         vy=0.4*Eloc.pose.position.y+0.1*dEloc.pose.position.y;
+       //Tho=tf::getYaw(rotation);
+
+         ROS_INFO("vx: %lf vy: %lf", vx, vy);
 
        if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
            robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, 0);
