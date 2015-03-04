@@ -6,31 +6,39 @@
 #include <squirrel_manipulation_msgs/PushActionResult.h>
 #include <actionlib/server/simple_action_server.h>
 
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #define PUSH_NAME "push"
 
 
 class PushAction {
-protected:
+ private:
+  geometry_msgs::Pose2D pose_m_;
 
-    ros::NodeHandle nh;
+  ros::Subscriber pose_sub_;
 
-    actionlib::SimpleActionServer<squirrel_manipulation_msgs::PushAction> pushServer;
-   
+  void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
-    squirrel_manipulation_msgs::PushFeedback pushFeedback;
-   
+  std::string pose_topic_;
 
-    squirrel_manipulation_msgs::PushResult pushResult;
-    
+ protected:
+
+  ros::NodeHandle nh, private_nh;
+
+  actionlib::SimpleActionServer<squirrel_manipulation_msgs::PushAction> pushServer;
+
+  squirrel_manipulation_msgs::PushFeedback pushFeedback;
+
+  squirrel_manipulation_msgs::PushResult pushResult;
 
 public:
 
     PushAction(const std::string pushServerActionName);
     ~PushAction();
-    
+
     void executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal);
-  
+
 
 
 };

@@ -27,10 +27,13 @@ double string_to_double(const std::string& s);
 
 geometry_msgs::TransformStamped t;
 
-PushAction::PushAction(const std::string std_PushServerActionName) : pushServer(nh, std_PushServerActionName, boost::bind(&PushAction::executePush, this, _1), false)
+PushAction::PushAction(const std::string std_PushServerActionName) :
+    pushServer(nh, std_PushServerActionName, boost::bind(&PushAction::executePush, this, _1), false),
+    private_nh("~")
 {
     pushServer.start();
-
+    private_nh.param<std::string>("pose_topic", pose_topic_,"/squirrel_localizer_pose");
+    pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
 }
 
 PushAction::~PushAction() {
@@ -41,8 +44,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     ros::Rate rate(1);
 
     // publish info to the console for the user
-    ROS_INFO("(push up action) started push up of %s for manipulation %s",  goal->object_id.c_str());
-
+    ROS_INFO("(push up action) started push up of %s for manipulation",  goal->object_id.c_str());
 
     RobotinoControl robotino(nh);
 
@@ -73,26 +75,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     double th=tf::getYaw(Odometry.pose.pose.orientation);
     double yaw=th;
 
-    geometry_msgs::PoseStamped np, op;
-
-    op.pose.position=Odometry.pose.pose.position;
-    op.pose.orientation=Odometry.pose.pose.orientation;
-    op.header.frame_id="/odom";
-    tf::TransformListener tf2;
-    tf2.transformPose("/map",op, np);
-
+    ROS_INFO("current pose in odometry",  goal->object_id.c_str());
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
 
-    srvPlan.request.start.x=np.pose.position.x;
-    srvPlan.request.start.y=np.pose.position.y;
-    srvPlan.request.start.theta=tf::getYaw(np.pose.orientation);
+    ROS_INFO("requesting plan");
+    srvPlan.request.start.x = pose_m_.x;
+    srvPlan.request.start.y = pose_m_.y;
+    srvPlan.request.start.theta = pose_m_.theta;
 
-
-    srvPlan.request.goal.x=goal->pose.position.x;
-    srvPlan.request.goal.y=goal->pose.position.y;
-    srvPlan.request.goal.theta=tf::getYaw(goal->pose.orientation);
-
+    srvPlan.request.goal.x = goal->pose.position.x;
+    srvPlan.request.goal.y = goal->pose.position.y;
+    srvPlan.request.goal.theta = tf::getYaw(goal->pose.orientation);
 
     geometry_msgs::Point32 p1, p2, p3, p4;
 
@@ -106,33 +100,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     srvPlan.request.object.points.push_back(p3);
     srvPlan.request.object.points.push_back(p4);
 
-
-
-      if ( ros::service::call("/getPushingPlan", srvPlan) ) {
-        if ( srvPlan.response.plan.poses.empty() ) {
-          ROS_WARN("got an empty plan");
-        } else {
-		  BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
-		                    srvPlan.response.plan.header.frame_id == "odom" , 
-		                    "returned path is not in '/odom' frame");
-          ROS_INFO("got a path for pushing");
-        }
+    if ( ros::service::call("/getPushingPlan", srvPlan) ) {
+      if ( srvPlan.response.plan.poses.empty() ) {
+        ROS_WARN("got an empty plan");
       } else {
-        ROS_ERROR("unable to communicate with /getPushingPlan");
+        BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
+                          srvPlan.response.plan.header.frame_id == "odom" ,
+                          "returned path is not in '/odom' frame");
+        ROS_INFO("got a path for pushing");
       }
+    } else {
+      ROS_ERROR("unable to communicate with /getPushingPlan");
+    }
 
+    ROS_INFO("got a plan");
+    nav_msgs::Path pushing_path=srvPlan.response.plan;
 
-      nav_msgs::Path pushing_path=srvPlan.response.plan;
+    int path_length= pushing_path.poses.size();
 
-      int path_length= pushing_path.poses.size();
+    double errX,errY,errTh;
+    vector<double> X,Y,TH;
 
-     double errX,errY,errTh;
-     vector<double> X,Y,TH;
+    double Xo1,Yo1,Tho1, Tho;
 
-     double Xo1,Yo1,Tho1, Tho;
-
-     int i=0;
-
+    int i=0;
 
    //getting coordinates separately
 
@@ -145,7 +136,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
 
 
-    sleep(2);
+    // sleep(2);
 
     rotation = t.transform.rotation;
     Xo1 =t.transform.translation.x; Yo1=t.transform.translation.y; Tho1=tf::getYaw(rotation);
@@ -197,17 +188,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
        Tho=tf::getYaw(rotation);
 
-       if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
+      /* if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
            robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, omega);
            i=i-1;
 
        }
-       else if (sgn(errTh)*errTh> 0.05){
+       else*/
+       /*    if (sgn(errTh)*errTh> 0.05){
            robotino.singleMove( 0, 0, 0, 0, 0, omega);
 
 
-       }
-       else if (sgn(errY)*errY> 0.05){
+       }*/
+      if (sgn(errY)*errY> 0.05){
            robotino.singleMove( vx, vy, 0, 0, 0, 0);
 
        }
@@ -236,6 +228,13 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 }
 
+
+void PushAction::updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_msg )
+{
+  pose_m_.x = pose_msg->pose.pose.position.x;
+  pose_m_.y = pose_msg->pose.pose.position.y;
+  pose_m_.theta = tf::getYaw(pose_msg->pose.pose.orientation);
+}
 
 
 int main(int argc, char** argv) {
@@ -272,3 +271,4 @@ double string_to_double(const std::string& s) {
         return 0;
     return x;
 }
+
