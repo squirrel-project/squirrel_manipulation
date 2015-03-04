@@ -123,11 +123,20 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     double Xo1,Yo1,Tho1, Tho;
 
-    int i=0;
+    int i=1;
+
+    X.push_back(pushing_path.poses[0].pose.position.x);
+    Y.push_back(pushing_path.poses[0].pose.position.y);
+    TH.push_back(tf::getYaw(pushing_path.poses[0].pose.orientation));
 
    //getting coordinates separately
 
     while(i<path_length) {
+        X.push_back((pushing_path.poses[i].pose.position.x+pushing_path.poses[i-1].pose.position.x)/2);
+        Y.push_back((pushing_path.poses[i].pose.position.y+pushing_path.poses[i-1].pose.position.y)/2);
+        TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
+        i++;
+
 
         X.push_back(pushing_path.poses[i].pose.position.x);
         Y.push_back(pushing_path.poses[i].pose.position.y);
@@ -148,7 +157,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     int p=X.size();
 
     i=0;
-    while(i<p){
+    while((i<p-1)||((i==p-1)&&((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))){
 
         ros::spinOnce();
 
