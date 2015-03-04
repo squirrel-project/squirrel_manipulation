@@ -41,7 +41,7 @@ PushAction::~PushAction() {
 
 void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal) {
 
-    ros::Rate rate(1);
+
 
     // publish info to the console for the user
     ROS_INFO("(push up action) started push up of %s for manipulation",  goal->object_id.c_str());
@@ -156,6 +156,25 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
 
 
+        if (i==p-1){
+                        ROS_INFO("recalculating plan");
+                        int pom=p-i;
+                        double relx, rely;
+                        relx=100; rely=100;
+                        for(int j=0; j<p-1; j++)
+                        {
+                           // cout<<"tren "<<sqrt(relx*relx+rely*rely)<<endl;
+                            //cout<<"moguca "<<sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy))<<endl;
+                                if (sqrt(relx*relx+rely*rely)>sqrt((X[j]-x)*(X[j]-x)+(Y[j]-y)*(Y[j]-y)))
+                                {
+                                    relx=X[j]-x;
+                                    rely=Y[j]-y;
+                                    pom=j;
+                                }
+                        }
+                        i=pom;
+                    }
+
        errX=X[i]-x;
        errY=Y[i]-y;
        yaw=tf::getYaw(Odometry.pose.pose.orientation);
@@ -188,18 +207,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
        Tho=tf::getYaw(rotation);
 
-      /* if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
+       if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
            robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, omega);
            i=i-1;
 
        }
-       else*/
+      // else*/
        /*    if (sgn(errTh)*errTh> 0.05){
            robotino.singleMove( 0, 0, 0, 0, 0, omega);
 
 
        }*/
-      if (sgn(errY)*errY> 0.05){
+      else if (sgn(errY)*errY> 0.05){
            robotino.singleMove( vx, vy, 0, 0, 0, 0);
 
        }
