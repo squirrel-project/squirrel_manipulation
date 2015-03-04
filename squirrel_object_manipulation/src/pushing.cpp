@@ -208,7 +208,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
        Tho=tf::getYaw(rotation);
 
        if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
-           robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, omega);
+           robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, 0);
            i=i-1;
 
        }
