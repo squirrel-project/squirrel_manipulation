@@ -200,8 +200,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
         geometry_msgs::PoseStamped Emap, Eloc;
 
-          Emap.pose.position.x=pose_m_.x;
-          Emap.pose.position.y=pose_m_.y;
+          Emap.pose.position.x=errX;
+          Emap.pose.position.y=errY;
           Emap.pose.position.z=0;
           Emap.pose.orientation.x=0;
           Emap.pose.orientation.y=0;
@@ -217,6 +217,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
          return;
        }
+
 
 
 
