@@ -160,9 +160,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     int p=X.size();
 
     i=0;
-    while((i<p-1)||((i==p-1)&&((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))){
+    while((i<p-1)||((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1))){
 
-        if(((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))break;
+       // if(((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1)))break;
 
         ros::spinOnce();
 
