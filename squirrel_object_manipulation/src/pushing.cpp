@@ -202,6 +202,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
           Emap.pose.position.x=pose_m_.x;
           Emap.pose.position.y=pose_m_.y;
+          Emap.pose.position.z=0;
+          Emap.pose.orientation.x=0;
+          Emap.pose.orientation.y=0;
+          Emap.pose.orientation.z=0;
+          Emap.pose.orientation.w=1;
           Emap.header.frame_id="/map";
        try {
            tf_listener.transformPose("/base_link",Emap,Eloc);
@@ -243,6 +248,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
          dEmap.pose.position.x=derrX;
          dEmap.pose.position.y=derrY;
+         dEmap.pose.position.z=0;
+         dEmap.pose.orientation.x=0;
+         dEmap.pose.orientation.y=0;
+         dEmap.pose.orientation.z=0;
+         dEmap.pose.orientation.w=1;
          dEmap.header.frame_id="/map";
       try {
           tf_listener.transformPose("/base_link",dEmap,dEloc);
