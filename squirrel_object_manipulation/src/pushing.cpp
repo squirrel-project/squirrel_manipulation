@@ -53,7 +53,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
     ros::Rate lRate(5);
 
-     tf::TransformListener tf_listener;
 
     cout << "v4r everything initialized" << endl;
 
@@ -63,11 +62,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
 
     ros::spinOnce();
-
-    nav_msgs::Odometry Odometry = robotino.getOdom();
-    double initX = Odometry.pose.pose.position.x ; double initY = Odometry.pose.pose.position.y ;
-
-    geometry_msgs::Quaternion rotation = t.transform.rotation;
 
     squirrel_rgbd_mapping_msgs::GetPushingPlan srvPlan;
 
@@ -114,12 +108,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     nav_msgs::Path pushing_path=srvPlan.response.plan;
 
-    int path_length= pushing_path.poses.size();
-
-    double errX,errY,errTh;         
+    int path_length= pushing_path.poses.size();       
     vector<double> X,Y,TH;
 
-    double Xo1,Yo1,Tho1, Tho;
 
     int i=1;
 
@@ -141,170 +132,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
 
 
-    // sleep(2);
 
-    rotation = t.transform.rotation;
-    Xo1 =t.transform.translation.x; Yo1=t.transform.translation.y; Tho1=tf::getYaw(rotation);
-
-    //path tracking
-    vector<double> Ex,Ey,Eth, dEx,dEy,dEth;
-
-    double vx,vy,omega,derrX,derrY,derrTh,x,y,th;
-    int p=X.size();
-
-    i=0;
-    while((i<p-1)||((abs(X[p-1]-x)>0.1)||(abs(Y[p-1]-y)>0.1))){
-
-
-        ros::spinOnce();
-
-      //  Odometry = robotino.getOdom();
-       // x = Odometry.pose.pose.position.x  ;  y = Odometry.pose.pose.position.y ;
-          x=pose_m_.x;
-          y=pose_m_.y;
-
-        if (i==p-1){
-                        ROS_INFO("recalculating plan");
-                        int pom=p-i;
-                        double relx, rely;
-                        relx=100; rely=100;
-                        for(int j=0; j<p-1; j++)
-                        {
-                           // cout<<"tren "<<sqrt(relx*relx+rely*rely)<<endl;
-                            //cout<<"moguca "<<sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy))<<endl;
-                                if (sqrt(relx*relx+rely*rely)>sqrt((X[j]-x)*(X[j]-x)+(Y[j]-y)*(Y[j]-y)))
-                                {
-                                    relx=X[j]-x;
-                                    rely=Y[j]-y;
-                                    pom=j;
-                                }
-                        }
-                        i=pom;
-                    }
-
-       cout<<"wanted x"<<X[i]<<"current x: "<<x <<"wanted y"<<Y[i]<<"current y: "<<y<< endl;
-
-
-     //  errX=X[i]-x;
-      // errY=Y[i]-y;
-
-
-        //ROS_INFO("errX: %lf errY: %lf", errX, errY);
-       //yaw=tf::getYaw(Odometry.pose.pose.orientation);
-      // errTh=TH[i]-yaw;
-
-
-        geometry_msgs::PoseStamped Emap, Eloc;
-
-        Emap.pose.position.x=X[i];
-        Emap.pose.position.y=Y[i];
-          Emap.pose.position.z=0;
-          Emap.pose.orientation.x=0;
-          Emap.pose.orientation.y=0;
-          Emap.pose.orientation.z=0;
-          Emap.pose.orientation.w=1;
-          Emap.header.frame_id="/map";
-       try {
-           tf_listener.waitForTransform("/map","/base_link", ros::Time::now(), ros::Duration(1.0));
-           tf_listener.transformPose("/base_link",Emap,Eloc);
-       } catch (tf::TransformException& ex) {
-         std::string ns = ros::this_node::getNamespace();
-         std::string node_name = ros::this_node::getName();
-         ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
-
-         return;
-       }
-
-
-       //SBth=yaw;
-
-
-       rotation = t.transform.rotation;
-
-
-       //Ex.push_back(errX);
-       //Ey.push_back(errY);
-       //Eth.push_back(errTh);
-
-       errX=Eloc.pose.position.x;
-       errY=Eloc.pose.position.y;
-
-       Ex.push_back(Eloc.pose.position.x);
-       Ey.push_back(Eloc.pose.position.y);
-       if(i==1){
-           derrX=0; derrY=0; derrTh=0;
-       }
-       else{
-           derrX=errX-Ex[i-1];//derivatives
-           derrY=errY-Ey[i-1];
-          // derrTh=errTh-Eth[i-1];
-       }
-
-
-       dEx.push_back(derrX);
-       dEy.push_back(derrY);
-       dEth.push_back(derrTh);
-
-
-       geometry_msgs::PoseStamped dEmap, dEloc;
-
-         dEmap.pose.position.x=derrX;
-         dEmap.pose.position.y=derrY;
-         dEmap.pose.position.z=0;
-         dEmap.pose.orientation.x=0;
-         dEmap.pose.orientation.y=0;
-         dEmap.pose.orientation.z=0;
-         dEmap.pose.orientation.w=1;
-         dEmap.header.frame_id="/map";
-      try {
-          tf_listener.waitForTransform("/map","/base_link", ros::Time::now(), ros::Duration(1.0));
-          tf_listener.transformPose("/base_link",dEmap,dEloc);
-      } catch (tf::TransformException& ex) {
-        std::string ns = ros::this_node::getNamespace();
-        std::string node_name = ros::this_node::getName();
-        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
-
-        return;
-      }
-       cout<<"error before transformation x: "<<errX<<" y:"<<errY<<endl;
-
-       cout<<"local error after transformation x: "<<Eloc.pose.position.x<<" y:"<<Eloc.pose.position.y<<endl<<endl;
-
-      // vx=(0.4*(errX*cos(th)+errY*sin(th))+0.1*(derrX*cos(th)+derrY*sin(th)));
-       //vy=0.2*(errY*cos(th)-errX*sin(th))+0.1*(derrY*cos(th)-derrX*sin(th));
-       //omega=0.5*errTh;
-         vx=0.4*Eloc.pose.position.x; //+0.1*dEloc.pose.position.x;
-         vy=0.4*Eloc.pose.position.y;//+0.1*dEloc.pose.position.y;
-       //Tho=tf::getYaw(rotation);
-
-       //  ROS_INFO("vx: %lf vy: %lf", vx, vy);
-
-         /* if(sgn(t.transform.translation.x)*t.transform.translation.x>0.02){
-           robotino.singleMove( 0, -1*t.transform.translation.x, 0, 0, 0, 0);
-           i=i-1;
-
-       }
-      // else*/
-       /*    if (sgn(errTh)*errTh> 0.05){
-           robotino.singleMove( 0, 0, 0, 0, 0, omega);
-
-
-       }*/
-      //else
-      /* if (sgn(errY)*errY> 0.05){
-           robotino.singleMove( vx, vy, 0, 0, 0, 0);
-
-       }
-       else
-       {
-        robotino.singleMove( vx, 0, 0, 0, 0, 0);
-
-       }*/
-       robotino.singleMove( vx, vy, 0, 0, 0, 0);
-       i++;
-       lRate.sleep();
-
-     }
         double d=0.23;
         double offsetX=t.transform.translation.y+d;
         double offsetY=t.transform.translation.x;
@@ -316,18 +144,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         geometry_msgs::PoseStamped transH;
 
     i=0;
-    while ((i<p-1)||((i==p-1)&&((abs(X[p-1]-Ox)>0.1)||(abs(Y[p-1]-Oy)>0.1)))){ //error tolerance of 5 cm
+    while ((i<path_length-1)||((i==path_length-1)&&((abs(X[path_length-1]-Ox)>0.1)||(abs(Y[path_length-1]-Oy)>0.1)))){ //error tolerance of 5 cm
 
                  ros::spinOnce();
 
                  //check if end of control sequence reached
 
-                 if (i==p-1){
+                 if (i==path_length-1){
                      cout<<"recalculating plan"<<endl;
-                     int pom=p-i;
+                     int pom=path_length-i;
                      double relx, rely;
                      relx=100; rely=100;
-                     for(int j=0; j<p-1; j++)
+                     for(int j=0; j<path_length-1; j++)
                      {
                              if (sqrt(relx*relx+rely*rely)>sqrt((X[j]-Ox)*(X[j]-Ox)+(Y[j]-Oy)*(Y[j]-Oy)))
                              {
@@ -397,7 +225,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  if (aORP>3.14) aORP=aORP-2*3.14;
                  if (aORP<-3.14) aORP=aORP+2*3.14;
 
-                 aR2O=atan2(Oy-y,Ox-x);
+                 aR2O=atan2(Oy-Ry,Ox-Rx);
                  if(aR2O>3.14)aR2O=aR2O-3.14;
                  if(aR2O<-3.14)aR2O=aR2O+3.14;
 
@@ -420,29 +248,29 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
            if ((((Oly<0)&&(Plx>Olx)||(Oly>0)&&(Plx<Olx))||(Plx<-0.02))&&(aORP>0.3)||(Vx<0)){
 
                    cout<<"action 3"<<endl;
-                   cout<<"difference "<< Plx-Olx<<" aORP "<<aORP<<" vx "<<vx<<endl;
+                   cout<<"difference "<< Plx-Olx<<" aORP "<<aORP<<" vx "<<Vx<<endl;
 
                    Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
                   // robotino.singleMove( 0, 1.5*(Plx-Olx), 0, 0, 0, 0);//turn left with respect to object
                       i=i-1;
                      }
-               else if((abs(th-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(th-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
+               else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
                      cout<<"action 0 "<<endl;
-                     cout<<"aO2P "<<aO2P<<" robot th: "<<th<< " difference "<<th-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<th-aR2O<< endl;
+                     cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
 
                      Vx=0; Vy=0;
-                     if ((aO2P-th)<3.14 && (sgn(aO2P)!=sgn(th)))Vth=0.3*(6.28-aO2P-th);
-                     else if ((aO2P-th)>3.14 && (sgn(aO2P)!=sgn(th)))Vth=0.3*(aO2P-6.28-th);
-                     else Vth=0.3*(aO2P-th);
+                     if ((aO2P-Rth)<3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28-aO2P-Rth);
+                     else if ((aO2P-Rth)>3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
+                     else Vth=0.3*(aO2P-Rth);
 
                      i=i-1;
                 }
                  //else if((abs(th-aR2O)>0.1)||(abs(th-aO2P))>0.2){
-               else if ((abs(th-aR2O)>0.2)&&(dO2P<0.1)){
+               else if ((abs(Rth-aR2O)>0.2)&&(dO2P<0.1)){
                      cout<<"action 1 "<<endl;
-                     cout<<"aR2O"<<aR2O<<" robot th: "<<th<< "difference"<<th-aR2O<<endl;
+                     cout<<"aR2O"<<aR2O<<" robot th: "<<Rth<< "difference"<<Rth-aR2O<<endl;
 
-                     Vx=0; Vy=0; Vth=0.3*(aR2O-th);
+                     Vx=0; Vy=0; Vth=0.3*(aR2O-Rth);
 
                      i=i-1;
                 }
@@ -487,9 +315,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                   // }
                 }
 
-               if (i<p-1)i++;
+               if (i<path_length-1)i++;
                else{
-                   cout<<"end"<<endl<<"current errors x: "<<errX<<" y:" <<errY<<endl;
+                   cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
                }
 
                robotino.singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
