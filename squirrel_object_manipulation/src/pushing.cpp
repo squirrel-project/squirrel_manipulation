@@ -53,13 +53,23 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
     ros::Rate lRate(5);
 
+    double d=0.23;
+    double offsetX=t.transform.translation.y+d;
+    double offsetY=t.transform.translation.x;
+    double Rx,Ry,Rth,Ox,Oy,Olx,Oly,Plx,Ply;
+    double Vx,Vy,Vth;
+    double dR2O,dR2P,dO2P,aORP,aR2O,aO2P,errXl,errYl, dErrXl,dErrYl;
+    vector<double> Elx,Ely;
 
-    cout << "v4r everything initialized" << endl;
+    geometry_msgs::PoseStamped transH;
+
+
 
     while(!firstSet) {
         ros::spinOnce();
         lRate.sleep();
     }
+    cout << "v4r everything initialized" << endl;
 
     ros::spinOnce();
 
@@ -68,11 +78,23 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
 
+    //checking object position
+    // /base_link object
+    Olx=-t.transform.translation.y+offsetX;
+    Oly=-t.transform.translation.x+offsetY;
+
+    // /map object
+    transH=Base_link2Map(Olx,Oly);
+    Ox=transH.pose.position.x;
+    Oy=transH.pose.position.y;
+
+    cout<<"Object position in map x: "<<Ox<<" y "<<Oy<<endl;
+
     //Getting pushing plan
 
     ROS_INFO("requesting plan");
-    srvPlan.request.start.x = pose_m_.x;
-    srvPlan.request.start.y = pose_m_.y;
+    srvPlan.request.start.x = Ox;
+    srvPlan.request.start.y = Oy;
     srvPlan.request.start.theta = pose_m_.theta;
 
     srvPlan.request.goal.x = goal->pose.position.x;
@@ -133,15 +155,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 
 
-        double d=0.23;
-        double offsetX=t.transform.translation.y+d;
-        double offsetY=t.transform.translation.x;
-        double Rx,Ry,Rth,Ox,Oy,Olx,Oly,Plx,Ply;
-        double Vx,Vy,Vth;
-        double dR2O,dR2P,dO2P,aORP,aR2O,aO2P,errXl,errYl, dErrXl,dErrYl;
-        vector<double> Elx,Ely;
 
-        geometry_msgs::PoseStamped transH;
 
     i=0;
     while ((i<path_length-1)||((i==path_length-1)&&((abs(X[path_length-1]-Ox)>0.1)||(abs(Y[path_length-1]-Oy)>0.1)))){ //error tolerance of 5 cm
@@ -421,7 +435,7 @@ geometry_msgs::PoseStamped Base_link2Map(double x, double y){
     Emap.pose.orientation.y=0;
     Emap.pose.orientation.z=0;
     Emap.pose.orientation.w=1;
-    Emap.header.frame_id="/map";
+    Emap.header.frame_id="/base_link";
     try {
         tf_listener.waitForTransform("/base_link","/map", ros::Time::now(), ros::Duration(1.0));
         tf_listener.transformPose("/map",Emap,Eloc);
