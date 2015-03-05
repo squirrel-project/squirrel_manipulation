@@ -13,6 +13,7 @@
 #include <nav_msgs/Odometry.h>
 #include <squirrel_object_manipulation/pushing.hpp>
 #include <boost/assert.hpp>
+#include "mongodb_store/message_store.h"
 
 using namespace std;
 
@@ -51,7 +52,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     RobotinoControl robotino(nh);
 
     ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
-    ros::Rate lRate(5);
+    ros::Rate lRate(10);
 
     double d=0.23;
     double offsetX=t.transform.translation.y+d;
@@ -62,6 +63,24 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     vector<double> Elx,Ely;
 
     geometry_msgs::PoseStamped transH;
+
+ /*   mongodb_store::MessageStoreProxy database(nh);
+
+    vector< boost::shared_ptr < geometry_msgs::PoseStamped> > dataresults;
+
+
+   if(database.queryNamed< geometry_msgs::PoseStamped >(goal->object_id.c_str(),dataresults)){
+       if(dataresults.size()<1){
+           ROS_INFO("nothing recived from database");
+           return;
+       }
+   }
+   else {
+       ROS_ERROR("database call failed");
+       return;
+   }
+
+   geometry_msgs::PoseStamped &object=*dataresults[0];*/
 
 
 
@@ -78,7 +97,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
 
+     ROS_INFO("getting object position");
+
     //checking object position
+
+
     // /base_link object
     Olx=-t.transform.translation.y+offsetX;
     Oly=-t.transform.translation.x+offsetY;
@@ -93,6 +116,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     //Getting pushing plan
 
     ROS_INFO("requesting plan");
+    cout<<endl;
     srvPlan.request.start.x = Ox;
     srvPlan.request.start.y = Oy;
     srvPlan.request.start.theta = pose_m_.theta;
@@ -103,10 +127,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     geometry_msgs::Point32 p1, p2, p3, p4;
 
-    p1.x = 0.23; p1.y = -0.08;
-    p2.x = 0.23; p1.y = 0.08;
-    p3.x = 0.33; p1.y = -0.08;
-    p4.x = 0.33; p1.y = 0.08;
+    p1.x = 0.20; p1.y = -0.20;
+    p2.x = 0.20; p1.y = 0.20;
+    p3.x = -0.20; p1.y = -0.20;
+    p4.x = -0.20; p1.y = 0.20;
 
     srvPlan.request.object.points.push_back(p1);
     srvPlan.request.object.points.push_back(p2);
@@ -126,7 +150,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
       ROS_ERROR("unable to communicate with /getPushingPlan");
     }
 
+    cout<<endl;
     ROS_INFO("got a plan");
+    cout<<endl;
 
     nav_msgs::Path pushing_path=srvPlan.response.plan;
 
@@ -143,9 +169,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
    //getting coordinates separately
 
     while(i<path_length) {
-       // X.push_back((pushing_path.poses[i].pose.position.x+pushing_path.poses[i-1].pose.position.x)/2);
-       // Y.push_back((pushing_path.poses[i].pose.position.y+pushing_path.poses[i-1].pose.position.y)/2);
-       // TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
+        X.push_back((pushing_path.poses[i].pose.position.x+pushing_path.poses[i-1].pose.position.x)/2);
+        Y.push_back((pushing_path.poses[i].pose.position.y+pushing_path.poses[i-1].pose.position.y)/2);
+        TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
 
         X.push_back(pushing_path.poses[i].pose.position.x);
         Y.push_back(pushing_path.poses[i].pose.position.y);
@@ -155,7 +181,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 
 
-
+   vector<double>vOlx,vOly;
 
     i=0;
     while ((i<path_length-1)||((i==path_length-1)&&((abs(X[path_length-1]-Ox)>0.1)||(abs(Y[path_length-1]-Oy)>0.1)))){ //error tolerance of 5 cm
@@ -165,7 +191,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  //check if end of control sequence reached
 
                  if (i==path_length-1){
-                     cout<<"recalculating plan"<<endl;
+                    // cout<<"recalculating plan"<<endl;
                      int pom=path_length-i;
                      double relx, rely;
                      relx=100; rely=100;
@@ -181,7 +207,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      i=pom;
                  }
 
-                //checking object lost
 
                 //update of coordinates
 
@@ -202,10 +227,34 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  // /map object - X[i] and Y[i]
 
                  // /base_link object wanted
-                 transH=Map2Base_link(X[i],Y[i]);
+                transH=Map2Base_link(X[i],Y[i]);
                  Plx=transH.pose.position.x;
                  Ply=transH.pose.position.y;
 
+
+                 //checking object lost
+
+                 vOlx.push_back(Olx);
+                 vOly.push_back(Oly);
+
+                  if(i>5){
+                       bool lost=1;
+                       for (int k=1;k<6;k++){
+
+                      //  cout<<"testing object lost i-k: "<<i-k<<" x(i-k): "<<vOlx[i-k]<<" x: "<<Olx<<" y(i-k): "<<vOly[i-k]<<" x: "<<Oly<<  endl;
+                         if ((vOlx[i-k]!=Olx)||(vOly[i-k]!=Oly)) lost=0;
+                       }
+                         if(lost){
+                         robotino.singleMove(0, 0, 0, 0, 0, 0);
+                         lRate.sleep();
+                         ros::spinOnce();
+                         cout <<"object lost"<<endl; //to replace with mesage for planner
+                         //rotational movement of robot for object search- to implement
+
+                         pushResult.result_status = "failure";
+                          break;
+                    }
+                  }
 
                  //calculating errors and derivatives
 
@@ -238,39 +287,44 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  aORP=acos((dR2P*dR2P-dO2P*dO2P+dR2O*dR2O)/(2*dR2O*dR2P));
                  if (aORP>3.14) aORP=aORP-2*3.14;
                  if (aORP<-3.14) aORP=aORP+2*3.14;
+                 if (isnan(aORP))aORP=0;
 
                  aR2O=atan2(Oy-Ry,Ox-Rx);
                  if(aR2O>3.14)aR2O=aR2O-3.14;
                  if(aR2O<-3.14)aR2O=aR2O+3.14;
+                 if (isnan(aR2O))aR2O=0;
 
                  aO2P=atan2(Y[i]-Oy,X[i]-Ox);
                  if(aO2P>3.14)aO2P=aO2P-3.14;
                  if(aO2P<-3.14)aO2P=aO2P+3.14;
+                 if(isnan(aO2P))aO2P=0;
 
 
                 Vx=0.4*errXl+0.1*dErrXl;
                 Vy=0.2*errYl+0.1*dErrYl;
 
 
-                cout<<endl<<"object l "<<Olx<<"   "<<Oly<<endl;
+                /*cout<<endl<<"object l "<<Olx<<"   "<<Oly<<endl;
                 cout<<" plx "<<Plx<<" Ply "<< Ply<<endl;
                 cout<<"robot "<<Rx<<"   "<<Ry<<"  "<<Rth<<"   "<<endl;
                 cout<<"object "<<Ox<<"   "<<Oy<<endl;
-                cout<<"wanted "<<X[i]<<"   "<<Y[i]<<endl;
+                cout<<"wanted "<<X[i]<<"   "<<Y[i]<<endl;*/
 
 
-           if ((((Oly<0)&&(Plx>Olx)||(Oly>0)&&(Plx<Olx))||(Plx<-0.02))&&(aORP>0.3)||(Vx<0)){
+      //   if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Plx<-0.02))&&(aORP>0.3)){
+                if (((Oly<0)&&(Ply>Oly))||((Oly>0)&&(Ply<Oly))){
 
-                   cout<<"action 3"<<endl;
-                   cout<<"difference "<< Plx-Olx<<" aORP "<<aORP<<" vx "<<Vx<<endl;
+                  cout<<"action 3"<<endl;
+                  cout<<"difference "<< Plx-Olx<<" aORP "<<aORP<<" vx "<<Vx<<endl;
 
                    Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
+                 // Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
                   // robotino.singleMove( 0, 1.5*(Plx-Olx), 0, 0, 0, 0);//turn left with respect to object
                       i=i-1;
                      }
                else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
                      cout<<"action 0 "<<endl;
-                     cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
+                    cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
 
                      Vx=0; Vy=0;
                      if ((aO2P-Rth)<3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28-aO2P-Rth);
@@ -312,30 +366,40 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                     Vy=0.2*errYl+0.1*dErrYl;
                     Vth=0;
 
-                    cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
+                   // cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
 
                 }
 
                     else
                 {
-                    cout<<"here 5"<<endl;
+                   cout<<"here 5"<<endl;
                    //if(vx>0.2)vx=0.2;
                   // if( vx>0){ //da ne ide unazad
                     Vx=0.4*errXl+0.1*dErrXl;
                     Vy=0;
                     Vth=0;
-                    cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
+                 //   cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
 
                   // }
                 }
 
                if (i<path_length-1)i++;
                else{
-                   cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
+                  // cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
                }
 
-               robotino.singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
+               if (Vx>0.2)Vx=0.2;
+               if (Vx<-0.2)Vx=-0.2;
+               if (Vy>0.2)Vy=0.2;
+               if (Vy<-0.2)Vy=-0.2;
+               if (Vth>0.2)Vth=0.2;
+               if (Vth<-0.2)Vth=-0.2;
+
+                robotino.singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
+
                 lRate.sleep();
+                ROS_INFO_STREAM("loop");
+                cout<<endl;
 
              }
 
@@ -411,7 +475,7 @@ geometry_msgs::PoseStamped Map2Base_link(double x, double y){
     Emap.pose.orientation.w=1;
     Emap.header.frame_id="/map";
     try {
-        tf_listener.waitForTransform("/map","/base_link", ros::Time::now(), ros::Duration(1.0));
+        tf_listener.waitForTransform("/map","/base_link", ros::Time::now(), ros::Duration(0.2));
         tf_listener.transformPose("/base_link",Emap,Eloc);
     } catch (tf::TransformException& ex) {
         std::string ns = ros::this_node::getNamespace();
@@ -437,7 +501,7 @@ geometry_msgs::PoseStamped Base_link2Map(double x, double y){
     Emap.pose.orientation.w=1;
     Emap.header.frame_id="/base_link";
     try {
-        tf_listener.waitForTransform("/base_link","/map", ros::Time::now(), ros::Duration(1.0));
+        tf_listener.waitForTransform("/base_link","/map", ros::Time::now(), ros::Duration(0.2));
         tf_listener.transformPose("/map",Emap,Eloc);
     } catch (tf::TransformException& ex) {
         std::string ns = ros::this_node::getNamespace();

@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   actionlib
   squirrel_manipulation_msgs
+  mongodb_store
 )
 
 ###################################
@@ -42,6 +43,10 @@ catkin_package(
     squirrel_manipulation_msgs
 )
 
+find_package(Boost REQUIRED COMPONENTS
+filesystem
+)
+
 ###########
 ## Build ##
 ###########
@@ -51,6 +56,7 @@ catkin_package(
 include_directories(
 	include
 	${catkin_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
 )
 
 #find_package(rostest REQUIRED)
@@ -71,7 +77,7 @@ add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 add_executable(push src/pushing.cpp)
-target_link_libraries(push robotino ${catkin_LIBRARIES})
+target_link_libraries(push robotino ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(pickup src/pickup.cpp)
 target_link_libraries(pickup robotino ${catkin_LIBRARIES})
