@@ -11,6 +11,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Float64.h>
 #include <squirrel_object_manipulation/pushing.hpp>
 #include <boost/assert.hpp>
 #include "mongodb_store/message_store.h"
@@ -52,6 +53,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     RobotinoControl robotino(nh);
 
     ros::Subscriber markerSub = nh.subscribe("arMarker/tf", 1, arCallback);
+    ros::Publisher TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 2);
     ros::Rate lRate(10);
 
     double d=0.23;
@@ -64,12 +66,13 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     geometry_msgs::PoseStamped transH;
 
- /*   mongodb_store::MessageStoreProxy database(nh);
+   /* mongodb_store::MessageStoreProxy database(nh);
 
     vector< boost::shared_ptr < geometry_msgs::PoseStamped> > dataresults;
 
 
-   if(database.queryNamed< geometry_msgs::PoseStamped >(goal->object_id.c_str(),dataresults)){
+  // if(database.queryNamed< geometry_msgs::PoseStamped >(goal->object_id.c_str(),dataresults)){
+    if(database.queryNamed< geometry_msgs::PoseStamped >("wp0",dataresults)){
        if(dataresults.size()<1){
            ROS_INFO("nothing recived from database");
            return;
@@ -80,8 +83,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
        return;
    }
 
-   geometry_msgs::PoseStamped &object=*dataresults[0];*/
 
+   geometry_msgs::PoseStamped &object=*dataresults[0];
+
+   cout<<" x position of recivedpoint"<<object.pose.position.x<<endl;*/
+
+    std_msgs::Float64 tilt_msg;
+    tilt_msg.data = 0.8;
+    TiltPub.publish(tilt_msg);
+    ros::spinOnce();
+
+
+    lRate.sleep();
 
 
     while(!firstSet) {
@@ -311,25 +324,27 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                 cout<<"wanted "<<X[i]<<"   "<<Y[i]<<endl;*/
 
 
-      //   if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Plx<-0.02))&&(aORP>0.3)){
-                if (((Oly<0)&&(Ply>Oly))||((Oly>0)&&(Ply<Oly))){
+         if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Plx<-0.02))&&(aORP>0.4)){
+               // if (((Oly<0)&&(Ply>Oly))||((Oly>0)&&(Ply<Oly))||(aORP>1.6)){
 
                   cout<<"action 3"<<endl;
-                  cout<<"difference "<< Plx-Olx<<" aORP "<<aORP<<" vx "<<Vx<<endl;
+                  cout<<"difference "<< Ply-Oly<<" aORP "<<aORP<<" vx "<<Vx<<endl;
 
-                   Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
-                 // Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
+                  // Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
+                    Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
                   // robotino.singleMove( 0, 1.5*(Plx-Olx), 0, 0, 0, 0);//turn left with respect to object
-                      i=i-1;
+                     i=i-1;
                      }
-               else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
+               //else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
+                //    else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
+              else if((abs(Rth-aO2P)>0.5)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
                      cout<<"action 0 "<<endl;
                     cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
 
                      Vx=0; Vy=0;
                      if ((aO2P-Rth)<3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28-aO2P-Rth);
                      else if ((aO2P-Rth)>3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
-                     else Vth=0.3*(aO2P-Rth);
+                     else Vth=0.2*(aO2P-Rth);
 
                      i=i-1;
                 }
@@ -338,7 +353,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      cout<<"action 1 "<<endl;
                      cout<<"aR2O"<<aR2O<<" robot th: "<<Rth<< "difference"<<Rth-aR2O<<endl;
 
-                     Vx=0; Vy=0; Vth=0.3*(aR2O-Rth);
+                     Vx=0; Vy=0; Vth=0.2*(aR2O-Rth);
 
                      i=i-1;
                 }
@@ -350,7 +365,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      cout<<"action 2 "<<endl;
                      cout<<"x "<<0.3*(abs(Olx)-d)<<" y "<<Oly<<endl;
 
-                     Vx=0.3*(abs(Olx)-d); Vy=Oly; Vth=0;
+                     Vx=0.2*(abs(Olx)-d); Vy=Oly; Vth=0;
 
                      //robotino.singleMove( 0.3*(abs(Oly)-d), -1*Olx, 0, 0, 0,0);
 
@@ -358,7 +373,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                 }
 
-                else if (sgn(errYl)*errYl> 0.05){
+              //  else if (sgn(errYl)*errYl> 0.05){
+                else{
                     cout<<"here 4"<<endl;
                    //if(vx>0.2)vx=0.2;
                    //if(vy>0.2)vy=0.2;
@@ -370,7 +386,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                 }
 
-                    else
+             /*      else
                 {
                    cout<<"here 5"<<endl;
                    //if(vx>0.2)vx=0.2;
@@ -381,11 +397,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  //   cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
 
                   // }
-                }
+                }*/
 
                if (i<path_length-1)i++;
                else{
-                  // cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
+                   cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
                }
 
                if (Vx>0.2)Vx=0.2;
@@ -411,6 +427,12 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         pushServer.publishFeedback(PushFeedback);
 
     }*/
+
+
+    tilt_msg.data = 0.6;
+    TiltPub.publish(tilt_msg);
+    ros::spinOnce();
+
 
     pushResult.result_status = "success";
     pushServer.setSucceeded(pushResult);
