@@ -324,7 +324,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                 cout<<"wanted "<<X[i]<<"   "<<Y[i]<<endl;*/
 
 
-         if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Plx<-0.02))&&(aORP>0.4)){
+         
+			 if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly)))&&(aORP>0.3)){
                // if (((Oly<0)&&(Ply>Oly))||((Oly>0)&&(Ply<Oly))||(aORP>1.6)){
 
                   cout<<"action 3"<<endl;
@@ -335,16 +336,15 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                   // robotino.singleMove( 0, 1.5*(Plx-Olx), 0, 0, 0, 0);//turn left with respect to object
                      i=i-1;
                      }
-               //else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
-                //    else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
+              
               else if((abs(Rth-aO2P)>0.5)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
                      cout<<"action 0 "<<endl;
                     cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
 
                      Vx=0; Vy=0;
-                     if ((aO2P-Rth)<3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28-aO2P-Rth);
-                     else if ((aO2P-Rth)>3.14 && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
-                     else Vth=0.2*(aO2P-Rth);
+                      if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28+aO2P-Rth);
+                      else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
+                      else Vth=0.3*(aO2P-Rth);
 
                      i=i-1;
                 }
@@ -386,18 +386,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                 }
 
-             /*      else
-                {
-                   cout<<"here 5"<<endl;
-                   //if(vx>0.2)vx=0.2;
-                  // if( vx>0){ //da ne ide unazad
-                    Vx=0.4*errXl+0.1*dErrXl;
-                    Vy=0;
-                    Vth=0;
-                 //   cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
-
-                  // }
-                }*/
 
                if (i<path_length-1)i++;
                else{
