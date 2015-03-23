@@ -9,6 +9,8 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+#include "squirrel_object_manipulation/RobotinoControl.hpp"
+
 #define PUSH_NAME "push"
 
 
@@ -17,6 +19,8 @@ class PushAction {
   geometry_msgs::Pose2D pose_m_;
 
   ros::Subscriber pose_sub_;
+
+  RobotinoControl *robotino; 
 
   void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
