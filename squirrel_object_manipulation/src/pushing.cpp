@@ -41,7 +41,7 @@ template <typename T> int sgn(T val);
 double string_to_double(const std::string& s);
 
 geometry_msgs::TransformStamped t;
-tf::StampedTransform trans;  // HACK Michael
+tf::StampedTransform trans;
 
 PushAction::PushAction(const std::string std_PushServerActionName) :
     pushServer(nh, std_PushServerActionName, boost::bind(&PushAction::executePush, this, _1), false),
@@ -279,8 +279,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                 // /base_link object
 
                  try {
-                   tf_listener.waitForTransform("base_link", goal->object_id, ros::Time::now(), ros::Duration(1.0));
-                   tf_listener.lookupTransform("base_link", goal->object_id, ros::Time(0), trans);
+                   tf::StampedTransform current_trans;
+                   tf_listener.waitForTransform("base_link", goal->object_id, ros::Time::now(), ros::Duration(0.2));
+                   tf_listener.lookupTransform("base_link", goal->object_id, ros::Time(0), current_trans);
+                   trans = current_trans;
                  } catch (tf::TransformException& ex) {
                    // NOTE: I just ignore the missing object pose and keep using the previous one
                    std::string ns = ros::this_node::getNamespace();
@@ -327,9 +329,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                      cout<<"goal reached"<<endl;
 
+                     cout << "reached position: " << Ox << " " << Oy << endl;
                  }
                  //if robot got to close to obstacles
                  else if (!robotino.checkDistancesPush(0.06)){ i=path_length;
+                     i=path_length;
                      robotino.singleMove(0,0,0.0,0.0,0.0,0);
                      ros::spinOnce();
                      ROS_INFO("obstacle");
@@ -531,7 +535,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      double va4y_var=va4y_meanE-va4y_mean*va4y_mean;
 
                      double K4=1.5e-03;
-
 
                      Vx=va4x_var*(abs(Olx)-d); Vy=Oly*K4/va4y_var; Vth=0;
 
