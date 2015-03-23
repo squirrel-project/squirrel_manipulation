@@ -252,6 +252,44 @@ bool RobotinoControl::checkDistances(double maxDist) {
         return true;
 
     }
+bool RobotinoControl::checkDistancesPush(double maxDist) {
+
+   if(distances.points.size() > 0){
+
+
+
+        geometry_msgs::Point32 currentFrontDistance = distances.points.at(2);
+
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+
+        currentFrontDistance = distances.points.at(3);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+        currentFrontDistance = distances.points.at(4);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+        currentFrontDistance = distances.points.at(5);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+        currentFrontDistance = distances.points.at(6);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+        currentFrontDistance = distances.points.at(7);
+        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+            return false;
+
+
+   }
+
+        return true;
+
+    }
 nav_msgs::Odometry RobotinoControl::getOdom(){
     return odometry;
 }

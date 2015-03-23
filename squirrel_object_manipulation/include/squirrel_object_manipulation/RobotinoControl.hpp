@@ -110,6 +110,7 @@ public:
     void turnRobot(double val);
     void stopRobot();
     bool checkDistances(double maxDist);
+    bool checkDistancesPush(double maxDist);
     nav_msgs::Odometry getOdom();
 
 };
