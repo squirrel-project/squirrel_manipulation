@@ -61,7 +61,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     // first move the camera so that the object is in view
     ros::Publisher TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 1);
     std_msgs::Float64 tilt_msg;
-    tilt_msg.data = 0.91;
+    tilt_msg.data = 0.61;
     TiltPub.publish(tilt_msg);
     ros::spinOnce();
 
@@ -140,12 +140,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
    cout<<" x position of recivedpoint"<<object.pose.position.x<<endl;*/
 
-    tilt_msg.data = 0.91;
-    TiltPub.publish(tilt_msg);
-    ros::spinOnce();
 
-
-    lRate.sleep();
 
 
     /*while(!firstSet) {
