@@ -12,7 +12,6 @@
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float64.h>
-#include "squirrel_object_manipulation/RobotinoControl.hpp"
 #include <squirrel_object_manipulation/pushing.hpp>
 #include <boost/assert.hpp>
 #include <boost/range/numeric.hpp>
@@ -50,9 +49,13 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     pushServer.start();
     private_nh.param<std::string>("pose_topic", pose_topic_,"/squirrel_localizer_pose");
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
+    robotino = new RobotinoControl(nh);
 }
 
 PushAction::~PushAction() {
+    cout << "************* before delete robotino\n";
+    delete robotino;
+    cout << "************* after delete robotino\n";
 }
 
 void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal) {
@@ -61,14 +64,12 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     // first move the camera so that the object is in view
     ros::Publisher TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 1);
     std_msgs::Float64 tilt_msg;
-    tilt_msg.data = 0.61;
+    tilt_msg.data = 0.66;
     TiltPub.publish(tilt_msg);
     ros::spinOnce();
 
     // publish info to the console for the user
     ROS_INFO("(push up action) started push up of %s for manipulation",  goal->object_id.c_str());
-
-    RobotinoControl robotino(nh);
 
     // HACK Michael
     if(startTracking(goal->object_id))
@@ -195,6 +196,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     srvPlan.request.start.y = Oy;
     srvPlan.request.start.theta = pose_m_.theta;
 
+    cout << "received object target position: " << goal->pose.position.x << " "  << goal->pose.position.y << "\n";
     srvPlan.request.goal.x = goal->pose.position.x;
     srvPlan.request.goal.y = goal->pose.position.y;
     srvPlan.request.goal.theta = tf::getYaw(goal->pose.orientation);
@@ -233,11 +235,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     nav_msgs::Path pushing_path=srvPlan.response.plan;
 
-    int path_length= pushing_path.poses.size();
     vector<double> X,Y,TH;
 
-
-    int i=1;
+    cout << "Federicos path end point: " << pushing_path.poses.back().pose.position.x << " " << pushing_path.poses.back().pose.position.y << endl;
 
     X.push_back(pushing_path.poses[0].pose.position.x);
     Y.push_back(pushing_path.poses[0].pose.position.y);
@@ -245,7 +245,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
    //getting coordinates separately
 
-    while(i<path_length) {
+    for(size_t i = 0; i < pushing_path.poses.size(); i++) {
         X.push_back((pushing_path.poses[i].pose.position.x+pushing_path.poses[i-1].pose.position.x)/2);
         Y.push_back((pushing_path.poses[i].pose.position.y+pushing_path.poses[i-1].pose.position.y)/2);
         TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
@@ -253,16 +253,17 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         X.push_back(pushing_path.poses[i].pose.position.x);
         Y.push_back(pushing_path.poses[i].pose.position.y);
         TH.push_back(tf::getYaw(pushing_path.poses[i].pose.orientation));
-        i++;
     }
+    int path_length = X.size();
 
 
+    cout << "calculated path end point: " << X[path_length-1] << " " << Y[path_length-1] << endl;
 
 
 
    try{
 
-    i=0;
+    int i=0;
     while ((i<path_length-1)||((i==path_length-1)&&((abs(X[path_length-1]-Ox)>0.1)||(abs(Y[path_length-1]-Oy)>0.1)))){ //error tolerance of 10 cm
 
                  ros::spinOnce();
@@ -318,7 +319,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  //if object reached to goal
                  if((abs(X[path_length-1]-Ox)<0.08)&&(abs(Y[path_length-1]-Oy)<0.08)){
                      i=path_length;
-                     robotino.singleMove(0,0,0.0,0.0,0.0,0);
+                     robotino->singleMove(0,0,0.0,0.0,0.0,0);
                      ros::spinOnce();
                      lRate.sleep();
 
@@ -328,13 +329,13 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      stopTracking();
 
                      cout<<"goal reached"<<endl;
-
-                     cout << "reached position: " << Ox << " " << Oy << endl;
+                     cout << "reached position: " << Ox << " " << Oy << " -- ";
+                     cout << "actual object target location: " << X[path_length-1] << " " << Y[path_length-1] << endl;
                  }
                  //if robot got to close to obstacles
-                 else if (!robotino.checkDistancesPush(0.06)){ i=path_length;
+                 else if (!robotino->checkDistancesPush(0.06)){ i=path_length;
                      i=path_length;
-                     robotino.singleMove(0,0,0.0,0.0,0.0,0);
+                     robotino->singleMove(0,0,0.0,0.0,0.0,0);
                      ros::spinOnce();
                      ROS_INFO("obstacle");
                      pushResult.result_status = "failure";
@@ -382,7 +383,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                        if ((vOlx[i-k]!=Olx)||(vOly[i-k]!=Oly)) lost=0;
                        }
                          if(lost){
-                         robotino.singleMove(0, 0, 0, 0, 0, 0);
+                         robotino->singleMove(0, 0, 0, 0, 0, 0);
                          lRate.sleep();
                          ros::spinOnce();
 
@@ -588,7 +589,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                if (Vth>0.2)Vth=0.2;
                if (Vth<-0.2)Vth=-0.2;
 
-                robotino.singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
+                robotino->singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
 
                 lRate.sleep();
                // pushFeedback.percent_completed=i*100/path_length;
@@ -620,8 +621,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     }*/
 
-
-    tilt_msg.data = 0.6;
+    tilt_msg.data = 0.60;
     TiltPub.publish(tilt_msg);
     ros::spinOnce();
 
