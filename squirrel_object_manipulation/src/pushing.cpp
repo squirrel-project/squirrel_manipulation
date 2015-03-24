@@ -129,17 +129,17 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     //visualisation
 
-
+cout<<"visualisation started"<<endl;
     cv_bridge::CvImage cv_image, cv_image1, cv_image2, cv_image3,cv_image4, cv_image5, cv_image6, cv_image7,cv_image8;
-    cv_image.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/diagram1.png",CV_LOAD_IMAGE_COLOR);
-    cv_image1.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c1.png",CV_LOAD_IMAGE_COLOR);
-    cv_image2.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c2.png",CV_LOAD_IMAGE_COLOR);
-    cv_image3.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c3.png",CV_LOAD_IMAGE_COLOR);
-    cv_image4.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c4.png",CV_LOAD_IMAGE_COLOR);
-    cv_image5.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/main.png",CV_LOAD_IMAGE_COLOR);
-    cv_image6.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/success.png",CV_LOAD_IMAGE_COLOR);
-    cv_image7.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/object.png",CV_LOAD_IMAGE_COLOR);
-    cv_image8.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/obstacle.png",CV_LOAD_IMAGE_COLOR);
+    cv_image.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/diagram1.png",CV_LOAD_IMAGE_COLOR);
+    cv_image1.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/c1.png",CV_LOAD_IMAGE_COLOR);
+    cv_image2.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/c2.png",CV_LOAD_IMAGE_COLOR);
+    cv_image3.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/c3.png",CV_LOAD_IMAGE_COLOR);
+    cv_image4.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/c4.png",CV_LOAD_IMAGE_COLOR);
+    cv_image5.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/main.png",CV_LOAD_IMAGE_COLOR);
+    cv_image6.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/success.png",CV_LOAD_IMAGE_COLOR);
+    cv_image7.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/object.png",CV_LOAD_IMAGE_COLOR);
+    cv_image8.image = cv::imread("/home/robotino/git/robotino/src/squirrel_manipulation/squirrel_object_manipulation/include/obstacle.png",CV_LOAD_IMAGE_COLOR);
 
     cv_image1.encoding = "bgr8";
     cv_image5.encoding = "bgr8";
@@ -158,8 +158,15 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
      pub.publish(ros_image);
      ros::spinOnce();
-
-   /* mongodb_store::MessageStoreProxy database(nh);
+     lRate.sleep();
+     cout<<"Image published"<<endl;
+      int pom=0;
+     while (pom<10){
+          pub.publish(ros_image);
+          lRate.sleep();
+          pom++;
+          }
+ /* mongodb_store::MessageStoreProxy database(nh);
 
     vector< boost::shared_ptr < geometry_msgs::PoseStamped> > dataresults;
 
@@ -372,7 +379,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      cout << "reached position: " << Ox << " " << Oy << " -- ";
                      cout << "actual object target location: " << X[path_length-1] << " " << Y[path_length-1] << endl;
                      cv_image6.toImageMsg(ros_image);
-
+                     pub.publish(ros_image);
                  }
                  //if robot got to close to obstacles
                  else if (!robotino->checkDistancesPush(0.06)){ i=path_length;
@@ -641,7 +648,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                if (Vth<-0.2)Vth=-0.2;
 
                 robotino->singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
-
+                 pub.publish(ros_image);
                 lRate.sleep();
                // pushFeedback.percent_completed=i*100/path_length;
                // pushServer.publishFeedback(pushFeedback.percent_completed);
