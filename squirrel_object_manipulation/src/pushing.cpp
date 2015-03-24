@@ -53,6 +53,9 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
 {
     pushServer.start();
     private_nh.param<std::string>("pose_topic", pose_topic_,"/squirrel_localizer_pose");
+    TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 1);
+    ImgPub = nh.advertise<sensor_msgs::Image>("/static_image", 1);
+
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = new RobotinoControl(nh);
 }
@@ -67,7 +70,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 
     // first move the camera so that the object is in view
-    ros::Publisher TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 1);
+    //ros::Publisher TiltPub=nh.advertise<std_msgs::Float64>("/tilt_controller/command", 1);
     std_msgs::Float64 tilt_msg;
     tilt_msg.data = 0.66;
     TiltPub.publish(tilt_msg);
@@ -154,15 +157,15 @@ cout<<"visualisation started"<<endl;
     sensor_msgs::Image ros_image;
     cv_image.toImageMsg(ros_image);
 
-    ros::Publisher pub = nh.advertise<sensor_msgs::Image>("/static_image", 1);
 
-     pub.publish(ros_image);
+
+     ImgPub.publish(ros_image);
      ros::spinOnce();
      lRate.sleep();
      cout<<"Image published"<<endl;
       int pom=0;
      while (pom<10){
-          pub.publish(ros_image);
+          ImgPub.publish(ros_image);
           lRate.sleep();
           pom++;
           }
@@ -379,7 +382,7 @@ cout<<"visualisation started"<<endl;
                      cout << "reached position: " << Ox << " " << Oy << " -- ";
                      cout << "actual object target location: " << X[path_length-1] << " " << Y[path_length-1] << endl;
                      cv_image6.toImageMsg(ros_image);
-                     pub.publish(ros_image);
+                     ImgPub.publish(ros_image);
                  }
                  //if robot got to close to obstacles
                  else if (!robotino->checkDistancesPush(0.06)){ i=path_length;
@@ -648,7 +651,7 @@ cout<<"visualisation started"<<endl;
                if (Vth<-0.2)Vth=-0.2;
 
                 robotino->singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
-                 pub.publish(ros_image);
+                 ImgPub.publish(ros_image);
                 lRate.sleep();
                // pushFeedback.percent_completed=i*100/path_length;
                // pushServer.publishFeedback(pushFeedback.percent_completed);

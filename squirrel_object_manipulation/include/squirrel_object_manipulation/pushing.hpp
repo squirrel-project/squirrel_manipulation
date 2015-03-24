@@ -25,6 +25,8 @@ class PushAction {
   void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
   std::string pose_topic_;
+  
+   ros::Publisher TiltPub, ImgPub;
 
  protected:
 
