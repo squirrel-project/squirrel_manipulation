@@ -19,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   squirrel_manipulation_msgs
   mongodb_store
+  cv_bridge
+  image_transport
 )
 
 ###################################
@@ -41,6 +43,8 @@ catkin_package(
     nav_msgs
     tf2
     squirrel_manipulation_msgs
+    cv_bridge
+    image_transport
 )
 
 find_package(Boost REQUIRED COMPONENTS

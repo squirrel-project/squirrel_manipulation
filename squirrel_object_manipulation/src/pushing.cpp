@@ -21,6 +21,11 @@
 #include <squirrel_object_perception_msgs/StopObjectTracking.h>
 // HACK END Michael
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+
 
 
 using namespace std;
@@ -69,16 +74,16 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     ros::spinOnce();
 
     // publish info to the console for the user
-    ROS_INFO("(push up action) started push up of %s for manipulation",  goal->object_id.c_str());
+    ROS_INFO("Push: (push up action) started push up of %s for manipulation",  goal->object_id.c_str());
 
     // HACK Michael
     if(startTracking(goal->object_id))
     {
-      ROS_INFO("(push up action) started tracking of %s",  goal->object_id.c_str());
+      ROS_INFO("Push: (push up action) started tracking of %s",  goal->object_id.c_str());
     }
     else
     {
-      ROS_ERROR("(push up action) starting tracking of %s failed",  goal->object_id.c_str());
+      ROS_ERROR("Push: (push up action) starting tracking of %s failed",  goal->object_id.c_str());
       pushResult.result_status = "failure";
       pushServer.setSucceeded(pushResult);
       return;
@@ -96,7 +101,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
       // NOTE: if I don't get the first object pose, I give up
       std::string ns = ros::this_node::getNamespace();
       std::string node_name = ros::this_node::getName();
-      ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+      ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
       pushResult.result_status = "failure";
       pushServer.setAborted(pushResult);
       stopTracking();
@@ -118,6 +123,41 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 
     geometry_msgs::PoseStamped transH;
+
+
+
+
+    //visualisation
+
+
+    cv_bridge::CvImage cv_image, cv_image1, cv_image2, cv_image3,cv_image4, cv_image5, cv_image6, cv_image7,cv_image8;
+    cv_image.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/diagram1.png",CV_LOAD_IMAGE_COLOR);
+    cv_image1.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c1.png",CV_LOAD_IMAGE_COLOR);
+    cv_image2.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c2.png",CV_LOAD_IMAGE_COLOR);
+    cv_image3.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c3.png",CV_LOAD_IMAGE_COLOR);
+    cv_image4.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/c4.png",CV_LOAD_IMAGE_COLOR);
+    cv_image5.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/main.png",CV_LOAD_IMAGE_COLOR);
+    cv_image6.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/success.png",CV_LOAD_IMAGE_COLOR);
+    cv_image7.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/object.png",CV_LOAD_IMAGE_COLOR);
+    cv_image8.image = cv::imread("/home/c7031098/squirrel_ws/src/squirrel_manipulation/squirrel_object_manipulation/include/obstacle.png",CV_LOAD_IMAGE_COLOR);
+
+    cv_image1.encoding = "bgr8";
+    cv_image5.encoding = "bgr8";
+    cv_image2.encoding = "bgr8";
+    cv_image3.encoding = "bgr8";
+    cv_image4.encoding = "bgr8";
+    cv_image5.encoding = "bgr8";
+    cv_image6.encoding = "bgr8";
+    cv_image7.encoding = "bgr8";
+    cv_image8.encoding = "bgr8";
+
+    sensor_msgs::Image ros_image;
+    cv_image.toImageMsg(ros_image);
+
+    ros::Publisher pub = nh.advertise<sensor_msgs::Image>("/static_image", 1);
+
+     pub.publish(ros_image);
+     ros::spinOnce();
 
    /* mongodb_store::MessageStoreProxy database(nh);
 
@@ -157,7 +197,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
    // cout<<"start pos x:"<<x<<" y: "<<y<<" theta: "<<th<<endl<<endl<<endl;
 
-     ROS_INFO("getting object position");
+     ROS_INFO("Push: getting object position");
 
     //checking object position
 
@@ -190,7 +230,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     //Getting pushing plan
 
-    ROS_INFO("requesting plan");
+    ROS_INFO("Push: requesting plan");
     cout<<endl;
     srvPlan.request.start.x = Ox;
     srvPlan.request.start.y = Oy;
@@ -215,22 +255,22 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     if ( ros::service::call("/getPushingPlan", srvPlan) ) {
       if ( srvPlan.response.plan.poses.empty() ) {
-        ROS_WARN("got an empty plan");
+        ROS_WARN("Push:got an empty plan");
       } else {
         BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/map" ||
                           srvPlan.response.plan.header.frame_id == "map" ,
                           "returned path is not in '/odom' frame");
-        ROS_INFO("got a path for pushing");
+        ROS_INFO("Push: got a path for pushing");
       }
     } else {
-      ROS_ERROR("unable to communicate with /getPushingPlan");
+      ROS_ERROR("Push: unable to communicate with /getPushingPlan");
       pushResult.result_status = "failure";
       pushServer.setAborted(pushResult);
       stopTracking();
     }
 
     cout<<endl;
-    ROS_INFO("got a plan");
+    ROS_INFO("Push: got a plan");
     cout<<endl;
 
     nav_msgs::Path pushing_path=srvPlan.response.plan;
@@ -288,7 +328,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                    // NOTE: I just ignore the missing object pose and keep using the previous one
                    std::string ns = ros::this_node::getNamespace();
                    std::string node_name = ros::this_node::getName();
-                   ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+                   ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
                  }
 
 
@@ -323,7 +363,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      ros::spinOnce();
                      lRate.sleep();
 
-                     ROS_INFO("goal reached");
+                     ROS_INFO("Push: goal reached");
                      pushResult.result_status = "success";
                      pushServer.setSucceeded(pushResult);
                      stopTracking();
@@ -331,16 +371,19 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      cout<<"goal reached"<<endl;
                      cout << "reached position: " << Ox << " " << Oy << " -- ";
                      cout << "actual object target location: " << X[path_length-1] << " " << Y[path_length-1] << endl;
+                     cv_image6.toImageMsg(ros_image);
+
                  }
                  //if robot got to close to obstacles
                  else if (!robotino->checkDistancesPush(0.06)){ i=path_length;
                      i=path_length;
                      robotino->singleMove(0,0,0.0,0.0,0.0,0);
                      ros::spinOnce();
-                     ROS_INFO("obstacle");
+                     ROS_INFO("Push: obstacle");
                      pushResult.result_status = "failure";
                      pushServer.setAborted(pushResult);
                      stopTracking();
+                     cv_image8.toImageMsg(ros_image);
 
 
                      cout<<"obstacle here"<<endl;
@@ -352,7 +395,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                  //check if end of control sequence reached
 
                  if (i==path_length-1){
-                     ROS_INFO("recalculating plan");
+                     ROS_INFO("Push: recalculating plan");
                      cout<<endl;
                     // cout<<"recalculating plan"<<endl;
                      int pom=path_length-i;
@@ -374,24 +417,25 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                  //checking object lost
 
-                 vOlx.push_back(Olx);
-                 vOly.push_back(Oly);
+                 vOlx.push_back(Ox);
+                 vOly.push_back(Oy);
 
                   if(i>5){
                        bool lost=1;
                        for (int k=1;k<6;k++){
-                       if ((vOlx[i-k]!=Olx)||(vOly[i-k]!=Oly)) lost=0;
+                       if ((vOlx[i-k]!=Ox)||(vOly[i-k]!=Oy)) lost=0;
                        }
                          if(lost){
                          robotino->singleMove(0, 0, 0, 0, 0, 0);
                          lRate.sleep();
                          ros::spinOnce();
 
-                         ROS_INFO("object lost");
+                         ROS_INFO("Push: object lost");
                          cout<<endl;
                          pushResult.result_status = "failure";
                          pushServer.setSucceeded(pushResult);
                          stopTracking();
+                         cv_image7.toImageMsg(ros_image);
                           break;
                     }
                   }
@@ -466,6 +510,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
                    // Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
                     i=i-1;
+                     cv_image1.toImageMsg(ros_image);
                      }
 
                  // else if((abs(Rth-aO2P)>0.5)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
@@ -499,6 +544,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                     // Vth=0.2*da;
 
                      i=i-1;
+
+                      cv_image2.toImageMsg(ros_image);
                 }
 
                  //else if((abs(th-aR2O)>0.1)||(abs(th-aO2P))>0.2){
@@ -518,6 +565,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                      Vx=0; Vy=0; Vth=0.2*(aR2O-Rth);
 
                      i=i-1;
+
+                    cv_image3.toImageMsg(ros_image);
                 }
 
 
@@ -547,6 +596,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                     // Vx=0.2*(abs(Olx)-d); Vy=Oly; Vth=0;
 
                      i=i-1;
+                     cv_image4.toImageMsg(ros_image);
 
                 }
 
@@ -570,6 +620,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
                    // Vx=0.4*errXl+0.1*dErrXl;
                    // Vy=0.2*errYl+0.1*dErrYl;
                     Vth=0;
+                    cv_image5.toImageMsg(ros_image);
 
                    // cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
 
@@ -609,6 +660,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
    catch(...){
        pushResult.result_status = "failure";
        pushServer.setAborted(pushResult);
+        cv_image8.toImageMsg(ros_image);
        stopTracking();
    }
 
@@ -694,7 +746,7 @@ geometry_msgs::PoseStamped Map2Base_link(double x, double y){
     } catch (tf::TransformException& ex) {
         std::string ns = ros::this_node::getNamespace();
         std::string node_name = ros::this_node::getName();
-        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+        ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
 
     }
 
@@ -720,7 +772,7 @@ geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z){
     } catch (tf::TransformException& ex) {
         std::string ns = ros::this_node::getNamespace();
         std::string node_name = ros::this_node::getName();
-        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+        ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
 
     }
 
