@@ -42,6 +42,9 @@ geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z);
 bool startTracking(std::string object_id);
 bool stopTracking();
 
+geometry_msgs::PoseStamped Odom2Base_link(double x, double y);
+geometry_msgs::PoseStamped Base_link2Odom(double x, double y);
+
 template <typename T> int sgn(T val);
 double string_to_double(const std::string& s);
 
@@ -130,7 +133,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
 
 
-
+/*S_INFO("Push: visualisation starting");
     //visualisation
 
 cout<<"visualisation started"<<endl;
@@ -170,6 +173,7 @@ cout<<"visualisation started"<<endl;
           lRate.sleep();
           pom++;
           }
+  ROS_INFO("Push: visualisation started");
  /* mongodb_store::MessageStoreProxy database(nh);
 
     vector< boost::shared_ptr < geometry_msgs::PoseStamped> > dataresults;
@@ -220,7 +224,7 @@ cout<<"visualisation started"<<endl;
 
 
     // /base_link object
-    //Olx=-t.transform.translation.y+offsetX;
+   //Olx=-t.transform.translation.y+offsetX;
     //Oly=-t.transform.translation.x+offsetY;
 
     /*cout<<"Object position in kinect_rgb_optical_frame x: "<<trans.getOrigin().x()<<" y "<<trans.getOrigin().y()<<endl;
@@ -254,8 +258,8 @@ cout<<"visualisation started"<<endl;
 
     geometry_msgs::Point32 p1, p2, p3, p4;
 
-    p1.x = 0.20; p1.y = -0.20;
-    p2.x = 0.20; p1.y = 0.20;
+    p1.x = 0.25; p1.y = -0.25;
+    p2.x = 0.25; p1.y = 0.25;
     p3.x = -0.20; p1.y = -0.20;
     p4.x = -0.20; p1.y = 0.20;
 
@@ -267,9 +271,14 @@ cout<<"visualisation started"<<endl;
     if ( ros::service::call("/getPushingPlan", srvPlan) ) {
       if ( srvPlan.response.plan.poses.empty() ) {
         ROS_WARN("Push:got an empty plan");
+       pushResult.result_status = "failure";
+      pushServer.setAborted(pushResult);
+      stopTracking();
+      return;
+
       } else {
-        BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/map" ||
-                          srvPlan.response.plan.header.frame_id == "map" ,
+        BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
+                          srvPlan.response.plan.header.frame_id == "odom" ,
                           "returned path is not in '/odom' frame");
         ROS_INFO("Push: got a path for pushing");
       }
@@ -278,6 +287,7 @@ cout<<"visualisation started"<<endl;
       pushResult.result_status = "failure";
       pushServer.setAborted(pushResult);
       stopTracking();
+      return;
     }
 
     cout<<endl;
@@ -288,7 +298,7 @@ cout<<"visualisation started"<<endl;
 
     vector<double> X,Y,TH;
 
-    cout << "Federicos path end point: " << pushing_path.poses.back().pose.position.x << " " << pushing_path.poses.back().pose.position.y << endl;
+    //cout << "Federicos path end point: " << pushing_path.poses.back().pose.position.x << " " << pushing_path.poses.back().pose.position.y << endl;
 
     X.push_back(pushing_path.poses[0].pose.position.x);
     Y.push_back(pushing_path.poses[0].pose.position.y);
@@ -308,13 +318,13 @@ cout<<"visualisation started"<<endl;
     int path_length = X.size();
 
 
-    cout << "calculated path end point: " << X[path_length-1] << " " << Y[path_length-1] << endl;
-
+    //cout << "calculated path end point: " << X[path_length-1] << " " << Y[path_length-1] << endl;
+     nav_msgs::Odometry Odometry;
 
 
    try{
 
-    int i=0;
+    int i=2;
     while ((i<path_length-1)||((i==path_length-1)&&((abs(X[path_length-1]-Ox)>0.1)||(abs(Y[path_length-1]-Oy)>0.1)))){ //error tolerance of 10 cm
 
                  ros::spinOnce();
@@ -323,10 +333,15 @@ cout<<"visualisation started"<<endl;
                 //update of coordinates
 
                  // /map robot
-                 Rx=pose_m_.x;
-                 Ry=pose_m_.y;
-                 Rth=pose_m_.theta;
-
+                // Rx=pose_m_.x;
+                // Ry=pose_m_.y;
+                // Rth=pose_m_.theta;
+                   
+                   //odom
+                   Odometry = robotino->getOdom();
+                    Rx = Odometry.pose.pose.position.x  ; 
+                   Ry = Odometry.pose.pose.position.y ;
+                   Rth=tf::getYaw(Odometry.pose.pose.orientation);
 
                 // /base_link object
 
@@ -353,14 +368,14 @@ cout<<"visualisation started"<<endl;
                 Oly=trans.getOrigin().y();
 
                  // /map object
-                 transH=Base_link2Map(Olx,Oly);
+                 transH=Base_link2Odom(Olx,Oly);
                  Ox=transH.pose.position.x;
                  Oy=transH.pose.position.y;
 
                  // /map object - X[i] and Y[i]
 
                  // /base_link object wanted
-                transH=Map2Base_link(X[i],Y[i]);
+                transH=Odom2Base_link(X[i],Y[i]);
                  Plx=transH.pose.position.x;
                  Ply=transH.pose.position.y;
 
@@ -368,7 +383,7 @@ cout<<"visualisation started"<<endl;
 
 
                  //if object reached to goal
-                 if((abs(X[path_length-1]-Ox)<0.08)&&(abs(Y[path_length-1]-Oy)<0.08)){
+                 if((abs(X[path_length-1]-Ox)<0.10)&&(abs(Y[path_length-1]-Oy)<0.10)){
                      i=path_length;
                      robotino->singleMove(0,0,0.0,0.0,0.0,0);
                      ros::spinOnce();
@@ -382,8 +397,8 @@ cout<<"visualisation started"<<endl;
                      cout<<"goal reached"<<endl;
                      cout << "reached position: " << Ox << " " << Oy << " -- ";
                      cout << "actual object target location: " << X[path_length-1] << " " << Y[path_length-1] << endl;
-                     cv_image6.toImageMsg(ros_image);
-                     ImgPub.publish(ros_image);
+            //       cv_image6.toImageMsg(ros_image);
+              //     ImgPub.publish(ros_image);
                  }
                  //if robot got to close to obstacles
                  else if (!robotino->checkDistancesPush(0.06)){ i=path_length;
@@ -394,7 +409,7 @@ cout<<"visualisation started"<<endl;
                      pushResult.result_status = "failure";
                      pushServer.setAborted(pushResult);
                      stopTracking();
-                     cv_image8.toImageMsg(ros_image);
+                //   cv_image8.toImageMsg(ros_image);
 
 
                      cout<<"obstacle here"<<endl;
@@ -431,7 +446,7 @@ cout<<"visualisation started"<<endl;
                  vOlx.push_back(Ox);
                  vOly.push_back(Oy);
 
-                  if(i>5){
+                  if(i>7){
                        bool lost=1;
                        for (int k=1;k<6;k++){
                        if ((vOlx[i-k]!=Ox)||(vOly[i-k]!=Oy)) lost=0;
@@ -446,7 +461,7 @@ cout<<"visualisation started"<<endl;
                          pushResult.result_status = "failure";
                          pushServer.setSucceeded(pushResult);
                          stopTracking();
-                         cv_image7.toImageMsg(ros_image);
+                  //     cv_image7.toImageMsg(ros_image);
                           break;
                     }
                   }
@@ -494,6 +509,19 @@ cout<<"visualisation started"<<endl;
                  if(aO2P<-3.14)aO2P=aO2P+3.14;
                  if(isnan(aO2P))aO2P=0;
 
+                   if(dR2O>0.5){
+                         robotino->singleMove(0, 0, 0, 0, 0, 0);
+                         lRate.sleep();
+                         ros::spinOnce();
+
+                         ROS_INFO("Push: object lost");
+                         cout<<endl;
+                         pushResult.result_status = "failure";
+                         pushServer.setSucceeded(pushResult);
+                         stopTracking();
+                  //     cv_image7.toImageMsg(ros_image);
+                          break;
+                    }
 
 
 
@@ -503,9 +531,21 @@ cout<<"visualisation started"<<endl;
                 cout<<"object "<<Ox<<"   "<<Oy<<endl;
                 cout<<"wanted "<<X[i]<<"   "<<Y[i]<<endl;*/
 
+                   
+                 double da;
 
+                     /*if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28+aO2P-Rth);
+                     else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
+                     else Vth=0.3*(aO2P-Rth);*/
+
+                     if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))da=(6.28+aO2P-Rth);
+                     else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))da=(aO2P-6.28-Rth);
+                     else da=(aO2P-Rth);
+
+
+                     
                // if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Plx<-0.02))&&(aORP>0.4)){
-                 if ((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly)))&&(aORP>0.3)){
+                 if (((((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly)))&&(aORP>0.3))&&(Olx<(d+0.250))&&(dR2O<d+0.5)){
                      // cout<<"action 1"<<endl;
                      // cout<<"difference "<< Ply-Oly<<" aORP "<<aORP<<" vx "<<Vx<<endl;
 
@@ -515,17 +555,17 @@ cout<<"visualisation started"<<endl;
                      double va1_var=va1_meanE-va1_mean*va1_mean;
                      double K1=10e-04;
 
-
-                  // Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
+                   ROS_INFO("Push: action 1");
+                  Vx=0; Vy=1.5*(Oly-Ply); Vth=0;
                      Vx=0; Vy=(Oly-Ply)*K1/va1_var;Vth=0;
 
-                   // Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
+                   //Vx=0; Vy=0.8*(Oly-Ply); Vth=0;
                     i=i-1;
-                     cv_image1.toImageMsg(ros_image);
+                    //v_image1.toImageMsg(ros_image);
                      }
 
                  // else if((abs(Rth-aO2P)>0.5)&&(dO2P>0.1)&&(abs(Oly)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Ply-Oly)>0.08)){
-                 else if((abs(Rth-aO2P)>0.3)&&(dO2P>0.1)&&(abs(Olx)>0.03)&&(abs(Rth-aR2O)<1.2)&&(abs(Plx-Olx)>0.08)){
+                 else if(((abs(da)>0.3)&&(dO2P>0.1)&&(abs(Olx)>0.03)&&(abs(Rth-aR2O)<0.8)&&(abs(Plx-Olx)>0.08))&&(Olx<(d+0.25))){
                  //else if((abs(th-aO2P)>0.3)&&(abs(th-aR2O)<1.2)&&(dO2P>0.1)){
 
 
@@ -533,15 +573,15 @@ cout<<"visualisation started"<<endl;
                     //cout<<"aO2P "<<aO2P<<" robot th: "<<Rth<< " difference "<<Rth-aO2P<<" dO2P "<<dO2P<<" th-aR2O "<<Rth-aR2O<< endl;
 
                      Vx=0; Vy=0;
-                     double da;
+                     //double da;
 
                      /*if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(6.28+aO2P-Rth);
                      else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))Vth=0.3*(aO2P-6.28-Rth);
                      else Vth=0.3*(aO2P-Rth);*/
 
-                     if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))da=(6.28+aO2P-Rth);
-                     else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))da=(aO2P-6.28-Rth);
-                     else da=(aO2P-Rth);
+                     //if ((aO2P<0) && (sgn(aO2P)!=sgn(Rth)))da=(6.28+aO2P-Rth);
+                     //else if ((aO2P>0) && (sgn(aO2P)!=sgn(Rth)))da=(aO2P-6.28-Rth);
+                     //else da=(aO2P-Rth);
 
                      va2.push_back(da);
 
@@ -552,15 +592,17 @@ cout<<"visualisation started"<<endl;
 
                      Vth=va2_var*da;
                      Vth=0.3*da;
+                     //Vth=0.2*da;
+                     ROS_INFO("Push: action 2");
                     // Vth=0.2*da;
 
                      i=i-1;
 
-                      cv_image2.toImageMsg(ros_image);
+                 //   cv_image2.toImageMsg(ros_image);
                 }
 
                  //else if((abs(th-aR2O)>0.1)||(abs(th-aO2P))>0.2){
-                else if ((abs(Rth-aR2O)>0.2)&&(dO2P<0.1)){
+                else if ((abs(Rth-aR2O)>0.3)&&(dO2P<0.20)){
                     // cout<<"action 3 "<<endl;
                     // cout<<"aR2O"<<aR2O<<" robot th: "<<Rth<< "difference"<<Rth-aR2O<<endl;
 
@@ -573,15 +615,18 @@ cout<<"visualisation started"<<endl;
                      Vth=va3_var*aR2O-Rth;
                      Vx=0; Vy=0; Vth=0.3*(aR2O-Rth);
 
-                     Vx=0; Vy=0; Vth=0.2*(aR2O-Rth);
-
+                    // Vx=0; Vy=0; Vth=0.2*(aR2O-Rth);
+                     ROS_INFO("Push: action 3");
                      i=i-1;
 
-                    cv_image3.toImageMsg(ros_image);
+                   //v_image3.toImageMsg(ros_image);
                 }
 
 
-                else if ((abs(Oly)>0.10)||(abs(Oly)>0.05)&&((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Olx>(d+0.10))){
+               //lse if ((abs(Oly)>0.10)||(abs(Oly)>0.05)&&((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Olx>(d+0.10))){
+   else if ((abs(Oly)>0.10)||(abs(Oly)>0.05)&&((Oly<0)&&(Ply>Oly)||(Oly>0)&&(Ply<Oly))||(Olx>(d+0.08))){
+
+
                      //cout<<"action 4 "<<endl;
                      //cout<<"x "<<0.3*(abs(Olx)-d)<<" y "<<Oly<<endl;
                      va4x.push_back(abs(Olx)-d);
@@ -605,16 +650,19 @@ cout<<"visualisation started"<<endl;
                      Vx=0.3*(abs(Olx)-d); Vy=Oly; Vth=0;
 
                     // Vx=0.2*(abs(Olx)-d); Vy=Oly; Vth=0;
+                    ROS_INFO("Push: action 4");
 
                      i=i-1;
-                     cv_image4.toImageMsg(ros_image);
+                     //_image4.toImageMsg(ros_image);
 
                 }
 
                 else{
-                    cout<<"here 0"<<endl;
+                //    cout<<"here 0"<<endl;
                     vElx.push_back(errXl);
                     vEly.push_back(errYl);
+                    ROS_INFO("Push: action main");
+
 
                     double ex_mean=std::accumulate(vElx.begin(), vElx.end(),0)/vElx.size();
                     double ey_mean=std::accumulate(vEly.begin(), vEly.end(),0)/vEly.size();
@@ -628,10 +676,10 @@ cout<<"visualisation started"<<endl;
                     Vx=2*(errXl*ex_var +0.1*dErrXl*ex_var);
                     Vy=2*(errYl*ey_var +0.1*dErrYl*ey_var);
 
-                   // Vx=0.4*errXl+0.1*dErrXl;
-                   // Vy=0.2*errYl+0.1*dErrYl;
+                  //Vx=0.4*errXl+0.1*dErrXl;
+                  // Vy=0.2*errYl+0.1*dErrYl;
                     Vth=0;
-                    cv_image5.toImageMsg(ros_image);
+                    //cv_image5.toImageMsg(ros_image);
 
                    // cout<<"Vx "<<Vx<<" Vy "<<Vy<<endl;
 
@@ -640,9 +688,10 @@ cout<<"visualisation started"<<endl;
 
 
                if (i<path_length-1)i++;
-               else{
-                   cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
-               }
+              // else{
+                //   ROS_INFO(
+                 //  cout<<"end"<<endl<<"current local errors x: "<<errXl<<" y:" <<errYl<<endl;
+              // }
 
                if (Vx>0.2)Vx=0.2;
                if (Vx<-0.2)Vx=-0.2;
@@ -652,7 +701,7 @@ cout<<"visualisation started"<<endl;
                if (Vth<-0.2)Vth=-0.2;
 
                 robotino->singleMove(Vx,Vy,0.0,0.0,0.0,Vth);
-                 ImgPub.publish(ros_image);
+                // ImgPub.publish(ros_image);
                 lRate.sleep();
                // pushFeedback.percent_completed=i*100/path_length;
                // pushServer.publishFeedback(pushFeedback.percent_completed);
@@ -671,7 +720,7 @@ cout<<"visualisation started"<<endl;
    catch(...){
        pushResult.result_status = "failure";
        pushServer.setAborted(pushResult);
-        cv_image8.toImageMsg(ros_image);
+      //  cv_image8.toImageMsg(ros_image);
        stopTracking();
    }
 
@@ -854,5 +903,58 @@ bool startTracking(std::string object_id) {
 bool stopTracking() {
     squirrel_object_perception_msgs::StopObjectTracking srvStopTrack;
     return ros::service::call("/squirrel_stop_object_tracking", srvStopTrack);
+}
+
+geometry_msgs::PoseStamped Base_link2Odom(double x, double y){
+
+    geometry_msgs::PoseStamped Emap, Eloc;
+    tf::TransformListener tf_listener;
+
+    Emap.pose.position.x=x;
+    Emap.pose.position.y=y;
+    Emap.pose.position.z=0;
+    Emap.pose.orientation.x=0;
+    Emap.pose.orientation.y=0;
+    Emap.pose.orientation.z=0;
+    Emap.pose.orientation.w=1;
+    Emap.header.frame_id="/base_link";
+    try {
+        tf_listener.waitForTransform("/base_link","/odom", ros::Time::now(), ros::Duration(0.2));
+        tf_listener.transformPose("/odom",Emap,Eloc);
+    } catch (tf::TransformException& ex) {
+        std::string ns = ros::this_node::getNamespace();
+        std::string node_name = ros::this_node::getName();
+        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+    }
+
+    return Eloc;
+}
+
+
+geometry_msgs::PoseStamped Odom2Base_link(double x, double y){
+
+    geometry_msgs::PoseStamped Emap, Eloc;
+    tf::TransformListener tf_listener;
+
+    Emap.pose.position.x=x;
+    Emap.pose.position.y=y;
+    Emap.pose.position.z=0;
+    Emap.pose.orientation.x=0;
+    Emap.pose.orientation.y=0;
+    Emap.pose.orientation.z=0;
+    Emap.pose.orientation.w=1;
+    Emap.header.frame_id="/odom";
+    try {
+        tf_listener.waitForTransform("/odom","/base_link", ros::Time::now(), ros::Duration(0.2));
+        tf_listener.transformPose("/base_link",Emap,Eloc);
+    } catch (tf::TransformException& ex) {
+        std::string ns = ros::this_node::getNamespace();
+        std::string node_name = ros::this_node::getName();
+        ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+    }
+
+    return Eloc;
 }
 
