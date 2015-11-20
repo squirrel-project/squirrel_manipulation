@@ -74,9 +74,6 @@ add_library(robotino
 )
 
 ## Declare a cpp executable
-add_executable(testrobotino src/TestRobotino.cpp)
-target_link_libraries(testrobotino robotino ${catkin_LIBRARIES})
-
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 

@@ -37,6 +37,7 @@ double Ox0, Oy0, Oz0;
 void arCallback(tf::tfMessage msg);
 geometry_msgs::PoseStamped Map2Base_link(double x, double y);
 geometry_msgs::PoseStamped Base_link2Map(double x, double y);
+geometry_msgs::PoseStamped odom2Map(double x, double y);
 geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z);
 bool startTracking(std::string object_id);
 bool stopTracking();
@@ -763,6 +764,9 @@ geometry_msgs::PoseStamped Map2Base_link(double x, double y){
     return Eloc;
 }
 
+
+
+
 geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z){
 
     geometry_msgs::PoseStamped Ekin, Eloc;
@@ -804,6 +808,32 @@ geometry_msgs::PoseStamped Base_link2Map(double x, double y){
     Emap.header.frame_id="/base_link";
     try {
         tf_listener.waitForTransform("/base_link","/map", ros::Time::now(), ros::Duration(0.2));
+        tf_listener.transformPose("/map",Emap,Eloc);
+    } catch (tf::TransformException& ex) {
+        std::string ns = ros::this_node::getNamespace();
+        std::string node_name = ros::this_node::getName();
+        ROS_ERROR("%s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+    }
+
+    return Eloc;
+}
+
+geometry_msgs::PoseStamped odom2Map(double x, double y){
+
+    geometry_msgs::PoseStamped Emap, Eloc;
+    tf::TransformListener tf_listener;
+
+    Emap.pose.position.x=x;
+    Emap.pose.position.y=y;
+    Emap.pose.position.z=0;
+    Emap.pose.orientation.x=0;
+    Emap.pose.orientation.y=0;
+    Emap.pose.orientation.z=0;
+    Emap.pose.orientation.w=1;
+    Emap.header.frame_id="/base_link";
+    try {
+        tf_listener.waitForTransform("/odom","/map", ros::Time::now(), ros::Duration(0.2));
         tf_listener.transformPose("/map",Emap,Eloc);
     } catch (tf::TransformException& ex) {
         std::string ns = ros::this_node::getNamespace();
