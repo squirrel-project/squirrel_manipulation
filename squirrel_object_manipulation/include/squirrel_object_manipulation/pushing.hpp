@@ -1,11 +1,24 @@
+#include <ros/ros.h>
+#include <iostream>
+
+#include <std_msgs/Float64.h>
+#include <boost/assert.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <boost/range/numeric.hpp>
+
 #include <squirrel_object_manipulation/RobotinoControl.hpp>
 #include <squirrel_rgbd_mapping_msgs/GetPushingPlan.h>
 #include <squirrel_manipulation_msgs/PushAction.h>
 #include <squirrel_manipulation_msgs/PushActionFeedback.h>
 #include <squirrel_manipulation_msgs/PushActionGoal.h>
 #include <squirrel_manipulation_msgs/PushActionResult.h>
-#include <actionlib/server/simple_action_server.h>
 
+#include <squirrel_object_manipulation/conversion_utils.hpp>
+#include <squirrel_object_perception_msgs/StartObjectTracking.h>
+#include <squirrel_object_perception_msgs/StopObjectTracking.h>
+
+
+#include <actionlib/server/simple_action_server.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
@@ -26,7 +39,6 @@ class PushAction {
 
   std::string pose_topic_;
   
-   ros::Publisher TiltPub, ImgPub;
 
  protected:
 

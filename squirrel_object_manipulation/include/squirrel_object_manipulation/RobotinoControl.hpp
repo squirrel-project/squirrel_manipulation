@@ -11,6 +11,7 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
+#include <std_msgs/Float64.h>
 
 
 #define ROBOTINO_MOVE_TOPIC "/cmd_vel"
@@ -22,6 +23,7 @@
 #define ROBOTINO_CAMERAINFO_TOPIC "/webcam/camera_info"
 #define ROBOTINO_IMAGERAW_TOPIC "/webcam/image_raw"
 #define ROBOTINO_IMAGECOMPRESSED_TOPIC "/webcam/image_raw/compressed"
+#define TILT_TOPIC "/tilt_controller/command"
 
 class RobotinoControl {
 
@@ -55,6 +57,7 @@ private:
 
 
     ros::Publisher pubMove;
+    ros::Publisher tiltPub;
 
     ros::Publisher pubDigitalValues;
 
@@ -83,17 +86,12 @@ private:
 
     void reset_odometry();
 
-    //=========simons space=========
 
-
-    //=========senkas space=========
 
 
 public:
 
     RobotinoControl(ros::NodeHandle& node);
-
-    //=========simons space=========
 
     void singleMove(geometry_msgs::Twist twist);
     void singleMove(double x, double y, double z, double xRot, double yRot, double zRot);
@@ -104,7 +102,6 @@ public:
 
     int sign(double d);
 
-    //=========senkas space=========
     void moveFwd(double speed);
     void moveFwd();
     void turnRobot(double val);
@@ -112,6 +109,8 @@ public:
     bool checkDistances(double maxDist);
     bool checkDistancesPush(double maxDist);
     nav_msgs::Odometry getOdom();
+
+    void moveTilt(double val);
 
 };
 
