@@ -2,6 +2,25 @@
 
 using namespace std;
 
+geometry_msgs::PoseStamped TransformFrame(geometry_msgs::PoseStamped pose_in, string frame_out){
+
+    geometry_msgs::PoseStamped pose_out;
+    tf::TransformListener tf_listener;
+
+    try {
+        tf_listener.waitForTransform(pose_in.header.frame_id, frame_out, ros::Time::now(), ros::Duration(0.2));
+        tf_listener.transformPose(frame_out, pose_in, pose_out);
+    } catch (tf::TransformException& ex) {
+        std::string ns = ros::this_node::getNamespace();
+        std::string node_name = ros::this_node::getName();
+        ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+
+    }
+
+    return pose_out;
+
+}
+
 geometry_msgs::PoseStamped Map2Base_link(double x, double y){
 
     geometry_msgs::PoseStamped Emap, Eloc;
@@ -87,4 +106,32 @@ double string_to_double(const std::string& s) {
         return 0;
     return x;
 }
+
+bool isQuaternionValid(const geometry_msgs::Quaternion& q){
+    // check if the quaternion has nan's or infs
+    if(!std::isfinite(q.x) || !std::isfinite(q.y) || !std::isfinite(q.z) || !std::isfinite(q.w)){
+        return false;
+    }
+
+    tf::Quaternion tf_q(q.x, q.y, q.z, q.w);
+
+    // if the length of the quaternion is close to zero
+    if(tf_q.length2() < 1e-6){
+        return false;
+    }
+
+    //check transforms the vertical vector correctly
+    tf_q.normalize();
+
+    tf::Vector3 up(0, 0, 1);
+
+    double dot = up.dot(up.rotate(tf_q.getAxis(), tf_q.getAngle()));
+
+    if(fabs(dot - 1) > 1e-3){
+        return false;
+    }
+
+    return true;
+}
+
 
