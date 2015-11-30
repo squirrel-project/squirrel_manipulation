@@ -15,6 +15,7 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
    // subImageCompressed = node.subscribe(ROBOTINO_IMAGECOMPRESSED_TOPIC, 1, &RobotinoControl::callbackImageCompressed, this);
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
+    tiltPub = node.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
 
 
 
@@ -56,7 +57,6 @@ void RobotinoControl::callbackImageCompressed(sensor_msgs::CompressedImage msg) 
     imageCompressed = msg;
 }
 
-//=========simons space=========
 
 void RobotinoControl::singleMove(geometry_msgs::Twist twist) {
     pubMove.publish(twist);
@@ -177,7 +177,6 @@ void RobotinoControl::rotateDistance(double rot) {
 }
 
 
-//=========senkas space=========
 void  RobotinoControl::moveFwd(double speed){
 
     geometry_msgs::Twist twist;
@@ -295,4 +294,11 @@ nav_msgs::Odometry RobotinoControl::getOdom(){
 }
 
 void RobotinoControl::reset_odometry(){
+}
+
+void RobotinoControl::moveTilt(double val){
+    std_msgs::Float64 tilt_msg;
+    tilt_msg.data = val;
+    tiltPub.publish(tilt_msg);
+    ros::spinOnce();
 }

@@ -73,21 +73,18 @@ add_library(robotino
    src/RobotinoControl.cpp
 )
 
+add_library(conversions
+   src/utils/conversion_utils.cpp
+)
 ## Declare a cpp executable
-add_executable(testrobotino src/TestRobotino.cpp)
-target_link_libraries(testrobotino robotino ${catkin_LIBRARIES})
-
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 add_executable(push src/pushing.cpp)
-target_link_libraries(push robotino ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(push robotino conversions ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(pickup src/pickup.cpp)
 target_link_libraries(pickup robotino ${catkin_LIBRARIES})
-
-#add_executable(test_push src/Test_pushing.cpp)
-#target_link_libraries(test_push robotino ${catkin_LIBRARIES})
 
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
