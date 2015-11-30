@@ -1,0 +1,5 @@
+geometry_msgs/Twist stiffness
+geometry_msgs/Twist damping
+float32 cpmaxdelta
+float32 maxforce
+float32 axismaxdeltatrq
