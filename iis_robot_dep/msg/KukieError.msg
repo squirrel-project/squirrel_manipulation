@@ -1,0 +1,2 @@
+int32 errorcode
+string errorlabel
