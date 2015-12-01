@@ -21,6 +21,8 @@ add_message_files(
     FriRobotData.msg
     FriRobotJntData.msg
     KukieError.msg
+    TactileMatrix.msg
+    TactileSensor.msg
 )
 
 generate_messages(
