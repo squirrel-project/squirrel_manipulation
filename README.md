@@ -15,4 +15,5 @@ $ roslaunch squirrel_object_manipulation  squirrel_object_manipulation.launch
 download kukadu to src/
 git@github.com:shangl/kukadu.git
 
-
+install dependencies for kukadu:
+sudo apt-get install 
