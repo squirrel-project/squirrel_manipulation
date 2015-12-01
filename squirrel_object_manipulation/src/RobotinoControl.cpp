@@ -12,17 +12,25 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
     subTf = node.subscribe(ROBOTINO_TF_TOPIC, 1, &RobotinoControl::callbackTf, this);
     subCameraInfo = node.subscribe(ROBOTINO_CAMERAINFO_TOPIC, 1, &RobotinoControl::callbackCameraInfo, this);
     subImageRaw = node.subscribe(ROBOTINO_IMAGERAW_TOPIC, 1, &RobotinoControl::callbackImageRaw, this);
-   // subImageCompressed = node.subscribe(ROBOTINO_IMAGECOMPRESSED_TOPIC, 1, &RobotinoControl::callbackImageCompressed, this);
+    // subImageCompressed = node.subscribe(ROBOTINO_IMAGECOMPRESSED_TOPIC, 1, &RobotinoControl::callbackImageCompressed, this);
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
     tiltPub = node.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
 
-
+    move_base_thread_ = new boost::thread(boost::bind(&RobotinoControl::moveBaseThread, this));
 
     spinRateVal = 10;
 
     usleep(1e6);
 
+}
+
+RobotinoControl::~RobotinoControl(){
+
+    move_base_thread_->interrupt();
+    move_base_thread_->join();
+
+    delete move_base_thread_;
 }
 
 void RobotinoControl::callbackBumper(std_msgs::Bool msg) {
@@ -160,7 +168,7 @@ void RobotinoControl::rotateDistance(double rot) {
         double velRotAdd = 0.0;
         currentSign = sign(odometry.pose.pose.orientation.z);
         if(prevSign == currentSign) {
-        //    velRotAdd = ringRestRot;
+            //    velRotAdd = ringRestRot;
         } else if(abs(odometry.pose.pose.orientation.z) > 0.3) {
             initZRot = acos(odometry.pose.pose.orientation.z);
             rot = ringRestRot;
@@ -210,7 +218,7 @@ void RobotinoControl::turnRobot(double val){
 
 bool RobotinoControl::checkDistances(double maxDist) {
 
-   if(distances.points.size() > 0){
+    if(distances.points.size() > 0){
         geometry_msgs::Point32 currentFrontDistance = distances.points.at(0);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
             return false;
@@ -246,14 +254,14 @@ bool RobotinoControl::checkDistances(double maxDist) {
         currentFrontDistance = distances.points.at(8);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist)
             return false;
-   }
-
-        return true;
-
     }
+
+    return true;
+
+}
 bool RobotinoControl::checkDistancesPush(double maxDist) {
 
-   if(distances.points.size() > 0){
+    if(distances.points.size() > 0){
 
 
 
@@ -284,11 +292,11 @@ bool RobotinoControl::checkDistancesPush(double maxDist) {
             return false;
 
 
-   }
-
-        return true;
-
     }
+
+    return true;
+
+}
 nav_msgs::Odometry RobotinoControl::getOdom(){
     return odometry;
 }
@@ -301,4 +309,47 @@ void RobotinoControl::moveTilt(double val){
     tilt_msg.data = val;
     tiltPub.publish(tilt_msg);
     ros::spinOnce();
+}
+
+void RobotinoControl::moveBaseThread(){
+
+    start_move_base_ = false;
+    stop_move_base_= false;
+
+    ros::Rate moveBaseRate(spinRateVal);
+    ros::spinOnce();
+
+    while (!stop_move_base_ && ros::ok){
+        pubMove.publish(current_base_vel_);
+        moveBaseRate.sleep();
+        ros::spinOnce();
+    }
+
+}
+
+void RobotinoControl::startMoveBase(){
+    start_move_base_ = true;
+    stop_move_base_ = false;
+}
+
+void RobotinoControl::stopMoveBase(){
+    stop_move_base_ = true;
+    start_move_base_ = false;
+    setZeroBaseVelocity();
+    stopRobot();
+}
+
+void RobotinoControl::setZeroBaseVelocity(){
+    geometry_msgs::Twist twist;
+    twist.linear.z=0;
+    twist.linear.x=0;
+    twist.linear.y=0;
+    twist.angular.z=0;
+    twist.angular.x=0;
+    twist.angular.y=0;
+    current_base_vel_ = twist;
+}
+
+void RobotinoControl::setControlFrequency(double val){
+    spinRateVal = val;
 }

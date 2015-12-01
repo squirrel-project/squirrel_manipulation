@@ -99,6 +99,21 @@ geometry_msgs::PoseStamped Base_link2Map(double x, double y){
     return Eloc;
 }
 
+geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in){
+    geometry_msgs::PoseStamped Emap, Eloc;
+
+    Emap.pose.position.x = tf_in.getOrigin().x();
+    Emap.pose.position.y = tf_in.getOrigin().y();
+    Emap.pose.position.z = tf_in.getOrigin().z();;
+    Emap.pose.orientation.x = tf_in.getRotation().x();
+    Emap.pose.orientation.y = tf_in.getRotation().y();
+    Emap.pose.orientation.z = tf_in.getRotation().z();;
+    Emap.pose.orientation.w = tf_in.getRotation().w();;
+    Emap.header.frame_id = tf_in.child_frame_id_;
+
+
+}
+
 double string_to_double(const std::string& s) {
     std::istringstream i(s);
     double x;
@@ -133,5 +148,6 @@ bool isQuaternionValid(const geometry_msgs::Quaternion& q){
 
     return true;
 }
+
 
 

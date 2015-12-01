@@ -100,7 +100,6 @@ private:
 public:
 
     RobotinoControl(ros::NodeHandle& node);
-    ~RobotinoControl();
 
     void singleMove(geometry_msgs::Twist twist);
     void singleMove(double x, double y, double z, double xRot, double yRot, double zRot);

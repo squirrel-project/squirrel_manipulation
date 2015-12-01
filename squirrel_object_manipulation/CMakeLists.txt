@@ -21,6 +21,13 @@ find_package(catkin REQUIRED COMPONENTS
   mongodb_store
   cv_bridge
   image_transport
+  base_local_planner
+  cmake_modules
+  control_toolbox
+  costmap_2d
+  nav_core
+  pluginlib
+  tf_conversions
 )
 
 ###################################
@@ -45,10 +52,25 @@ catkin_package(
     squirrel_manipulation_msgs
     cv_bridge
     image_transport
+    base_local_planner
+    control_toolbox
+    costmap_2d
+    nav_core
+    pluginlib
+    roscpp
+    tf
+    tf_conversions
 )
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
+)
+
+find_package(Eigen3 REQUIRED)
+include_directories(
+  include
+  ${Eigen3_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 ###########
@@ -73,6 +95,15 @@ add_library(robotino
    src/RobotinoControl.cpp
 )
 
+add_library(eband_local_planner
+    src/pushing/eband_local_planner.cpp
+    src/pushing/eband_local_planner_ros.cpp
+    src/pushing/eband_local_planner.cpp
+    src/pushing/conversions_and_types.cpp
+    src/pushing/eband_visualization.cpp
+    src/pushing/eband_trajectory_controller.cpp
+)
+
 add_library(conversions
    src/utils/conversion_utils.cpp
 )
@@ -80,8 +111,8 @@ add_library(conversions
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
-add_executable(push src/pushing.cpp)
-target_link_libraries(push robotino conversions ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(push src/pushing/pushing.cpp)
+target_link_libraries(push robotino conversions eband_local_planner ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(pickup src/pickup.cpp)
 target_link_libraries(pickup robotino ${catkin_LIBRARIES})

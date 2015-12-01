@@ -10,6 +10,8 @@ geometry_msgs::PoseStamped Map2Base_link(double x, double y);
 geometry_msgs::PoseStamped Base_link2Map(double x, double y);
 geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z);
 
+geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in);
+
 bool isQuaternionValid(const geometry_msgs::Quaternion& q);
 
 double string_to_double(const std::string& s);

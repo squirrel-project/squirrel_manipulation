@@ -43,9 +43,10 @@ private:
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
-    nav_msgs::Path pushing_path_;
 
-    void getPushPath();
+    //navigation path
+    nav_msgs::Path pushing_path_;
+    bool getPushPath();
 
     //robot pose update
     std::string pose_topic_;
@@ -66,11 +67,17 @@ private:
     bool trackingStart_;
     bool objectLost_;
     boost::thread* object_tracking_thread_;
+    bool startTracking();
+    bool stopTracking();
     void objectTrackingThread();
 
     //execute cycle
 
     bool executeCycle();
+
+    void abortPush();
+
+
 
 
 
