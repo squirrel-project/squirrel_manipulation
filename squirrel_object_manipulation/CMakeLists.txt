@@ -86,6 +86,9 @@ target_link_libraries(push robotino conversions ${catkin_LIBRARIES} ${Boost_LIBR
 add_executable(pickup src/pickup.cpp)
 target_link_libraries(pickup robotino ${catkin_LIBRARIES})
 
+add_executable(smash src/smash.cpp)
+target_link_libraries(smash robotino ${catkin_LIBRARIES})
+
 #if(CATKIN_ENABLE_TESTING)
 #  find_package(rostest REQUIRED)
 #  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
