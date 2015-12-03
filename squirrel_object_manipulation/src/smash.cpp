@@ -41,6 +41,14 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
 
     bool smash_success_ = false;
 
+    if(sqrt((Rx-goalx)*(Rx-goalx)+(Ry-goaly)*(Ry-goaly)) > 1.0){
+
+        ROS_ERROR(" Smash: Robot distance to the clutter larger than the allowed one. ");
+
+        smashResult.result_status = "failure";
+        smashServer.setAborted(smashResult);
+
+    }
     //main control loop
     try{
 
@@ -52,15 +60,18 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
 
         Vth = 0; Vx = 0; Vy = 0;
 
+        bool correctly_oriented_ = false;
+
         while(smash_success_){
 
-            if (abs(aR2G-Rth)>0.1){
+            if ((abs(aR2G-Rth)>0.1)&& !correctly_oriented_){
                 Vth = 0.3 * (aR2G-Rth);
                 Vx = 0; Vy = 0;
             }
-            else if (dR2G<0.05){
+            else if (dR2G>0.05){
+                correctly_oriented_ = true;
                 Vth = 0;
-                Vx = 0.3 * (1.0-dR2G) ;
+                Vx = 0.8 * (1.0-dR2G) ;
                 Vy = 0;
 
             }
@@ -83,7 +94,12 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
         
     }
     ros::spinOnce();
+    robotino->stopRobot();
 
+    if(smash_success_){
+        smashResult.result_status = "success";
+        smashServer.setSucceeded(smashResult);
+    }
 }
 
 
