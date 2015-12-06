@@ -20,7 +20,6 @@
 
   <run_depend>squirrel_object_manipulation</run_depend>
 
-
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <metapackage />
