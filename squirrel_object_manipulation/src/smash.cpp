@@ -9,6 +9,8 @@ SmashAction::SmashAction(const std::string std_SmashServerActionName) :
     private_nh("~")
 {
     smashServer.start();
+    ROS_INFO("Smash: server stated \n");
+
     private_nh.param<std::string>("pose_topic", pose_topic_,"/squirrel_localizer_pose");
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &SmashAction::updatePose, this);
@@ -22,7 +24,7 @@ SmashAction::~SmashAction() {
 void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstPtr &goal) {
 
     
-    ROS_INFO("Smash:action started \n");
+    ROS_INFO("Smash: action started \n");
 
 
     ros::Rate lRate(10);
@@ -41,7 +43,7 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
 
     bool smash_success_ = false;
 
-    if(sqrt((Rx-goalx)*(Rx-goalx)+(Ry-goaly)*(Ry-goaly)) > 1.0){
+    if(sqrt((Rx-goalx)*(Rx-goalx)+(Ry-goaly)*(Ry-goaly)) > 1.0 + d){
 
         ROS_ERROR(" Smash: Robot distance to the clutter larger than the allowed one. ");
 

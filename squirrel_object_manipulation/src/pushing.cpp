@@ -42,7 +42,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         pushServer.setSucceeded(pushResult);
         return;
     }
-
+    cout<< "1"<<endl;
     tf::TransformListener tf_listener;
     tf::StampedTransform trans;
 
@@ -58,6 +58,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         stopTracking();
         return;
     }
+    cout<< "2"<<endl;
 
     ros::Rate lRate(10);
 
