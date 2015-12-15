@@ -54,7 +54,7 @@
   <run_depend>geometry_msgs</run_depend>
   <run_depend>moveit_core</run_depend>
   <run_depend>moveit_ros_planning_interface</run_depend>
-  <run_depend>robotino_arm_6dof_moveit_config</run_depend>
+  <run_depend>robotino_full_moveit_config</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

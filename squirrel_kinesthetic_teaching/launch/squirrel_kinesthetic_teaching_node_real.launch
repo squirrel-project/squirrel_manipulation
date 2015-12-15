@@ -1,0 +1,14 @@
+<launch>
+	<include file="$(find robotino_full_moveit_config)/launch/planning_context.launch">
+    		 <arg name="load_robot_description" value="true"/>
+ 	</include>
+
+	<include file="$(find robotino_bringup)/launch/robot.launch">
+		 <arg name="robot" value="robotino"/>
+		 <arg name="robot_env" value="simple_room"/>
+	</include>
+
+  	<include file="$(find robotino_full_moveit_config)/launch/move_group.launch"/>
+
+  	<node name="squirrel_kinesthetic_teaching_node" pkg="squirrel_kinesthetic_teaching" type="squirrel_kinesthetic_teaching_node" respawn="false" output="screen"/>
+</launch>
