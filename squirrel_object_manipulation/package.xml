@@ -15,9 +15,9 @@
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>TODO</license>
 
-	<run_depend>tf</run_depend>
-	<run_depend>tf2</run_depend>
-	<run_depend>kukadu</run_depend>
+    <run_depend>tf</run_depend>
+    <run_depend>tf2</run_depend>
+    <run_depend>kukadu</run_depend>
     <run_depend>roscpp</run_depend>
     <run_depend>std_msgs</run_depend>
     <run_depend>nav_msgs</run_depend>
