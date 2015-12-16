@@ -4,3 +4,4 @@
 .cproject
 qtcreator-build
 *~
+*.pyc

@@ -1,30 +1,30 @@
-squirrel_manipulation
-=====================
+squirrel_kinesthetic_teaching
+=============================
 
 Technical Maintainer: lokalmatador (Philipp Zech, University of Innsbruck)
 
-Repository for kinesthetic teaching.
+Package for kinesthetic teaching.
 
 ## Starting the node in simulation
 
 ```bash 
-$ roslaunch squirrel_kinesthetic_teaching squirrel_kinesthetic_teaching_node_sim.launch
+$ roslaunch squirrel_kinesthetic_teaching squirrel_kinesthetic_teaching_node_simulator.launch
 ``` 
 
 ## Starting the node on the robot
 
 ```bash 
-$ roslaunch squirrel_kinesthetic_teaching squirrel_kinesthetic_teaching_node_real.launch
+$ roslaunch squirrel_kinesthetic_teaching squirrel_kinesthetic_teaching_node_robot.launch
 ``` 
 
 ## Start teaching
 ```bash 
-$ rostopic pub /squirrel_manipulation/start_teaching std_msgs/String "data: 'start'" 
+$ rosservice call /squirrel_manipulation/start_teaching "{}"
 ``` 
 
 ## Stop teaching
 ```bash 
-$ rostopic pub /squirrel_manipulation/stop_teaching std_msgs/String "data: 'stop'" 
+$ $ rosservice call /squirrel_manipulation/stop_teaching "{}"
 ``` 
 
 
