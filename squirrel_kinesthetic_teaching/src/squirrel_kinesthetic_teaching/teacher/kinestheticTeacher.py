@@ -11,13 +11,14 @@ class KinestheticTeacher:
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting KinestheticTeacher')
         self.teaching = False
-        self.delta = 0.01
+        self.delta = 0.1
         self.rate = rospy.Rate(10)
+
         self.start = rospy.Service('/squirrel_manipulation/start_teaching', Empty, self.start)
         self.start = rospy.Service('/squirrel_manipulation/stop_teaching', Empty, self.stop)
         self.wrist_sub = rospy.Subscriber('/wrist', Float64MultiArray, self.follow, queue_size=1);
-        roscpp_initialize(sys.argv)
 
+        roscpp_initialize(sys.argv)
         self.group = None
 
 
@@ -26,6 +27,7 @@ class KinestheticTeacher:
             rospy.loginfo(rospy.get_caller_id() + ': entering teaching mode')
             self.teaching = True
             self.group = MoveGroupCommander('Arm')            
+            self.group.set_planner_id('lbkpiece')
             return EmptyResponse()
         else:
             rospy.logwarn(rospy.get_caller_id() + ': already in teaching mode')
@@ -46,7 +48,6 @@ class KinestheticTeacher:
     def follow(self, msg):        
         while not rospy.is_shutdown() and self.teaching:
             self.group.clear_pose_targets()
-            rospy.loginfo("while...")
             current_pose = self.group.get_current_pose()
             target_pose = Pose()
                         
@@ -57,9 +58,15 @@ class KinestheticTeacher:
             #target_pose.orientation.x = current_pose.pose.orientation.x + delta * msg.data[4];
             #target_pose.orientation.y = current_pose.pose.orientation.y + delta * msg.data[5];
             #target_pose.orientation.z = current_pose.pose.orientation.z + delta * msg.data[6];
-            target_pose.orientation.w = 1.0
-                    
+
+            #debug
+            target_pose.orientation.w = current_pose.pose.orientation.w
+            target_pose.orientation.x = current_pose.pose.orientation.x
+            target_pose.orientation.y = current_pose.pose.orientation.y
+            target_pose.orientation.z = current_pose.pose.orientation.z                    
+            rospy.loginfo(rospy.get_caller_id() + ': current_pose: \n %s', current_pose)
             rospy.loginfo(rospy.get_caller_id() + ': target_pose: \n %s', target_pose)
+            #debug
             
             self.group.set_pose_target(target_pose)
             self.group.plan()

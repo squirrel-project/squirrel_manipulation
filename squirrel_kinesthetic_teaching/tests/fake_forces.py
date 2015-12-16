@@ -36,9 +36,9 @@ def chat():
     pub = rospy.Publisher('/wrist', Float64MultiArray, queue_size=10)
     while not rospy.is_shutdown():
         forces = Float64MultiArray()
-        forces.data.append(random.uniform(0.1, 0.15))
-        forces.data.append(random.uniform(0.1, 0.15))
-        forces.data.append(random.uniform(0.1, 0.15))
+        forces.data.append(random.uniform(-1, -0.9))
+        forces.data.append(random.uniform(-1, -0.9))
+        forces.data.append(random.uniform(-1, -0.9))
         forces.data.append(random.uniform(0.1, 0.15))
         forces.data.append(random.uniform(0.1, 0.15))
         forces.data.append(random.uniform(0.1, 0.15))
