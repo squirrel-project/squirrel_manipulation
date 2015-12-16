@@ -25,9 +25,10 @@ script:
   - source /opt/ros/$CI_ROS_DISTRO/setup.bash
   - mkdir -p $CATKIN_WS_SRC
   - ln -s $TRAVIS_BUILD_DIR $CATKIN_WS_SRC
+  - cd $CATKIN_WS/src/squirrel_manipulation
+  - git submodule update --init
   - cd $CATKIN_WS
   - git clone git@github.com:squirrel-project/squirrel_common.git ~/catkin_ws/src/squirrel_common
-  - git clone git@github.com:shangl/kukadu.git ~/catkin_ws/src/kukadu
   - catkin init
   - rosdep install --from-paths src/ -i -y --rosdistro $CI_ROS_DISTRO
   # Enable install space
