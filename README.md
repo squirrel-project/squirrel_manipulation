@@ -22,3 +22,4 @@ sudo apt-get install ros-indigo-desktop-full libgsl0-dev gnuplot gnuplot-x11 lib
 
 set up environment variable (add to .bashrc):
 export KUKADU_HOME=PATH_TO_SQUIRREL_CATKIN/src/kukadu
+
