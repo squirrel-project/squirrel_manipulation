@@ -16,4 +16,7 @@ $ roslaunch squirrel_manipulation_waypoint squirrel_manipulation_waypoint_node.l
 $ $ rosservice call /squirrel_manipulation_waypoints/get_waypoints squirrel_waypoints_msgs/ManipulationWaypointServiceRequest
 ``` 
 
+## Requirements
+* numpy
+
 
