@@ -1,0 +1,3 @@
+<launch>
+	<node name="squirrel_manipulation_waypoint_node" pkg="squirrel_manipulation_waypoint" type="squirrel_manipulation_waypoint_node.py" output="screen"/>
+</launch>
