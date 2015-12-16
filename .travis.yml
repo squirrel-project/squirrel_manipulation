@@ -19,7 +19,7 @@ install:
   - sudo apt-get install -qq -y python-rosdep python-catkin-tools
   - sudo rosdep init
   - rosdep update
-  - sudo apt-get install ros-indigo-desktop libgsl0-dev gnuplot gnuplot-x11 libarmadillo-dev libboost-all-dev libncurses5-dev libarmadillo-dev stdc++ liballegro5-dev
+  - sudo apt-get install ros-indigo-desktop libgsl0-dev gnuplot gnuplot-x11 libarmadillo-dev libboost-all-dev libncurses5-dev libarmadillo-dev stdc++ liballegro5-dev libeigen3-dev
   # Use rosdep to install all dependencies (including ROS itself)
 script:
   - source /opt/ros/$CI_ROS_DISTRO/setup.bash
