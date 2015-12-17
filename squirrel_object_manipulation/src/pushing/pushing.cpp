@@ -112,7 +112,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
         push_planner_->updatePushPlanner(pose_robot_,pose_object_);
         geometry_msgs::Twist cmd = push_planner_->getVelocities();
-        cout<<"move"<<endl<<cmd <<endl;
+       // cout<<"move"<<endl<<cmd <<endl;
         robotino->singleMove(cmd.linear.x,0,0.0,0.0,0.0,cmd.angular.z);
 
         lRate.sleep();
