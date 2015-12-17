@@ -8,8 +8,6 @@ PushPlanner::PushPlanner(string local_frame_, string global_frame_, geometry_msg
 {
     this->initialize(local_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_);
 
-    // visualisation
-    vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 10, true);
 
 }
 
@@ -20,6 +18,10 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     this->pose_object_ = pose_object_;
     this->pushing_path_ = pushing_path_;
     this->goal_reached_ = false;
+
+    vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 10, true);
+    marker_target_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_target", 10, true);
+    visualise_ = false;
 
     setLookahedDistance(lookahead_);
 }
@@ -39,12 +41,14 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
         }
     }
 
+    if (visualise_)publishMarkerTargetCurrent(pushing_path_.poses[p_min_ind]);
+
     //determining the target point with lookahead distance
     double neighbourhood_min = std::numeric_limits<double>::infinity();
     int p_lookahead = p_min_ind;
 
     if(distancePoints(pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.x, pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.y, pushing_path_.poses[p_min_ind].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y) < lookahead_){
-        return pushing_path_.poses[pushing_path_.poses.size() - 1];
+        p_lookahead = pushing_path_.poses.size() - 1;
     }
     else{
 
@@ -55,12 +59,40 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
                 p_lookahead = i;
             }
         }
-
-        return pushing_path_.poses[p_lookahead];
     }
+    //if (visualise_)publishMarkerTargetCurrent(pushing_path_.poses[p_lookahead]);
+
+    return pushing_path_.poses[p_lookahead];
 }
 
 void PushPlanner::setLookahedDistance(double d){
 
     lookahead_ = d;
+}
+
+void PushPlanner::visualisationOn(){
+    visualise_ = true;
+}
+
+void PushPlanner::visualisationOff(){
+    visualise_ = false;
+}
+
+void PushPlanner::publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = t_pose.header.frame_id;
+    marker.header.stamp = ros::Time();
+    marker.ns = "push_action";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = t_pose.pose;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    marker_target_c_.publish(marker);
 }

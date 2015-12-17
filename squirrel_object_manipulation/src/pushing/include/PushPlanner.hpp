@@ -26,8 +26,9 @@ private:
     string local_frame_;
     double lookahead_;
 
-
+    bool visualise_;
     ros::Publisher vis_points_pub_;
+    ros::Publisher marker_target_c_;
     void publishWaypointMarkerArray(ros::NodeHandle nh);
 
     
@@ -55,6 +56,10 @@ public:
     virtual void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_) = 0;
     virtual geometry_msgs::Twist getVelocities() = 0;
     void setLookahedDistance(double d);
+
+    void visualisationOn();
+    void visualisationOff();
+    void publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose);
     
 };
 

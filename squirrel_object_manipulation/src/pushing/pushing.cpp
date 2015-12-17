@@ -104,10 +104,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     //initialize push planner
     push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_);
+    push_planner_->visualisationOn();
+
 
     //main push loop
-
-
     while (nh.ok() &&  !push_planner_->goal_reached_){
 
         push_planner_->updatePushPlanner(pose_robot_,pose_object_);

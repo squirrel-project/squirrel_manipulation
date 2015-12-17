@@ -45,8 +45,8 @@ geometry_msgs::Twist SimplePathFollowing::getVelocities(){
     //orientation error
     double err_th = pose_robot_.theta - aR2P;
 
-    //cout << "robot pose" <<endl << pose_robot_<<endl<<endl;
-    //cout << " target pose " <<endl << target_<<endl<<endl;
+    cout << "robot pose" <<endl << pose_robot_<<endl<<endl;
+    cout << " target pose " <<endl << target_<<endl<<endl;
 
     //translation error
     double err_lin = distancePoints(pose_robot_.x, pose_robot_.y, target_.pose.position.x, target_.pose.position.y);
@@ -69,8 +69,8 @@ geometry_msgs::Twist SimplePathFollowing::getVelocities(){
         cmd.linear.x = 0.0;
     }
 
-    //cout << "(simple path follow) err theta"<< err_th<<" lin err "<<err_lin<<endl;
-    //cout<< "vel th "<<vel_ang_<< "vel lin"<<vel_lin_<<endl;
+    cout << "(simple path follow) err theta"<< err_th<<" lin err "<<err_lin<<endl;
+    cout<< "vel th "<<vel_ang_<< "vel lin"<<vel_lin_<<endl;
 
 
 
