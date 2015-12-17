@@ -1,7 +1,14 @@
 #include <vector>
 #include <iostream>
+#include <std_msgs/Duration.h>
+#include <moveit_msgs/RobotTrajectory.h>
+#include <moveit/transforms/transforms.h>
+#include <moveit/robot_state/conversions.h>
+#include <moveit/robot_state/robot_state.h>
 #include <moveit_msgs/MotionPlanResponse.h>
+#include <trajectory_msgs/JointTrajectory.h>
 #include <moveit_msgs/ExecuteKnownTrajectory.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
 #include <uibk_planning_node/TrajectoryPlanner.h>
 #include <moveit/move_group_interface/move_group.h>
 #include <uibk_planning_node/PathTrajectoryPlanner.h>
@@ -20,6 +27,7 @@ int main(int argc, char** args) {
 
     ROS_INFO("Retrieving joint state...");
     moveit::planning_interface::MoveGroup group(groupName);
+    group.setPlannerId("LBKPIECEkConfigDefault");
     group.setEndEffectorLink("link5");
 
     vector<double> jointVals = group.getCurrentJointValues();
@@ -36,30 +44,60 @@ int main(int argc, char** args) {
         jointNames.push_back(s.str());
     }
 
-    trajectory_planner_moveit::TrajectoryPlanner planner(*node, "Arm", jointNames);
+    ros::ServiceClient execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
+    trajectory_planner_moveit::TrajectoryPlanner planner(*node, group, jointNames);
 
     geometry_msgs::PoseStamped newPose = group.getCurrentPose();
     cout << "current pose: " << newPose << endl;
 
-    /*
     // this works fine (joint planning and movement)
+    // waving behaviour
     moveit_msgs::MotionPlanResponse jointPlan;
-    if(planner.plan(jointVals, jointPlan)) {
+    moveit::core::robotStateToRobotStateMsg(*group.getCurrentState(), jointPlan.trajectory_start);
+    jointPlan.group_name = group.getName();
+    jointPlan.planning_time = 1.0;
+    trajectory_msgs::JointTrajectory jt;
+    std_msgs::Duration dur;
 
-        ROS_INFO("Plan to goal1 found");
-        moveit_msgs::RobotState state;
+    jt.joint_names = jointNames;
 
-        state.joint_state.name = jointPlan.trajectory.joint_trajectory.joint_names;
-        state.joint_state.position = jointPlan.trajectory.joint_trajectory.points.back().positions;
+    for(int j = 0; j < 200; ++j) {
 
-        ros::ServiceClient execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
+        jt.points.clear();
 
+        trajectory_msgs::JointTrajectoryPoint jtp;
+        jtp.positions = vector<double>(jointVals);
+        jtp.time_from_start = dur.data.fromSec(0);
+        jt.points.push_back(jtp);
+        for(int i = 1; i < 2; ++i) {
+
+            jtp.positions = vector<double>(jointVals);
+            jtp.time_from_start = dur.data.fromSec(i * 0.04);
+
+            jt.points.push_back(jtp);
+
+            int sign = 1;
+            jointVals.at(0) += sign * 0.005;
+            //sign *= -1;
+
+        }
+
+        if(j % 20 == 0)  {
+            Eigen::Vector3d refPoint;
+            refPoint << 0.0, 0.0, 0.0;
+            Eigen::MatrixXd jacob;
+            moveit::core::RobotStatePtr currStat = group.getCurrentState();
+            const moveit::core::JointModelGroup* jmg = currStat->getJointModelGroup(string("Arm"));
+            // last boolean determines wheter the jacobian should be represented in quaternion representation
+            currStat->getJacobian(jmg, jmg->getLinkModel(string("link5")), refPoint, jacob, false);
+            cout << "jacobian: " << endl << jacob << endl << endl << endl;
+        }
+
+        jointPlan.trajectory.joint_trajectory = jt;
         planner.executePlan(jointPlan, execution_client);
 
-    } else {
-        ROS_ERROR("Planning for goal1 failed!");
     }
-    */
+
 
     ROS_INFO("joint execution done...press enter to continue...");
     getchar();
