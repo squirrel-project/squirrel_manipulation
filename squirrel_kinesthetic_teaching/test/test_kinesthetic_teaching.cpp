@@ -42,10 +42,35 @@ int main(int argc, char** args) {
     cout << "current pose: " << newPose << endl;
 
     /*
+    // this works fine (joint planning and movement)
+    moveit_msgs::MotionPlanResponse jointPlan;
+    if(planner.plan(jointVals, jointPlan)) {
+
+        ROS_INFO("Plan to goal1 found");
+        moveit_msgs::RobotState state;
+
+        state.joint_state.name = jointPlan.trajectory.joint_trajectory.joint_names;
+        state.joint_state.position = jointPlan.trajectory.joint_trajectory.points.back().positions;
+
+        ros::ServiceClient execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
+
+        planner.executePlan(jointPlan, execution_client);
+
+    } else {
+        ROS_ERROR("Planning for goal1 failed!");
+    }
+    */
+
+    ROS_INFO("joint execution done...press enter to continue...");
+    getchar();
+
+    /*
+    // i tried this with, as well as different small values and the original position
     newPose.pose.position.x += 0.1;
     newPose.pose.position.z -= 0.5;
     */
 
+	// this is another position that is valid
     newPose.pose.position.x = -0.109621;
     newPose.pose.position.y = 0.19786;
     newPose.pose.position.z = 0.699962;
@@ -56,11 +81,13 @@ int main(int argc, char** args) {
 
     moveit_msgs::MotionPlanResponse plan;
 
+/*
+    // approach 2 --> uses the cartesian path service directly
     trajectory_planner_moveit::PathTrajectoryPlanner p2(*node, "Arm", jointNames, "link5");
     p2.plan(newPose, plan);
+*/
 
-    /*
-
+	// approach 1 --> computes inverse kinematics explicitely and tries to execute it
     if(planner.plan(newPose, plan)) {
 
         ROS_INFO("Plan to goal1 found");
@@ -76,7 +103,6 @@ int main(int argc, char** args) {
     } else {
         ROS_ERROR("Planning for goal1 failed!");
     }
-    */
 
     getchar();
 
