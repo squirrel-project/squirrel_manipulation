@@ -313,8 +313,7 @@ void RobotinoControl::moveTilt(double val){
 
 void RobotinoControl::moveBaseThread(){
 
-    start_move_base_ = false;
-    stop_move_base_= false;
+    stop_move_base_= true;
 
     ros::Rate moveBaseRate(spinRateVal);
     ros::spinOnce();
@@ -328,13 +327,11 @@ void RobotinoControl::moveBaseThread(){
 }
 
 void RobotinoControl::startMoveBase(){
-    start_move_base_ = true;
     stop_move_base_ = false;
 }
 
 void RobotinoControl::stopMoveBase(){
     stop_move_base_ = true;
-    start_move_base_ = false;
     setZeroBaseVelocity();
     stopRobot();
 }
@@ -347,6 +344,10 @@ void RobotinoControl::setZeroBaseVelocity(){
     twist.angular.z=0;
     twist.angular.x=0;
     twist.angular.y=0;
+    this->setBaseVelocity(twist);
+}
+
+void RobotinoControl::setBaseVelocity(geometry_msgs::Twist twist){
     current_base_vel_ = twist;
 }
 

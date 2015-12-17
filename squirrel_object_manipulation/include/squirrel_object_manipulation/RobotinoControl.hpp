@@ -123,6 +123,7 @@ public:
     void startMoveBase();
     void stopMoveBase();
     void setZeroBaseVelocity();
+    void setBaseVelocity(geometry_msgs::Twist twist);
 
     void moveTilt(double val);
 

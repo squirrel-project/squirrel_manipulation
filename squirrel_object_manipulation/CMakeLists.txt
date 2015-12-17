@@ -94,25 +94,25 @@ target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_L
 add_library(robotino
    src/RobotinoControl.cpp
 )
-
-add_library(eband_local_planner
-    src/pushing/eband_local_planner.cpp
-    src/pushing/eband_local_planner_ros.cpp
-    src/pushing/eband_local_planner.cpp
-    src/pushing/conversions_and_types.cpp
-    src/pushing/eband_visualization.cpp
-    src/pushing/eband_trajectory_controller.cpp
+add_library(pushlib
+   src/pushing/src/PushPlanner.cpp
+   src/pushing/src/SimplePathFollowing.cpp
 )
 
-add_library(conversions
+add_library(utils
    src/utils/conversion_utils.cpp
+   src/utils/math_utils.cpp
 )
 ## Declare a cpp executable
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
 add_executable(push src/pushing/pushing.cpp)
-target_link_libraries(push robotino conversions eband_local_planner ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(pushc src/pushing/pushing_core.cpp)
+target_link_libraries(pushc robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
 
 add_executable(pickup src/pickup.cpp)
 target_link_libraries(pickup robotino ${catkin_LIBRARIES})

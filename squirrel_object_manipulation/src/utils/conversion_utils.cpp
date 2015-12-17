@@ -109,10 +109,13 @@ geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in){
     Emap.pose.orientation.y = tf_in.getRotation().y();
     Emap.pose.orientation.z = tf_in.getRotation().z();;
     Emap.pose.orientation.w = tf_in.getRotation().w();;
-    Emap.header.frame_id = tf_in.child_frame_id_;
+    Emap.header.frame_id = tf_in.frame_id_;
 
+    return Emap;
 
 }
+
+
 
 double string_to_double(const std::string& s) {
     std::istringstream i(s);

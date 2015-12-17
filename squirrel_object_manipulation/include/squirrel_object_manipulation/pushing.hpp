@@ -26,6 +26,9 @@
 #include <squirrel_object_manipulation/RobotinoControl.hpp>
 #include <squirrel_object_manipulation/conversion_utils.hpp>
 
+#include "../src/pushing/include/PushPlanner.hpp"
+#include "../src/pushing/include/SimplePathFollowing.hpp"
+
 #define PUSH_NAME "push"
 
 typedef actionlib::SimpleActionServer<squirrel_manipulation_msgs::PushAction> pushServer;
@@ -35,9 +38,13 @@ class PushAction {
 private:
 
 
-    RobotinoControl *robotino;
+    boost::shared_ptr<RobotinoControl> robotino;
+    boost::shared_ptr<PushPlanner> push_planner_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_;
+    tf::TransformListener tfl_;
+    std::string node_name_;
+
+    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_;
 
     std::string robot_base_frame_, global_frame_;
 
@@ -56,29 +63,21 @@ private:
 
     // push planning
     bool runPushPlan_;
-    boost::mutex plan_push_mutex_;
-    boost::condition_variable plan_push_cond_;
-    boost::thread* plan_push_thread_;
-    void planPushThread();
 
     //object tracking
     geometry_msgs::PoseStamped pose_object_;
     tf::TransformListener tf_listener_;
     bool trackingStart_;
     bool objectLost_;
+    bool first_pose_;
     boost::thread* object_tracking_thread_;
+    boost::mutex object_pose_mutex_;
     bool startTracking();
     bool stopTracking();
+    bool getFirstObjectPose();
     void objectTrackingThread();
 
-    //execute cycle
-
-    bool executeCycle();
-
     void abortPush();
-
-
-
 
 
 protected:

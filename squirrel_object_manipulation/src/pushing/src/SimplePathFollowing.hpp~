@@ -1,0 +1,10 @@
+#ifndef SIMPLEPATHFOLLOWING_HPP
+#define SIMPLEPATHFOLLOWING_HPP
+
+class SimplePathFollowing
+{
+public:
+    SimplePathFollowing();
+};
+
+#endif // SIMPLEPATHFOLLLOWING_HPP
