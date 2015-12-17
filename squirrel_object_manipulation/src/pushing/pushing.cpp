@@ -118,9 +118,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         lRate.sleep();
     }
 
-
-
-
     //end of action instance
 
     //if pushing did not result with success for any reason

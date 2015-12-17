@@ -48,6 +48,7 @@ protected:
     ros::NodeHandle nh;
 
 public:
+
     bool goal_reached_;
 
     PushPlanner();
