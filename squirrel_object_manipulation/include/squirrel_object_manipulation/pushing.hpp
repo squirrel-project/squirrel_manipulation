@@ -78,6 +78,8 @@ private:
     void objectTrackingThread();
 
     void abortPush();
+    void finishPush();
+    void finishSuccess();
 
 
 protected:

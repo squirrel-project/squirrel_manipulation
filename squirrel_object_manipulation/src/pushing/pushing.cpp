@@ -118,6 +118,12 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         lRate.sleep();
     }
 
+    if (push_planner_->goal_reached_){
+        ROS_INFO("Goal reached sucessfully \n");
+        finishSuccess();
+        return;
+    }
+
     //end of action instance
 
     //if pushing did not result with success for any reason
@@ -270,6 +276,12 @@ void PushAction::abortPush(){
 
     pushResult.result_status = "failure";
     pushServer.setAborted(pushResult);
+    finishPush();
+
+}
+
+void PushAction::finishPush(){
+
     if(trackingStart_){
         if (stopTracking()){
             ROS_INFO("(Push) Object tracking stopped \n");
@@ -284,6 +296,15 @@ void PushAction::abortPush(){
     //moving tilt for navigation configuration
     robotino->moveTilt(tilt_nav_);
     ros::spinOnce();
+
+}
+void PushAction::finishSuccess(){
+
+    ROS_INFO("(Push) Push action  executed sucessfully \n");
+
+    pushResult.result_status = "success";
+    pushServer.setSucceeded(pushResult);
+    finishPush();
 
 }
 

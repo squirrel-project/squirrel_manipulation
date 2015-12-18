@@ -61,7 +61,8 @@ public:
     void visualisationOn();
     void visualisationOff();
     void publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose);
-    
+    void publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose);
+
 };
 
 #endif // PUSHPLANNER_H
