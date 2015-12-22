@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<package>
+  <name>squirrel_arm_control</name>
+  <version>0.0.0</version>
+  <description>The squirrel_arm_control package</description>
+
+  <maintainer email="simon.hangl@uibk.ac.at">simon hangl</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>tf</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>kukadu</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>iis_robot_dep</build_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>uibk_planning_node</build_depend>
+
+  <run_depend>tf</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>kukadu</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>iis_robot_dep</run_depend>
+  <run_depend>cmake_modules</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>uibk_planning_node</run_depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>
