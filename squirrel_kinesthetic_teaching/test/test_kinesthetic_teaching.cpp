@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <armadillo>
 #include <std_msgs/Duration.h>
 #include <moveit_msgs/RobotTrajectory.h>
 #include <moveit/transforms/transforms.h>
@@ -15,6 +16,7 @@
 #include <moveit_msgs/ExecuteKnownTrajectoryRequest.h>
 
 using namespace std;
+using namespace arma;
 
 int main(int argc, char** args) {
 
@@ -76,22 +78,45 @@ int main(int argc, char** args) {
 
             jt.points.push_back(jtp);
 
-            int sign = 1;
+            int sign = -1;
             jointVals.at(0) += sign * 0.005;
+            //jointVals.at(3) += sign * 0.005;
             //sign *= -1;
 
         }
 
-        if(j % 20 == 0)  {
+/*
+        if(j % 20)  {
+
             Eigen::Vector3d refPoint;
             refPoint << 0.0, 0.0, 0.0;
             Eigen::MatrixXd jacob;
             moveit::core::RobotStatePtr currStat = group.getCurrentState();
             const moveit::core::JointModelGroup* jmg = currStat->getJointModelGroup(string("Arm"));
             // last boolean determines wheter the jacobian should be represented in quaternion representation
-            currStat->getJacobian(jmg, jmg->getLinkModel(string("link5")), refPoint, jacob, false);
-            cout << "jacobian: " << endl << jacob << endl << endl << endl;
+            currStat->getJacobian(jmg, jmg->getLinkModel(string("hand_wrist_link")), refPoint, jacob, false);
+
+            mat armaJacob(3, 5);
+            for(int l = 0; l < 3; ++l)
+                for(int m = 0; m < 5; ++m)
+                    armaJacob(l, m) = jacob.coeff(l, m);
+
+            vec force(3);
+            force(0) = 0; force(1) = 0; force(2) = -1;// force(3) = 0; force(4) = 0; force(5) = 0;
+            cout << jacob << endl << endl;
+            cout << armaJacob.t() << endl << endl;
+            cout << armaJacob << endl << endl;
+            cout << armaJacob.t() * armaJacob << endl;
+            vec q = inv(armaJacob.t() * armaJacob) * armaJacob.t() * force;
+
+            cout << "jacobian: " << endl << armaJacob << endl << endl << endl;
+            cout << "next q: " << q.t() << endl;
+
+            for(int l = 0; l < 5; ++l)
+                    jointVals.at(l) += q(l);
+
         }
+        */
 
         jointPlan.trajectory.joint_trajectory = jt;
         planner.executePlan(jointPlan, execution_client);

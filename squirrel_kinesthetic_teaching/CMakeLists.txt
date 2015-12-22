@@ -10,10 +10,14 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning_interface
 )
 
+find_package(cmake_modules REQUIRED)
+find_package(Armadillo REQUIRED)
+
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS roscpp
+    DEPENDS ${ARMADILLO_LIBRARIES}
 )
 
 include_directories(
@@ -27,5 +31,7 @@ add_library(${PROJECT_NAME}
     ${KINTEACHSRC}
 )
 
+target_link_libraries(${PROJECT_NAME} ${ARMADILLO_LIBRARIES})
+
 add_executable(testkin test/test_kinesthetic_teaching.cpp)
-target_link_libraries(testkin ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(testkin ${catkin_LIBRARIES} ${PROJECT_NAME} ${ARMADILLO_LIBRARIES})
