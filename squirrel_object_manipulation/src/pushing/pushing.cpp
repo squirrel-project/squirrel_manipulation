@@ -20,9 +20,10 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("controller_frequency", controller_frequency_, 10.0);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 0.60);
-    private_nh.param("lookahead", lookahead_, 0.15);
+    private_nh.param("lookahead", lookahead_, 0.30);
     // private_nh.param("push_planner", push_planner_, new PushPlanner());
-    push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
+    push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
@@ -110,7 +111,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     //main push loop
     while (nh.ok() &&  !push_planner_->goal_reached_){
 
-        push_planner_->updatePushPlanner(pose_robot_,pose_object_);
+        push_planner_->updatePushPlanner(pose_robot_, pose_object_);
         geometry_msgs::Twist cmd = push_planner_->getVelocities();
        // cout<<"move"<<endl<<cmd <<endl;
         robotino->singleMove(cmd.linear.x,0,0.0,0.0,0.0,cmd.angular.z);

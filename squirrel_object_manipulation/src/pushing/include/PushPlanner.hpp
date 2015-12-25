@@ -19,6 +19,14 @@
 using namespace ros;
 using namespace std;
 
+enum PushState {
+  APPROACH,
+  PUSH,
+  RELOCATE,
+  LOST_OBJECT
+};
+
+
 class PushPlanner
 {
 private:
@@ -29,6 +37,7 @@ private:
     bool visualise_;
     ros::Publisher vis_points_pub_;
     ros::Publisher marker_target_c_;
+    ros::Publisher marker_object_c_;
     void publishWaypointMarkerArray(ros::NodeHandle nh);
 
     
@@ -38,6 +47,7 @@ protected:
     double err_th_toll_;
     double vel_lin_;
     double vel_ang_;
+    double vel_x, vel_y;
     
     ros::NodeHandle private_nh;
     geometry_msgs::Pose2D pose_robot_;
@@ -46,6 +56,8 @@ protected:
     geometry_msgs::PoseStamped getLookaheadPoint();
 
     ros::NodeHandle nh;
+
+    PushState state_;
 
 public:
 

@@ -28,6 +28,8 @@
 
 #include "../src/pushing/include/PushPlanner.hpp"
 #include "../src/pushing/include/SimplePathFollowing.hpp"
+#include "../src/pushing/include/SimplePush.hpp"
+
 
 #define PUSH_NAME "push"
 
