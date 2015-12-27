@@ -98,6 +98,7 @@ add_library(pushlib
    src/pushing/src/PushPlanner.cpp
    src/pushing/src/SimplePathFollowing.cpp
    src/pushing/src/SimplePush.cpp
+   src/pushing/src/BangBangPush.cpp
    src/pushing/src/PushRecoverySM.cpp
 )
 

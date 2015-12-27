@@ -23,9 +23,15 @@ enum PushState {
   APPROACH,
   PUSH,
   RELOCATE,
-  LOST_OBJECT
+  SUCCESS,
+  ABBORT
 };
 
+enum ObjectState {
+  INACTION,
+  DETACHED,
+  LOST
+};
 
 class PushPlanner
 {
@@ -33,8 +39,11 @@ private:
     string global_frame_;
     string local_frame_;
     double lookahead_;
+    double goal_toll_;
 
     bool visualise_;
+    bool state_machine_;
+
     ros::Publisher vis_points_pub_;
     ros::Publisher marker_target_c_;
     ros::Publisher marker_object_c_;
@@ -43,13 +52,14 @@ private:
     
 
 protected:
+    ros::NodeHandle  private_nh;
+
     double err_t_toll_;
     double err_th_toll_;
-    double vel_lin_;
-    double vel_ang_;
-    double vel_x, vel_y;
-    
-    ros::NodeHandle private_nh;
+    double vel_lin_max_;
+    double vel_ang_max_;
+    double vel_x_max_, vel_y_max_;
+
     geometry_msgs::Pose2D pose_robot_;
     geometry_msgs::PoseStamped pose_object_;
     nav_msgs::Path pushing_path_;
@@ -62,11 +72,12 @@ protected:
 public:
 
     bool goal_reached_;
+    bool executed_;
 
     PushPlanner();
-    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_);
-    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_);
-    virtual void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_) = 0;
+    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_,  double goal_toll_, bool state_machine_);
+    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_);
+    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     virtual geometry_msgs::Twist getVelocities() = 0;
     void setLookahedDistance(double d);
 

@@ -1,26 +1,29 @@
 #include "../include/PushPlanner.hpp"
 
 
-
-
 PushPlanner::PushPlanner()
 {
 }
 
-PushPlanner::PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_)
+PushPlanner::PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_):
+    private_nh("~")
 {
-    this->initialize(local_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_);
+    this->initialize(local_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_);
 
 
 }
 
-void PushPlanner::initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_){
+void PushPlanner::initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_){
+
     this->global_frame_ = global_frame_;
     this->local_frame_ = local_frame_;
     this->pose_robot_ = pose_robot_;
     this->pose_object_ = pose_object_;
     this->pushing_path_ = pushing_path_;
     this->goal_reached_ = false;
+    this->executed_ = false;
+    this->goal_toll_ = goal_toll_;
+    this->state_machine_ = state_machine_;
 
     vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 10, true);
     marker_target_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_target", 10, true);
@@ -28,6 +31,13 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     visualise_ = false;
 
     setLookahedDistance(lookahead_);
+}
+
+void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_){
+
+    this->pose_robot_ = pose_robot_;
+    this->pose_object_ = pose_object_;
+
 }
 
 geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
@@ -79,14 +89,17 @@ void PushPlanner::setLookahedDistance(double d){
 }
 
 void PushPlanner::visualisationOn(){
+
     visualise_ = true;
 }
 
 void PushPlanner::visualisationOff(){
+
     visualise_ = false;
 }
 
 void PushPlanner::publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose) {
+
     visualization_msgs::Marker marker;
     marker.header.frame_id = t_pose.header.frame_id;
     marker.header.stamp = ros::Time();
@@ -106,6 +119,7 @@ void PushPlanner::publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose) 
 }
 
 void PushPlanner::publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose) {
+
     visualization_msgs::Marker marker;
     marker.header.frame_id = t_pose.header.frame_id;
     marker.header.stamp = ros::Time();

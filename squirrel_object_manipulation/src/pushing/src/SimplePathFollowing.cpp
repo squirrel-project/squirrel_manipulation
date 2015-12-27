@@ -4,8 +4,13 @@
 using namespace std;
 
 
-SimplePathFollowing::SimplePathFollowing(){
-
+SimplePathFollowing::SimplePathFollowing():
+PushPlanner()
+{
+private_nh.param("push/error_theta_tolerance", err_th_toll_,0.01);
+private_nh.param("push/error_target_tolerance", err_t_toll_ ,0.01);
+private_nh.param("push/velocity_angular_max", vel_ang_max_ ,0.3);
+private_nh.param("push/velocity_linear_max", vel_lin_max_ ,0.3);
 }
 
 
@@ -14,12 +19,6 @@ void SimplePathFollowing::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, g
     this->pose_object_ = pose_object_;
     this->pose_object_.pose.position.x = pose_robot_.x;
     this->pose_object_.pose.position.y = pose_robot_.y;
-
-    this-> err_th_toll_ = 0.01;
-    this-> err_t_toll_ = 0.01;
-    this-> vel_ang_  = 0.3;
-    this-> vel_lin_ = 0.3;
-
 
 }
 geometry_msgs::Twist SimplePathFollowing::getVelocities(){
@@ -54,10 +53,10 @@ geometry_msgs::Twist SimplePathFollowing::getVelocities(){
     }
 
     if (err_th < - err_th_toll_) {
-        cmd.angular.z =  vel_ang_;
+        cmd.angular.z =  vel_ang_max_;
     }
     else if (err_th > err_th_toll_){
-        cmd.angular.z =  - vel_ang_;
+        cmd.angular.z =  - vel_ang_max_;
 
     }
     else {
@@ -65,7 +64,7 @@ geometry_msgs::Twist SimplePathFollowing::getVelocities(){
     }
 
     if (err_lin > err_t_toll_){
-        cmd.linear.x = vel_lin_;
+        cmd.linear.x = vel_lin_max_;
     }
     else{
         cmd.linear.x = 0.0;

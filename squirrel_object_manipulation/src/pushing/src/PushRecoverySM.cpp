@@ -7,15 +7,16 @@ PushRecoverySM::PushRecoverySM()
 }
 
 
-void PushRecoverySM::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_){
+void PushRecoverySM::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_)
+{
     this->pose_robot_ = pose_robot_;
     this->pose_object_ = pose_object_;
 
     this-> err_th_toll_ = 0.01;
     this-> err_t_toll_ = 0.01;
-    this-> vel_ang_  = 0.3;
-    this-> vel_lin_ = 0.3;
-    this-> vel_y = 0.1;
+    this-> vel_ang_max_  = 0.3;
+    this-> vel_lin_max_ = 0.3;
+    this-> vel_y_max_ = 0.1;
 
 
 }
@@ -67,12 +68,12 @@ geometry_msgs::Twist PushRecoverySM::getVelocities(){
     }
 
     if (err_th < - err_th_toll_) {
-        cmd.angular.z =  vel_ang_;
-        cmd.linear.y = vel_y;
+        cmd.angular.z =  vel_ang_max_;
+        cmd.linear.y = vel_y_max_;
     }
     else if (err_th > err_th_toll_){
-        cmd.angular.z =  - vel_ang_;
-        cmd.linear.y = -vel_y;
+        cmd.angular.z =  - vel_ang_max_;
+        cmd.linear.y = -vel_y_max_;
 
     }
     else {
@@ -81,7 +82,7 @@ geometry_msgs::Twist PushRecoverySM::getVelocities(){
     }
 
     if (dO2T  > err_t_toll_){
-        cmd.linear.x = vel_lin_;
+        cmd.linear.x = vel_lin_max_;
     }
     else{
         cmd.linear.x = 0.0;

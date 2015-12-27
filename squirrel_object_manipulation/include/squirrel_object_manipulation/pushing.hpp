@@ -29,6 +29,7 @@
 #include "../src/pushing/include/PushPlanner.hpp"
 #include "../src/pushing/include/SimplePathFollowing.hpp"
 #include "../src/pushing/include/SimplePush.hpp"
+#include "../src/pushing/include/BangBangPush.hpp"
 
 
 #define PUSH_NAME "push"
@@ -46,12 +47,15 @@ private:
     tf::TransformListener tfl_;
     std::string node_name_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_;
+    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_ ;
 
     std::string robot_base_frame_, global_frame_;
 
+    bool state_machine_;
+
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
+
 
     //navigation path
     nav_msgs::Path pushing_path_;
@@ -61,6 +65,7 @@ private:
     std::string pose_topic_;
     geometry_msgs::Pose2D pose_robot_;
     ros::Subscriber pose_sub_;
+    boost::mutex robot_pose_mutex_;
     void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
     // push planning

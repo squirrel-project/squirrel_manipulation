@@ -14,16 +14,19 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
 {
     node_name_ = ros::this_node::getName();
 
-    private_nh.param<std::string>("pose_topic", pose_topic_,"/squirrel_localizer_pose");
+    private_nh.param("pose_topic", pose_topic_,std::string("/squirrel_localizer_pose"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("map"));
     private_nh.param("controller_frequency", controller_frequency_, 10.0);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 0.60);
     private_nh.param("lookahead", lookahead_, 0.30);
+    private_nh.param("goal_tolerance", goal_toll_ ,0.1);
+    private_nh.param("state_machine", state_machine_, true);
     // private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
-    push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
+    push_planner_ = boost::shared_ptr<PushPlanner>(new BangBangPush());
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
@@ -104,16 +107,16 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     cout << endl;
 
     //initialize push planner
-    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_);
+    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_);
     push_planner_->visualisationOn();
 
 
     //main push loop
-    while (nh.ok() &&  !push_planner_->goal_reached_){
+    while (nh.ok() &&  !push_planner_->executed_){
 
         push_planner_->updatePushPlanner(pose_robot_, pose_object_);
         geometry_msgs::Twist cmd = push_planner_->getVelocities();
-       // cout<<"move"<<endl<<cmd <<endl;
+        // cout<<"move"<<endl<<cmd <<endl;
         robotino->singleMove(cmd.linear.x,0,0.0,0.0,0.0,cmd.angular.z);
 
         lRate.sleep();
@@ -132,45 +135,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     return;
 
 
-}
-
-
-void PushAction::objectTrackingThread(){
-
-    ros::Rate lRate(controller_frequency_);
-    ros::NodeHandle n;
-
-    tf::StampedTransform trans;
-    first_pose_ = false;
-
-    // boost::unique_lock<boost::mutex> lock(object_pose_mutex_);
-
-    while (n.ok()){
-        // lock.lock();
-        lRate.sleep();
-
-        if(trackingStart_&&(first_pose_)){
-            try {
-                tf_listener_.waitForTransform(global_frame_, object_id_, ros::Time::now(), ros::Duration(0.2));
-                tf_listener_.lookupTransform(global_frame_, object_id_, ros::Time(0), trans);
-                pose_object_ = tf_stamped2pose_stamped(trans);
-            } catch (tf::TransformException& ex) {
-                std::string ns = ros::this_node::getNamespace();
-                std::string node_name = ros::this_node::getName();
-                ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
-                abortPush();
-            }
-        }
-        // lock.unlock();
-    }
-}
-
-
-void PushAction::updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_msg )
-{
-    pose_robot_.x = pose_msg->pose.pose.position.x;
-    pose_robot_.y = pose_msg->pose.pose.position.y;
-    pose_robot_.theta = tf::getYaw(pose_msg->pose.pose.orientation);
 }
 
 bool PushAction::getFirstObjectPose(){
@@ -195,6 +159,46 @@ bool PushAction::getFirstObjectPose(){
     return first_pose_;
 
 }
+
+void PushAction::objectTrackingThread(){
+
+    ros::Rate lRate(controller_frequency_);
+    ros::NodeHandle n;
+
+    tf::StampedTransform trans;
+    first_pose_ = false;
+
+    while (n.ok()){
+
+        object_pose_mutex_.lock();
+        lRate.sleep();
+
+        if(trackingStart_&&(first_pose_)){
+            try {
+                tf_listener_.waitForTransform(global_frame_, object_id_, ros::Time::now(), ros::Duration(0.2));
+                tf_listener_.lookupTransform(global_frame_, object_id_, ros::Time(0), trans);
+                pose_object_ = tf_stamped2pose_stamped(trans);
+            } catch (tf::TransformException& ex) {
+                std::string ns = ros::this_node::getNamespace();
+                std::string node_name = ros::this_node::getName();
+                ROS_ERROR("Push: %s/%s: %s", ns.c_str(), node_name.c_str(), ex.what());
+                abortPush();
+            }
+        }
+        object_pose_mutex_.unlock();
+    }
+}
+
+
+void PushAction::updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_msg ){
+
+    robot_pose_mutex_.lock();
+    pose_robot_.x = pose_msg->pose.pose.position.x;
+    pose_robot_.y = pose_msg->pose.pose.position.y;
+    pose_robot_.theta = tf::getYaw(pose_msg->pose.pose.orientation);
+    robot_pose_mutex_.unlock();
+}
+
 
 bool PushAction::getPushPath(){
 
@@ -310,30 +314,23 @@ void PushAction::finishSuccess(){
 }
 
 bool PushAction::startTracking() {
+
     squirrel_object_perception_msgs::StartObjectTracking srvStartTrack;
     srvStartTrack.request.object_id.data = object_id_;
     return(ros::service::call("/squirrel_start_object_tracking", srvStartTrack));
 }
 
 bool PushAction::stopTracking() {
-    squirrel_object_perception_msgs::StopObjectTracking srvStopTrack;
-    bool stopped = false;
-    int count = 0;
-    while((count <10) || (!stopped)) {
-        if(ros::service::call("/squirrel_stop_object_tracking", srvStopTrack)) stopped = true;
-        count++;
-    }
-    if (stopped){
-        trackingStart_ = false;
-        first_pose_ = false;
-        runPushPlan_ = false;
-        objectLost_ = false;
-        ROS_INFO("(Push) tracking have finished sucessfully");
-        return true;
-    }
-    ROS_INFO("(Push) tracking have not finished sucessfully");
-    return false;
 
+    squirrel_object_perception_msgs::StopObjectTracking srvStopTrack;
+    bool track = ros::service::call("/squirrel_stop_object_tracking", srvStopTrack);
+    trackingStart_ = false;
+    first_pose_ = false;
+    runPushPlan_ = false;
+    objectLost_ = false;
+    ROS_INFO("(Push) tracking have finished");
+
+    return track;
 }
 
 int main(int argc, char** argv) {
