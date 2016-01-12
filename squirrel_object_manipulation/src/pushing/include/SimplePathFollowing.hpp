@@ -7,9 +7,12 @@
 
 class SimplePathFollowing : public PushPlanner{
 
+protected:
+    void initChild();
+
 public:
     SimplePathFollowing();
-    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
+    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_) override;
     geometry_msgs::Twist getVelocities();
 
 };

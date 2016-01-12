@@ -13,6 +13,7 @@ private_nh.param("push/velocity_angular_max", vel_ang_max_ ,0.3);
 private_nh.param("push/velocity_linear_max", vel_lin_max_ ,0.3);
 }
 
+void SimplePathFollowing::initChild() {}
 
 void SimplePathFollowing::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_){
     this->pose_robot_ = pose_robot_;
@@ -23,14 +24,7 @@ void SimplePathFollowing::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, g
 }
 geometry_msgs::Twist SimplePathFollowing::getVelocities(){
     //initialize value
-    geometry_msgs::Twist cmd;
-    cmd.linear.x = 0.0;
-    cmd.linear.y = 0.0;
-    cmd.linear.z = 0.0;
-    cmd.angular.x = 0.0;
-    cmd.angular.y = 0.0;
-    cmd.angular.z = 0.0;
-
+    geometry_msgs::Twist cmd = getNullTwist();
 
     geometry_msgs::PoseStamped target_ = this->getLookaheadPoint();
 

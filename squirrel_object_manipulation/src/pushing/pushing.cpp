@@ -17,16 +17,20 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("pose_topic", pose_topic_,std::string("/squirrel_localizer_pose"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("map"));
-    private_nh.param("controller_frequency", controller_frequency_, 10.0);
+    private_nh.param("controller_frequency", controller_frequency_, 20.0);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 0.60);
     private_nh.param("lookahead", lookahead_, 0.30);
-    private_nh.param("goal_tolerance", goal_toll_ ,0.1);
+    private_nh.param("goal_tolerance", goal_toll_, 0.20);
     private_nh.param("state_machine", state_machine_, true);
     // private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
-    push_planner_ = boost::shared_ptr<PushPlanner>(new BangBangPush());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new BangBangPush());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDPush());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDSimplePush());
+    push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
+
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
@@ -107,17 +111,17 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     cout << endl;
 
     //initialize push planner
-    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_);
+    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_, controller_frequency_);
     push_planner_->visualisationOn();
+    push_planner_->startPush();
 
 
     //main push loop
-    while (nh.ok() &&  !push_planner_->executed_){
+    while (nh.ok() &&  push_planner_->push_active_){
 
         push_planner_->updatePushPlanner(pose_robot_, pose_object_);
-        geometry_msgs::Twist cmd = push_planner_->getVelocities();
-        // cout<<"move"<<endl<<cmd <<endl;
-        robotino->singleMove(cmd.linear.x,0,0.0,0.0,0.0,cmd.angular.z);
+        geometry_msgs::Twist cmd = push_planner_->getControlCommand();
+        robotino->singleMove(cmd.linear.x, cmd.linear.y,0.0,0.0,0.0,cmd.angular.z);
 
         lRate.sleep();
     }
@@ -127,6 +131,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         finishSuccess();
         return;
     }
+    cout << endl;
 
     //end of action instance
 

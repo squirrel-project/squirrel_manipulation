@@ -14,37 +14,17 @@ SimplePush::SimplePush():
 
 geometry_msgs::Twist SimplePush::getVelocities(){
     //initialize value
-    geometry_msgs::Twist cmd;
-    cmd.linear.x = 0.0;
-    cmd.linear.y = 0.0;
-    cmd.linear.z = 0.0;
-    cmd.angular.x = 0.0;
-    cmd.angular.y = 0.0;
-    cmd.angular.z = 0.0;
-
-
-    geometry_msgs::PoseStamped target_ = this->getLookaheadPoint();
+    geometry_msgs::Twist cmd = getNullTwist();
 
     //angle between object pose and target
-    double aO2T = atan2(target_.pose.position.y - pose_object_.pose.position.y, target_.pose.position.x - pose_object_.pose.position.x);
+    double aO2T = atan2(current_target_.pose.position.y - pose_object_.pose.position.y, current_target_.pose.position.x - pose_object_.pose.position.x);
     if (isnan(aO2T)) aO2T = 0;
 
     //orientation error
     double err_th = pose_robot_.theta - aO2T;
 
     //translation error object-target
-    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, target_.pose.position.x, target_.pose.position.y);
-
-
-    if (dO2T < 0.05){
-        goal_reached_ = true;
-        cmd.angular.z = 0.0;
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        return cmd;
-
-    }
-
+    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
     if (err_th < - err_th_toll_) {
         //rotating left and moving right
@@ -71,3 +51,4 @@ geometry_msgs::Twist SimplePush::getVelocities(){
     return cmd;
 
 }
+void SimplePush::initChild() {}

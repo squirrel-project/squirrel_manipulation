@@ -14,27 +14,10 @@ BangBangPush::BangBangPush():
 
 geometry_msgs::Twist BangBangPush::getVelocities(){
     //initialize value
-    geometry_msgs::Twist cmd;
-    cmd.linear.x = 0.0;
-    cmd.linear.y = 0.0;
-    cmd.linear.z = 0.0;
-    cmd.angular.x = 0.0;
-    cmd.angular.y = 0.0;
-    cmd.angular.z = 0.0;
-
-
-    geometry_msgs::PoseStamped target_ = this->getLookaheadPoint();
+    geometry_msgs::Twist cmd = getNullTwist();
 
     //translation error object-target
-    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, target_.pose.position.x, target_.pose.position.y);
-    if (dO2T < 0.05){
-        goal_reached_ = true;
-        cmd.angular.z = 0.0;
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        return cmd;
-
-    }
+    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
     if (dO2T > err_t_toll_){
         cmd.linear.x = vel_lin_max_;
@@ -44,7 +27,7 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
     }
 
     //angle between object pose and target
-    double aO2T = atan2(target_.pose.position.y - pose_object_.pose.position.y, target_.pose.position.x - pose_object_.pose.position.x);
+    double aO2T = atan2(current_target_.pose.position.y - pose_object_.pose.position.y, current_target_.pose.position.x - pose_object_.pose.position.x);
     if (isnan(aO2T)) aO2T = 0;
 
      //orientation error
@@ -64,7 +47,7 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
 
 
     //angle object-robot-target
-    double aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, target_.pose.position.x, target_.pose.position.y);
+    double aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
 
     if (aORT < - err_th_toll_) {
@@ -83,3 +66,5 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
     return cmd;
 
 }
+
+void BangBangPush::initChild() {}

@@ -9,9 +9,11 @@ class SimplePush : public PushPlanner {
 private:
     ros::NodeHandle nh;
 
+protected:
+    void initChild();
+
 public:
     SimplePush();
-    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     geometry_msgs::Twist getVelocities();
 
 };

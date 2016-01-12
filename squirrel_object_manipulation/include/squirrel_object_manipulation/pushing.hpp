@@ -30,6 +30,9 @@
 #include "../src/pushing/include/SimplePathFollowing.hpp"
 #include "../src/pushing/include/SimplePush.hpp"
 #include "../src/pushing/include/BangBangPush.hpp"
+#include "../src/pushing/include/PIDPush.hpp"
+#include "../src/pushing/include/PIDSimplePush.hpp"
+#include "../src/pushing/include/PIDObjectPush.hpp"
 
 
 #define PUSH_NAME "push"

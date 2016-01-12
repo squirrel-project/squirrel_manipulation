@@ -11,8 +11,8 @@ private:
 
 public:
     BangBangPush();
-    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     geometry_msgs::Twist getVelocities();
+    void initChild();
 
 };
 

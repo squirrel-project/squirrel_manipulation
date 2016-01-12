@@ -44,22 +44,21 @@ catkin_package(
 #  LIBRARIES squirrel_mhand_msgs
   CATKIN_DEPENDS
     squirrel_rgbd_mapping_msgs
+    squirrel_manipulation_msgs
     roscpp
     sensor_msgs
     std_msgs
     nav_msgs
-    tf2
-    squirrel_manipulation_msgs
-    cv_bridge
-    image_transport
-    base_local_planner
-    control_toolbox
-    costmap_2d
-    nav_core
-    pluginlib
-    roscpp
     tf
     tf_conversions
+    #tf2
+    #cv_bridge
+    #image_transport
+    #base_local_planner
+    #costmap_2d
+    #nav_core
+    control_toolbox
+    pluginlib
 )
 
 find_package(Boost REQUIRED COMPONENTS
@@ -97,9 +96,12 @@ add_library(robotino
 add_library(pushlib
    src/pushing/src/PushPlanner.cpp
    src/pushing/src/SimplePathFollowing.cpp
+   src/pushing/src/PIDPathFollowing.cpp
    src/pushing/src/SimplePush.cpp
    src/pushing/src/BangBangPush.cpp
-   src/pushing/src/PushRecoverySM.cpp
+   src/pushing/src/PIDSimplePush.cpp
+   src/pushing/src/PIDPush.cpp
+   src/pushing/src/PIDObjectPush.cpp
 )
 
 add_library(utils

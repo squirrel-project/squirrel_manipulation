@@ -152,5 +152,18 @@ bool isQuaternionValid(const geometry_msgs::Quaternion& q){
     return true;
 }
 
+geometry_msgs::Twist getNullTwist(){
+
+    geometry_msgs::Twist cmd;
+    cmd.linear.x = 0.0;
+    cmd.linear.y = 0.0;
+    cmd.linear.z = 0.0;
+    cmd.angular.x = 0.0;
+    cmd.angular.y = 0.0;
+    cmd.angular.z = 0.0;
+
+    return cmd;
+}
+
 
 
