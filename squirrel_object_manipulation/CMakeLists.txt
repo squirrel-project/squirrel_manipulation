@@ -95,6 +95,7 @@ add_library(robotino
 )
 add_library(pushlib
    src/pushing/src/PushPlanner.cpp
+   src/pushing/src/VisualisePushPlanner.cpp
    src/pushing/src/SimplePathFollowing.cpp
    src/pushing/src/PIDPathFollowing.cpp
    src/pushing/src/SimplePush.cpp
@@ -107,6 +108,7 @@ add_library(pushlib
 add_library(utils
    src/utils/conversion_utils.cpp
    src/utils/math_utils.cpp
+   src/utils/gnuplot-cpp/gnuplot_i.cpp
 )
 ## Declare a cpp executable
 add_executable(ardemo src/ARDemo.cpp)

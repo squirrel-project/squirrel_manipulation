@@ -45,8 +45,10 @@ geometry_msgs::Twist PIDObjectPush::getVelocities(){
 
     // error object-target
     vec object_error_(2);
-    object_error_(0) = pose_object_.pose.position.x;
-    object_error_(1) = pose_object_.pose.position.y;
+    object_error_(0) = current_target_.pose.position.x - pose_object_.pose.position.x;
+    object_error_(1) = current_target_.pose.position.y - pose_object_.pose.position.y;
+    cout <<"object_error_"<<endl<<object_error_ <<endl;
+    cout<<"-pose_robot_.theta"<<-pose_robot_.theta<<endl;
 
       // transform to robot frame
     vec robot_error_R_ = rotate2DVector(object_error_, -pose_robot_.theta);
@@ -55,13 +57,10 @@ geometry_msgs::Twist PIDObjectPush::getVelocities(){
     cmd.linear.x = pid_x_.computeCommand(robot_error_R_(0), ros::Duration(time_step_));
     cmd.linear.y = pid_y_.computeCommand(robot_error_R_(1), ros::Duration(time_step_));
 
-    //angle between object pose and target
-    double aO2P = atan2(current_target_.pose.position.y - pose_object_.pose.position.y, current_target_.pose.position.x - pose_object_.pose.position.x);
-    if (isnan(aO2P)) aO2P = 0;
 
     //    //orientation error
     //    double err_th = aR2P - pose_robot_.theta;
-    double err_th = aO2P - pose_robot_.theta;
+    double err_th = rotationDifference(aO2P, pose_robot_.theta);
     cmd.angular.z =  pid_theta_.computeCommand(err_th, ros::Duration(time_step_));
 
     cout << cmd<<endl;

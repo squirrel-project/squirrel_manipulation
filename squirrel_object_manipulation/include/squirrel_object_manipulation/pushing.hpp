@@ -50,7 +50,7 @@ private:
     tf::TransformListener tfl_;
     std::string node_name_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_ ;
+    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_ ;
 
     std::string robot_base_frame_, global_frame_;
 

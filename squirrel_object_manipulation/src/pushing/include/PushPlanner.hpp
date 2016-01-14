@@ -17,13 +17,17 @@
 #include <squirrel_object_manipulation/math_utils.hpp>
 #include <squirrel_object_manipulation/conversion_utils.hpp>
 
+#include "../../utils/gnuplot-cpp/gnuplot_i.hpp"
+
+
+
 using namespace ros;
 using namespace std;
 
 enum PushState {
     INACTIVE,
     PUSH,
-    // APPROACH,
+    APPROACH,
     RELOCATE
     // ABBORTING
 };
@@ -43,6 +47,7 @@ private:
     string local_frame_;
     double lookahead_;
     double goal_toll_;
+    double object_diameter_;
 
     bool visualise_;
     bool state_machine_;
@@ -53,6 +58,7 @@ private:
     ros::Publisher marker_object_c_;
     ros::Publisher marker_point_;
     void publishWaypointMarkerArray(ros::NodeHandle nh);
+    void updateMatrix();
 
     
 
@@ -68,15 +74,24 @@ protected:
     double vel_x_max_, vel_y_max_;
     double controller_frequency_, time_step_;
 
-    arma::vec relocate_target_;
-    double relocate_target_orient_;
-    double error_orient_sgn_ ;
+    double aO2P, aR2O;
+    double dO2P, dR2O;
+
+
 
     geometry_msgs::Pose2D pose_robot_;
     geometry_msgs::PoseStamped pose_object_;
+    geometry_msgs::PoseStamped current_target_;
+
+    arma::mat pose_robot_vec_;
+    arma::mat pose_object_vec_;
+    arma::mat current_target_vec_;
+    arma::mat relocate_target_vec_;
+    arma::vec relocate_target_;
+    int elem_count_;
+
     geometry_msgs::PoseStamped goal_;
     nav_msgs::Path pushing_path_;
-    geometry_msgs::PoseStamped current_target_;
 
     geometry_msgs::PoseStamped getLookaheadPoint();
 
@@ -90,8 +105,8 @@ public:
     bool push_active_;
 
     PushPlanner();
-    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_,  double goal_toll_, bool state_machine_, double controller_frequency_);
-    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_);
+    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_,  double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_);
+    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_);
 
     virtual void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     virtual geometry_msgs::Twist getVelocities() = 0;
@@ -100,16 +115,22 @@ public:
     void setLookahedDistance(double d);
 
     geometry_msgs::Twist relocateVelocities();
+    geometry_msgs::Twist approachVelocities();
+
+
+    void startPush();
+    void stopPush();
+
+    //visualisation
+
+    void plotData();
 
     void visualisationOn();
     void visualisationOff();
     void publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose);
     void publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose);
     void publishPoint(geometry_msgs::PoseStamped t_pose);
-
-
-    void startPush();
-    void stopPush();
+    void publishPoint(arma::vec t);
 
 };
 

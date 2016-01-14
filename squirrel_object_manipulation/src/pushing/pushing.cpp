@@ -23,6 +23,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.20);
     private_nh.param("state_machine", state_machine_, true);
+    private_nh.param("object_diameter", object_diameter_, 0.2);
     // private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
@@ -30,7 +31,6 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDPush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDSimplePush());
     push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
-
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
@@ -54,7 +54,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     ROS_INFO("(Push) started push up of %s for manipulation \n",  goal->object_id.c_str());
     cout << endl;
-
 
     // initilize push
     runPushPlan_ = false;
@@ -81,7 +80,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     // move camera for vision
     robotino->moveTilt(tilt_nav_);
     if(startTracking()){
-        ROS_INFO("(Push) Started tracking of the %s \n",  goal->object_id.c_str());
+        ROS_INFO("(Push) Wait for tracking  of the %s to start \n",  goal->object_id.c_str());
         trackingStart_ = true;
     }
     else{
@@ -111,7 +110,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     cout << endl;
 
     //initialize push planner
-    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_, controller_frequency_);
+    push_planner_->initialize(robot_base_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_, controller_frequency_, object_diameter_);
     push_planner_->visualisationOn();
     push_planner_->startPush();
 

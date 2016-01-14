@@ -72,12 +72,6 @@ geometry_msgs::Twist PIDPush::getVelocities(){
     cmd.linear.x = pid_x_.computeCommand(robot_error_R_(0), ros::Duration(time_step_));
     cmd.linear.y = pid_y_.computeCommand(robot_error_R_(1), ros::Duration(time_step_));
 
-    //    //angle between robot pose and target
-    //    double aR2P = atan2(current_target_.pose.position.y - pose_robot_.y, current_target_.pose.position.x - pose_robot_.x);
-    //    if (isnan(aR2P)) aR2P = 0;
-    //angle between object pose and target
-    double aO2P = atan2(current_target_.pose.position.y - pose_object_.pose.position.y, current_target_.pose.position.x - pose_object_.pose.position.x);
-    if (isnan(aO2P)) aO2P = 0;
 
     //    //orientation error
     //    double err_th = aR2P - pose_robot_.theta;

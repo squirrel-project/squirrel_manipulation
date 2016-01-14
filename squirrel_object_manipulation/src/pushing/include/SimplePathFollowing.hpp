@@ -12,7 +12,7 @@ protected:
 
 public:
     SimplePathFollowing();
-    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_) override;
+    void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     geometry_msgs::Twist getVelocities();
 
 };

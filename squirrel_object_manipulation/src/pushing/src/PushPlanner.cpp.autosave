@@ -96,11 +96,8 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
         else {
         vec relocate_t = reflectPointOverPoint(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y);
         relocate_target_vec_.resize(relocate_target_vec_.n_rows + 1,3);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,0) = relocate_t(0);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,1) = relocate_t(0);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,2) = aO2P;
-
-        for (int i = 0; i < 3; i ++)
+        for (int i = 0; i < 3; i ++) relocate_target_(0,i) = relocate_target_(i);
+        
         }
         publishPoint(relocate_target_);
 
