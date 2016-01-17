@@ -1,0 +1,6 @@
+[submodule "uibk_moveit_tools"]
+	path = uibk_moveit_tools
+	url = https://github.com/shangl/uibk_moveit_tools
+[submodule "kukadu"]
+	path = kukadu
+	url = https://github.com/shangl/kukadu
