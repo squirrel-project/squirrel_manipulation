@@ -70,6 +70,9 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     //the angle of a vector robot-object
     aR2O = getVectorAngle(pose_robot_.y - pose_object_.pose.position.y, pose_robot_.x - pose_object_.pose.position.x);
 
+    //the angle object-robot-target
+    aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
+
     //translation error object-goal
     double dO2G = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, goal_ .pose.position.x, goal_.pose.position.y);
 
@@ -84,24 +87,17 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     case RELOCATE:
     {
         if(!rel_){
-            relocate_target_ = reflectPointOverPoint(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y);
-            relocate_target_.resize(3);
-            relocate_target_(2) = aO2P;
-            relocate_target_orient_ = aO2P;
-            relocate_target_vec_.resize(1,3);
-            for (int i = 0; i < 3; i ++) relocate_target_vec_(0,i) = relocate_target_(i);
+            relocate_target_vec_.set_size(3,1);
+            relocate_target_.set_size(3);
 
             rel_ = true;
         }
-        else {
-        vec relocate_t = reflectPointOverPoint(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y);
-        relocate_target_vec_.resize(relocate_target_vec_.n_rows + 1,3);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,0) = relocate_t(0);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,1) = relocate_t(0);
-        relocate_target_vec_(relocate_target_vec_.n_rows - 1,2) = aO2P;
 
-        for (int i = 0; i < 3; i ++)
-        }
+        relocate_target_vec_(span(0,1),relocate_target_vec_.n_cols - 1) = reflectPointOverPoint(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y);
+        relocate_target_vec_(2, relocate_target_vec_.n_cols - 1) = aO2P;
+        for (int i = 0; i < 3; i ++) relocate_target_(i) = mean(relocate_target_vec_.row(i));
+        relocate_target_vec_.resize(3,relocate_target_vec_.n_cols + 1);
+
         publishPoint(relocate_target_);
 
         if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.06) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_))
@@ -112,6 +108,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
 
     }
         break;
+
     case APPROACH:
     {
         if (dR2O < 1.2 * object_diameter_)
@@ -119,6 +116,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
 
     }
         break;
+
     case PUSH:
     {
 

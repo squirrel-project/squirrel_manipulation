@@ -17,21 +17,15 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
     geometry_msgs::Twist cmd = getNullTwist();
 
     //translation error object-target
-    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
-
-    if (dO2T > err_t_toll_){
+    if (dO2P > err_t_toll_){
         cmd.linear.x = vel_lin_max_;
     }
     else{
         cmd.linear.x = 0.0;
     }
 
-    //angle between object pose and target
-    double aO2T = atan2(current_target_.pose.position.y - pose_object_.pose.position.y, current_target_.pose.position.x - pose_object_.pose.position.x);
-    if (isnan(aO2T)) aO2T = 0;
-
-     //orientation error
-    double err_th = pose_robot_.theta - aO2T;
+    //orientation error
+    double err_th = rotationDifference(aO2P, pose_robot_.theta);
 
     if (err_th < - err_th_toll_) {
         // rotating left
@@ -45,11 +39,7 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
         cmd.angular.z = 0.0;
     }
 
-
-    //angle object-robot-target
-    double aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
-
-
+    //the angle object-robot-target
     if (aORT < - err_th_toll_) {
         // moving left
         cmd.linear.y = vel_y_max_;

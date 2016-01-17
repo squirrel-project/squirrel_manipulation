@@ -74,7 +74,7 @@ protected:
     double vel_x_max_, vel_y_max_;
     double controller_frequency_, time_step_;
 
-    double aO2P, aR2O;
+    double aO2P, aR2O, aORT;
     double dO2P, dR2O;
 
 
