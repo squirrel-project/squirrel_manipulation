@@ -48,6 +48,7 @@
     <build_depend>nav_msgs</build_depend>
     <build_depend>tf2</build_depend>
     <build_depend>tf</build_depend>
+    <build_depend>rospy</build_depend>
     <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
     <build_depend>squirrel_manipulation_msgs</build_depend>
     <run_depend>roscpp</run_depend>
@@ -56,16 +57,17 @@
     <run_depend>nav_msgs</run_depend>
     <run_depend>tf2</run_depend>
     <run_depend>tf</run_depend>
+    <run_depend>rospy</run_depend>
     <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
     <run_depend>squirrel_manipulation_msgs</run_depend>
 
     <build_depend>actionlib</build_depend>
     <build_depend>actionlib_msgs</build_depend>
+    <build_depend>genmsg</build_depend>
     <run_depend>actionlib</run_depend>
     <run_depend>actionlib_msgs</run_depend>
+    <run_depend>genmsg</run_depend>
 
-    <build_depend>mongodb_store</build_depend>
-    <run_depend>mongodb_store</run_depend>
     <build_depend>cv_bridge</build_depend>
     <run_depend>cv_bridge</run_depend>
     <build_depend>image_transport</build_depend>

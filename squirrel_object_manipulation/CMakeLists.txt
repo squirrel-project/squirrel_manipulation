@@ -6,14 +6,12 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   rospy
   roscpp
-  genmsg
-  kukadu
   std_msgs
   nav_msgs
+  genmsg
   actionlib
   cv_bridge
   sensor_msgs
-  mongodb_store
   geometry_msgs
   actionlib_msgs
   image_transport
@@ -32,12 +30,6 @@ catkin_package(
     nav_msgs
     tf
     tf_conversions
-    #tf2
-    #cv_bridge
-    #image_transport
-    #base_local_planner
-    #costmap_2d
-    #nav_core
     control_toolbox
     pluginlib
 )
