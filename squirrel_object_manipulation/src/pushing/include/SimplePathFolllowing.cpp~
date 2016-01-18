@@ -1,5 +1,0 @@
-#include "../include/SimpleSathFollowing.hpp"
-
-SimplePathFolllowing::SimplePathFollowing()
-{
-}
