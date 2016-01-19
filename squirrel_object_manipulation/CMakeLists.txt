@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
+  squirrel_object_perception_msgs
 )
 
 catkin_package(

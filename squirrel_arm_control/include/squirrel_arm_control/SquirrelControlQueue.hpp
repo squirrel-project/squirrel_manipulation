@@ -30,7 +30,7 @@ private:
     std::string groupName;
 
     std::vector<std::string> jointNames;
-    \
+
     arma::vec currentJointState;
     sensor_msgs::JointState currentJointStateSjs;
 
@@ -54,6 +54,9 @@ private:
 
     std_msgs::Duration dur;
 
+    KUKADU_SHARED_PTR<kukadu_thread> cartesianStateThread;
+
+    void retrieveCartJoints();
     void jointStateCallback(sensor_msgs::JointState js);
     geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in);
 

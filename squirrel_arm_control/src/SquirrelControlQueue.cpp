@@ -20,7 +20,7 @@
 using namespace std;
 using namespace arma;
 
-SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/joint_states") {
+SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states") {
 
     this->groupName = groupName;
     this->node = node;
@@ -44,6 +44,8 @@ SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupNa
     planner = KUKADU_SHARED_PTR<trajectory_planner_moveit::TrajectoryPlanner>(new trajectory_planner_moveit::TrajectoryPlanner(*node, *group, jointNames));
 
     jointPosSub = node->subscribe(jointStateTopic, 10, &SquirrelControlQueue::jointStateCallback, this);
+
+    cartesianStateThread = KUKADU_SHARED_PTR<kukadu_thread>(new kukadu_thread(&SquirrelControlQueue::retrieveCartJoints, this));
 
 }
 
@@ -189,7 +191,7 @@ geometry_msgs::PoseStamped SquirrelControlQueue::tf_stamped2pose_stamped(tf::Sta
 
 }
 
-geometry_msgs::Pose SquirrelControlQueue::getCurrentCartesianPose() {
+void SquirrelControlQueue::retrieveCartJoints() {
 
     try {
         tf::StampedTransform trans;
@@ -199,6 +201,10 @@ geometry_msgs::Pose SquirrelControlQueue::getCurrentCartesianPose() {
     } catch (tf::TransformException& ex) {
 
     }
+
+}
+
+geometry_msgs::Pose SquirrelControlQueue::getCurrentCartesianPose() {
 
     return currentPose;
 

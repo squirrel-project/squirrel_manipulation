@@ -12,7 +12,8 @@ namespace po = boost::program_options;
 int main(int argc, char** args) {
 
     ros::init(argc, args, "test_squirrel_control"); KUKADU_SHARED_PTR<ros::NodeHandle> node = KUKADU_SHARED_PTR<ros::NodeHandle>(new ros::NodeHandle()); usleep(1e6);
-    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelControlQueue(0.01, "Arm", node));
+    /*
+    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelControlQueue(0.1, "Arm", node));
 
     double tau, az, bz, dmpStepSize, tolAbsErr, tolRelErr, ac;
 
@@ -70,7 +71,7 @@ int main(int argc, char** args) {
         firstJoints(0) = firstJoint0 + 0.3 * sin(i / 25.0);
         queue->addJointsPosToQueue(firstJoints);
     }
-    sleep(10);
+    sleep(20);
     scaredOfSenka.stopDataStorage();
 
     cout << "measurement finished" << endl;
@@ -90,13 +91,14 @@ int main(int argc, char** args) {
     DMPExecutor execFinalPush(dmpFinalPush, queue);
 
     cout << "executing dmp" << endl;
-    execFinalPush.executeTrajectory(ac, 0, dmpFinalPush->getTmax(), dmpStepSize, tolAbsErr, tolRelErr);
+    execFinalPush.executeTrajectory(ac, 0, dmpFinalPush->getTmax(), tolAbsErr, tolRelErr);
 
     cout << "execution done" << endl;
 
     queue->stopCurrentMode();
     queue->setFinish();
     queueThr->join();
+    */
 
     getchar();
 
