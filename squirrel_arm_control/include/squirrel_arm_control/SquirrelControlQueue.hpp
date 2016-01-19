@@ -14,7 +14,7 @@
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit/planning_interface/planning_interface.h>
 
-class SquirrelControlQueue : public ControlQueue {
+class SquirrelControlQueue : public kukadu::ControlQueue {
 
 private:
 
