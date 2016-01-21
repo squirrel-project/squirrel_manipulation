@@ -3,36 +3,20 @@ project(squirrel_object_manipulation)
 
 find_package(catkin REQUIRED COMPONENTS
   tf
-  tf2
-  rospy
   roscpp
   std_msgs
   nav_msgs
-  genmsg
   actionlib
-  cv_bridge
   sensor_msgs
   geometry_msgs
-  actionlib_msgs
-  image_transport
+  control_toolbox
+  cmake_modules
+  costmap_2d
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
 
 )
 
-catkin_package(
-  CATKIN_DEPENDS
-    squirrel_rgbd_mapping_msgs
-    squirrel_manipulation_msgs
-    roscpp
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    tf
-    tf_conversions
-    control_toolbox
-    pluginlib
-)
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
