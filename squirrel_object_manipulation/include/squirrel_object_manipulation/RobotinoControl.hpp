@@ -12,6 +12,7 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
 #include <std_msgs/Float64.h>
+#include <boost/thread.hpp>
 
 
 #define ROBOTINO_MOVE_TOPIC "/cmd_vel"
@@ -73,7 +74,12 @@ private:
     sensor_msgs::Image imageRaw;
     sensor_msgs::CompressedImage imageCompressed;
 
+    boost::thread* move_base_thread_;
+    bool start_move_base_;
+    bool stop_move_base_;
+
     double spinRateVal;
+    geometry_msgs::Twist current_base_vel_;
 
     void callbackBumper(std_msgs::Bool msg);
     void callbackDistance(sensor_msgs::PointCloud msg);
@@ -86,12 +92,15 @@ private:
 
     void reset_odometry();
 
+    void moveBaseThread();
+
 
 
 
 public:
 
     RobotinoControl(ros::NodeHandle& node);
+    ~RobotinoControl();
 
     void singleMove(geometry_msgs::Twist twist);
     void singleMove(double x, double y, double z, double xRot, double yRot, double zRot);
@@ -109,6 +118,12 @@ public:
     bool checkDistances(double maxDist);
     bool checkDistancesPush(double maxDist);
     nav_msgs::Odometry getOdom();
+
+    void setControlFrequency(double val);
+    void startMoveBase();
+    void stopMoveBase();
+    void setZeroBaseVelocity();
+    void setBaseVelocity(geometry_msgs::Twist twist);
 
     void moveTilt(double val);
 
