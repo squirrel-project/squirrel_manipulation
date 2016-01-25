@@ -3,44 +3,30 @@ project(squirrel_object_manipulation)
 
 find_package(catkin REQUIRED COMPONENTS
   tf
-  tf2
-  rospy
   roscpp
-  genmsg
-  kukadu
   std_msgs
   nav_msgs
   actionlib
-  cv_bridge
   sensor_msgs
-  mongodb_store
   geometry_msgs
   control_toolbox
   cmake_modules
   costmap_2d
-  actionlib_msgs
-  image_transport
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
+<<<<<<< HEAD
   squirrel_object_perception_msgs
 )
+=======
+>>>>>>> 2407ed98d9894856dfcff0789adea5b253d4e8e0
 
-catkin_package(
-  CATKIN_DEPENDS
-    squirrel_rgbd_mapping_msgs
-    roscpp
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    tf2
-    squirrel_manipulation_msgs
-    cv_bridge
-    image_transport
 )
+
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
 )
+
 
 include_directories(
 	include
@@ -54,7 +40,6 @@ target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_L
 add_library(robotino
    src/RobotinoControl.cpp
 )
-
 add_library(pushlib
    src/pushing/src/PushPlanner.cpp
    src/pushing/src/VisualisePushPlanner.cpp
@@ -65,10 +50,6 @@ add_library(pushlib
    src/pushing/src/PIDSimplePush.cpp
    src/pushing/src/PIDPush.cpp
    src/pushing/src/PIDObjectPush.cpp
-)
-
-add_library(conversions
-   src/utils/conversion_utils.cpp
 )
 
 add_library(utils
