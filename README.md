@@ -18,7 +18,7 @@ download kukadu to src/
 git@github.com:shangl/kukadu.git
 
 install dependencies for kukadu:
-sudo apt-get install ros-indigo-desktop-full libgsl0-dev gnuplot gnuplot-x11 libarmadillo-dev libboost-all-dev libncurses5-dev libarmadillo-dev
+sudo apt-get install ros-indigo-desktop-full libgsl0-dev gnuplot gnuplot-x11 libarmadillo-dev libboost-all-dev libncurses5-dev libarmadillo-dev libgsl0-dev gnuplot gnuplot-x11 libarmadillo-dev libboost-all-dev libncurses5-dev libarmadillo-dev liballegro5-dev ros-indigo-pcl-ros ros-indigo-moveit-ros-planning-interface python3.4-dev
 
 set up environment variable (add to .bashrc):
 export KUKADU_HOME=PATH_TO_SQUIRREL_CATKIN/src/kukadu

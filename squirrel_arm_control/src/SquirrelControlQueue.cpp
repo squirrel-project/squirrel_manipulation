@@ -21,10 +21,10 @@ using namespace std;
 using namespace arma;
 using namespace kukadu;
 
-SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states") {
+SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states") {
 
-    this->groupName = groupName;
     this->node = node;
+    this->groupName = groupName;
     currControlType = CONTROLQUEUE_STOP_MODE;
 
     firstTimeCartFrcReading = true;
