@@ -3,40 +3,28 @@ project(squirrel_object_manipulation)
 
 find_package(catkin REQUIRED COMPONENTS
   tf
-  tf2
-  rospy
   roscpp
-  genmsg
-  kukadu
   std_msgs
   nav_msgs
   actionlib
-  cv_bridge
   sensor_msgs
-  mongodb_store
   geometry_msgs
-  actionlib_msgs
-  image_transport
+  control_toolbox
+  cmake_modules
+  costmap_2d
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
 )
 
-catkin_package(
-  CATKIN_DEPENDS
-    squirrel_rgbd_mapping_msgs
-    roscpp
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    tf2
-    squirrel_manipulation_msgs
-    cv_bridge
-    image_transport
-)
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
 )
+
+catkin_package(
+    CATKIN_DEPENDS 
+)
+
 
 include_directories(
 	include
@@ -50,16 +38,31 @@ target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_L
 add_library(robotino
    src/RobotinoControl.cpp
 )
+add_library(pushlib
+   src/pushing/src/PushPlanner.cpp
+   src/pushing/src/VisualisePushPlanner.cpp
+   src/pushing/src/SimplePathFollowing.cpp
+   src/pushing/src/PIDPathFollowing.cpp
+   src/pushing/src/SimplePush.cpp
+   src/pushing/src/BangBangPush.cpp
+   src/pushing/src/PIDSimplePush.cpp
+   src/pushing/src/PIDPush.cpp
+   src/pushing/src/PIDObjectPush.cpp
+)
 
-add_library(conversions
+add_library(utils
    src/utils/conversion_utils.cpp
+   src/utils/math_utils.cpp
+   src/utils/gnuplot-cpp/gnuplot_i.cpp
 )
 
 add_executable(ardemo src/ARDemo.cpp)
 target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 
-add_executable(push src/pushing.cpp)
-target_link_libraries(push robotino conversions ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(push src/pushing/pushing.cpp)
+target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(pickup src/pickup.cpp)
-target_link_libraries(pickup robotino ${catkin_LIBRARIES})
+
+add_executable(smash src/smash.cpp)
+target_link_libraries(smash robotino ${catkin_LIBRARIES})
+

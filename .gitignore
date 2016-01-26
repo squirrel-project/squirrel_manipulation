@@ -5,3 +5,5 @@
 qtcreator-build
 *~
 *.pyc
+*.orig
+*.remote
