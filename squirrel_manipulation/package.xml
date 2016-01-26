@@ -22,7 +22,7 @@
   <run_depend>uibk_moveit_tools</run_depend>
   <run_depend>squirrel_kclhand</run_depend>
   <run_depend>squirrel_object_manipulation</run_depend>
-
+  <run_depend>robotinoSH_6dof_moveit_config</run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <metapackage />
