@@ -2,53 +2,56 @@ cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_object_manipulation)
 
 find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  actionlib_msgs
+  cmake_modules
+  control_toolbox
+  costmap_2d
+  cv_bridge
+  genmsg
+  geometry_msgs
+  image_transport
+  kukadu
+  mongodb_store
+  nav_msgs
+  roscpp
+  sensor_msgs
+  squirrel_manipulation_msgs
+  squirrel_object_perception_msgs
+  squirrel_rgbd_mapping_msgs
+  std_msgs
   tf
   tf2
-  rospy
-  roscpp
-  genmsg
-  kukadu
-  std_msgs
-  nav_msgs
-  actionlib
-  cv_bridge
-  sensor_msgs
-  mongodb_store
-  geometry_msgs
-  control_toolbox
-  cmake_modules
-  costmap_2d
-  actionlib_msgs
-  image_transport
-  squirrel_manipulation_msgs
-  squirrel_rgbd_mapping_msgs
-  squirrel_object_perception_msgs
-)
-
-catkin_package(
-  CATKIN_DEPENDS
-    squirrel_rgbd_mapping_msgs
-    roscpp
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    tf2
-    squirrel_manipulation_msgs
-    cv_bridge
-    image_transport
+  visualization_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
 )
 
-include_directories(
-	include
-	${catkin_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
+catkin_package(
+  CATKIN_DEPENDS
+    control_toolbox
+    cv_bridge
+    geometry_msgs
+    image_transport
+    nav_msgs
+    roscpp
+    sensor_msgs
+    squirrel_manipulation_msgs
+    squirrel_object_perception_msgs
+    squirrel_rgbd_mapping_msgs
+    std_msgs
+    tf
+    tf2
+    visualization_msgs
 )
 
-catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
+include_directories(
+	include
+    ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+)
 target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
 
 add_library(robotino
@@ -83,13 +86,21 @@ target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 add_executable(push src/pushing/pushing.cpp)
 target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-
 add_executable(smash src/smash.cpp)
 target_link_libraries(smash robotino ${catkin_LIBRARIES})
 
-#if(CATKIN_ENABLE_TESTING)
-#  find_package(rostest REQUIRED)
-#  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
-#  target_link_libraries(test_mynode ${catkin_LIBRARIES})
-#endif()
+add_dependencies(robotino ${catkin_EXPORTED_TARGETS})
+add_dependencies(pushlib ${catkin_EXPORTED_TARGETS})
+add_dependencies(conversions ${catkin_EXPORTED_TARGETS})
+add_dependencies(utils ${catkin_EXPORTED_TARGETS})
+add_dependencies(ardemo ${catkin_EXPORTED_TARGETS})
+add_dependencies(push ${catkin_EXPORTED_TARGETS})
+add_dependencies(smash ${catkin_EXPORTED_TARGETS})
 
+if(CATKIN_ENABLE_TESTING)
+	catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
+endif()
+
+install(TARGETS ardemo push smash RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(TARGETS robotino pushlib conversions utils ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION} LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION} RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

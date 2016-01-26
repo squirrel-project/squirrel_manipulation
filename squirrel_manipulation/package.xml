@@ -11,13 +11,11 @@
   <buildtool_depend>catkin</buildtool_depend>
   
   <run_depend>kukadu</run_depend>
-  <run_depend>squirrel_kclhand</run_depend>
-  <run_depend>uibk_moveit_tools</run_depend>
-  <run_depend>squirrel_object_manipulation</run_depend>
   <run_depend>squirrel_kinesthetic_teaching</run_depend>
+  <run_depend>squirrel_object_manipulation</run_depend>
+  <run_depend>uibk_moveit_tools</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <metapackage />
+    <metapackage/>
   </export>
 </package>
