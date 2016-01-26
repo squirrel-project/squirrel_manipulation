@@ -14,12 +14,15 @@ find_package(catkin REQUIRED COMPONENTS
   costmap_2d
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
-
 )
 
 
 find_package(Boost REQUIRED COMPONENTS
 filesystem
+)
+
+catkin_package(
+    CATKIN_DEPENDS 
 )
 
 
@@ -62,10 +65,4 @@ target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LI
 
 add_executable(smash src/smash.cpp)
 target_link_libraries(smash robotino ${catkin_LIBRARIES})
-
-#if(CATKIN_ENABLE_TESTING)
-#  find_package(rostest REQUIRED)
-#  add_rostest_gtest(test_mynode test/test.launch test/manipulation.cpp)
-#  target_link_libraries(test_mynode ${catkin_LIBRARIES})
-#endif()
 
