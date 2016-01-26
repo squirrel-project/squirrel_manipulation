@@ -17,7 +17,7 @@ find_package(Armadillo REQUIRED)
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS moveit_msgs roscpp std_msgs trajectory_msgs uibk_planning_node
+    CATKIN_DEPENDS moveit_msgs roscpp std_msgs trajectory_msgs uibk_planning_node moveit_core
     DEPENDS ${ARMADILLO_LIBRARIES}
 )
 

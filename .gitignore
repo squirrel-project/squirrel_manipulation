@@ -3,3 +3,5 @@
 .settings
 .cproject
 qtcreator-build
+*.orig
+*.remote

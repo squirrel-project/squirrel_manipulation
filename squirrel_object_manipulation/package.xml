@@ -28,9 +28,7 @@
     <build_depend>sensor_msgs</build_depend>
     <build_depend>sensor_msgs</build_depend>
     <build_depend>squirrel_manipulation_msgs</build_depend>
-    <build_depend>squirrel_manipulation_msgs</build_depend>
     <build_depend>squirrel_object_perception_msgs</build_depend>
-    <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
     <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>std_msgs</build_depend>
@@ -47,23 +45,14 @@
     <run_depend>kukadu</run_depend>
     <run_depend>mongodb_store</run_depend>
     <run_depend>nav_msgs</run_depend>
-    <run_depend>robotino_bringup_sim</run_depend>
-    <run_depend>robotino_bringup_sim</run_depend>
-    <run_depend>robotino_teleop</run_depend>
-    <run_depend>robotino_teleop</run_depend>
     <run_depend>roscpp</run_depend>
     <run_depend>sensor_msgs</run_depend>
     <run_depend>squirrel_manipulation_msgs</run_depend>
-    <run_depend>squirrel_navigation</run_depend>
-    <run_depend>squirrel_navigation</run_depend>
     <run_depend>squirrel_object_perception_msgs</run_depend>
     <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
-    <run_depend>squirrel_tracking</run_depend>
-    <run_depend>squirrel_tracking</run_depend>
     <run_depend>std_msgs</run_depend>
     <run_depend>tf</run_depend>
     <run_depend>tf2</run_depend>
-    <run_depend>visualization_msgs</run_depend>
     <run_depend>visualization_msgs</run_depend>
     
     <test_depend>rosunit</test_depend>
