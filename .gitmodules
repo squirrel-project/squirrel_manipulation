@@ -4,9 +4,3 @@
 [submodule "kukadu"]
 	path = kukadu
 	url = https://github.com/shangl/kukadu
-[submodule "ros_control"]
-	path = ros_control
-	url = https://github.com/CentroEPiaggio/ros_control.git
-[submodule "pisa-iit-soft-hand"]
-	path = pisa-iit-soft-hand
-	url = https://github.com/CentroEPiaggio/pisa-iit-soft-hand.git
