@@ -271,5 +271,13 @@ void SquirrelControlQueue::safelyDestroy() {
 }
 
 bool SquirrelControlQueue::stopQueueWhilePtp() {
+    return false;
+}
+
+std::vector<arma::vec> SquirrelControlQueue::computeIk(geometry_msgs::Pose targetPose) {
+
+}
+
+geometry_msgs::Pose SquirrelControlQueue::computeFk(std::vector<double> joints) {
 
 }

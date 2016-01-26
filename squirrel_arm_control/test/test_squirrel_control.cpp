@@ -6,13 +6,14 @@
 
 using namespace std;
 using namespace arma;
+using namespace kukadu;
 
 namespace po = boost::program_options;
 
 int main(int argc, char** args) {
 
     ros::init(argc, args, "test_squirrel_control"); KUKADU_SHARED_PTR<ros::NodeHandle> node = KUKADU_SHARED_PTR<ros::NodeHandle>(new ros::NodeHandle()); usleep(1e6);
-    /*
+
     KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelControlQueue(0.1, "Arm", node));
 
     double tau, az, bz, dmpStepSize, tolAbsErr, tolRelErr, ac;
@@ -61,7 +62,7 @@ int main(int argc, char** args) {
 
     cout << "starting measurement" << endl;
     SensorStorage scaredOfSenka(queueVectors, std::vector<KUKADU_SHARED_PTR<GenericHand> >(), 1000);
-    scaredOfSenka.setExportMode(STORE_TIME | STORE_RBT_CART_POS | STORE_RBT_JNT_POS);
+    scaredOfSenka.setExportMode(SensorStorage::STORE_TIME | SensorStorage::STORE_RBT_CART_POS | SensorStorage::STORE_RBT_JNT_POS);
     scaredOfSenka.startDataStorage(storeDir);
     cout << "measuerment started" << endl;
 
@@ -98,7 +99,6 @@ int main(int argc, char** args) {
     queue->stopCurrentMode();
     queue->setFinish();
     queueThr->join();
-    */
 
     getchar();
 

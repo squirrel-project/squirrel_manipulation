@@ -92,6 +92,9 @@ public:
     virtual std::string getRobotFileName();
     virtual std::vector<std::string> getJointNames();
 
+    virtual std::vector<arma::vec> computeIk(geometry_msgs::Pose targetPose);
+    virtual geometry_msgs::Pose computeFk(std::vector<double> joints);
+
     virtual void safelyDestroy();
 
 };
