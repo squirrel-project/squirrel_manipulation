@@ -22,6 +22,7 @@ private:
     const std::string targetFrame;
     const std::string jointStateTopic;
 
+    bool destroyIt;
     bool firstTimeCartFrcReading;
     bool firstTimeJointFrcReading;
 
