@@ -151,8 +151,11 @@ int main(int argc, char** args) {
 
     queue->cartesianPtp(newPose);
 
-    cout << "done" << endl;
+    cout << "done; moving to homeposition" << endl;
     getchar();
+
+    queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));
+    getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
 
     /*
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0)));
