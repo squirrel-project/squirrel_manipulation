@@ -1,3 +1,6 @@
+#ifndef SQUIRREL_CONTROL_QUEUE
+#define SQUIRREL_CONTROL_QUEUE
+
 #include <string>
 #include <vector>
 #include <armadillo>
@@ -5,7 +8,6 @@
 #include <kukadu/kukadu.h>
 #include <std_msgs/Duration.h>
 #include <geometry_msgs/Pose.h>
-#include <boost/thread/mutex.hpp>
 #include <tf/transform_listener.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -104,3 +106,5 @@ public:
     virtual void safelyDestroy();
 
 };
+
+#endif
