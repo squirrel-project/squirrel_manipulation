@@ -11,6 +11,7 @@
 #include <tf/transform_listener.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <moveit_msgs/ExecuteKnownTrajectory.h>
 #include <uibk_planning_node/TrajectoryPlanner.h>
 #include <moveit/move_group_interface/move_group.h>

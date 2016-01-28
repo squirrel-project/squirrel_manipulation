@@ -8,15 +8,30 @@
 #include <kukadu/kukadu.h>
 #include <std_msgs/Duration.h>
 #include <geometry_msgs/Pose.h>
+#include <std_msgs/Float64MultiArray.h>
 
 class SquirrelKclHand : public kukadu::GenericHand {
 
 private:
 
+    static const int numOfFingers = 3;
+    static const int tactileSensorsPerFinger = 5;
+
+    const std::string sensorTopic;
+
+    ros::Subscriber sensorSub;
+
+    arma::vec tactile;
+
+    kukadu_mutex tactileMutex;
+
+    KUKADU_SHARED_PTR<ros::NodeHandle> node;
+
+    void sensorCallback(std_msgs::Float64MultiArray sense);
 
 public:
 
-    SquirrelKclHand();
+    SquirrelKclHand(KUKADU_SHARED_PTR<ros::NodeHandle> node);
 
     virtual void connectHand();
 

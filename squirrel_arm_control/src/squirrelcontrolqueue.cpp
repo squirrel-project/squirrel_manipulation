@@ -1,4 +1,4 @@
-#include "../include/squirrel_arm_control/SquirrelControlQueue.hpp"
+#include "../include/squirrel_arm_control/squirrelcontrolqueue.hpp"
 
 #include <tf/tf.h>
 #include <sstream>
