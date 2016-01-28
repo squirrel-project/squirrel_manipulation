@@ -1,8 +1,0 @@
-moveit_setup_assistant_config:
-  URDF:
-    package: robotino_bringup
-    relative_path: robots/robotinoSH/urdf/robotino_simple.urdf
-  SRDF:
-    relative_path: config/robot.srdf
-  CONFIG:
-    generated_timestamp: 1453815528

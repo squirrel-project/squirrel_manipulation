@@ -1,9 +1,0 @@
-controller_list:
-  - name: fake_arm_controller
-    joints:
-      - rotatory
-      - joint1
-      - joint2
-      - joint3
-      - joint4
-      - joint5

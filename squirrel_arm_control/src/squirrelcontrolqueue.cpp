@@ -22,7 +22,7 @@ using namespace arma;
 using namespace kukadu;
 
 SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))),
-    baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/robotino_arm/arm/joint_states"),
+    baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states"),
     forceTorqueTopic("/wrist") {
 
     this->node = node;
