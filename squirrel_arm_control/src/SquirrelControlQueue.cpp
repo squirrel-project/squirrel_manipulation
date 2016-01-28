@@ -21,12 +21,13 @@ using namespace std;
 using namespace arma;
 using namespace kukadu;
 
-SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states") {
+SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/robotino_arm/arm/joint_states") {
 
     this->node = node;
     this->groupName = groupName;
     currControlType = CONTROLQUEUE_STOP_MODE;
 
+    destroyIt = false;
     firstTimeCartFrcReading = true;
     firstTimeJointFrcReading = true;
 
@@ -51,6 +52,8 @@ SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupNa
 }
 
 SquirrelControlQueue::~SquirrelControlQueue() {
+    destroyIt = true;
+    cartesianStateThread->join();
 }
 
 void SquirrelControlQueue::setInitValues() {
@@ -194,13 +197,14 @@ geometry_msgs::PoseStamped SquirrelControlQueue::tf_stamped2pose_stamped(tf::Sta
 
 void SquirrelControlQueue::retrieveCartJoints() {
 
-    try {
-        tf::StampedTransform trans;
-        tfList.waitForTransform(baseFrame, targetFrame, ros::Time::now(), ros::Duration(0.02));
-        tfList.lookupTransform(baseFrame, targetFrame, ros::Time(0), trans);
-        currentPose = tf_stamped2pose_stamped(trans).pose;
-    } catch (tf::TransformException& ex) {
-
+    while(!destroyIt) {
+        try {
+            tf::StampedTransform trans;
+            tfList.waitForTransform(baseFrame, targetFrame, ros::Time::now(), ros::Duration(0.02));
+            tfList.lookupTransform(baseFrame, targetFrame, ros::Time(0), trans);
+            currentPose = tf_stamped2pose_stamped(trans).pose;
+        } catch (tf::TransformException& ex) {
+        }
     }
 
 }
@@ -271,5 +275,13 @@ void SquirrelControlQueue::safelyDestroy() {
 }
 
 bool SquirrelControlQueue::stopQueueWhilePtp() {
+    return true;
+}
+
+std::vector<arma::vec> SquirrelControlQueue::computeIk(geometry_msgs::Pose targetPose) {
+
+}
+
+geometry_msgs::Pose SquirrelControlQueue::computeFk(std::vector<double> joints) {
 
 }
