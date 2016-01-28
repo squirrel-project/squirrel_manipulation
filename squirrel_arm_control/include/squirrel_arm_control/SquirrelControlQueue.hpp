@@ -21,9 +21,9 @@ private:
     const std::string baseFrame;
     const std::string targetFrame;
     const std::string jointStateTopic;
+    const std::string forceTorqueTopic;
 
     bool destroyIt;
-    bool firstTimeCartFrcReading;
     bool firstTimeJointFrcReading;
 
     int currControlType;
@@ -32,6 +32,7 @@ private:
 
     std::vector<std::string> jointNames;
 
+    arma::vec currentFrqTrq;
     arma::vec currentJointState;
     sensor_msgs::JointState currentJointStateSjs;
 
@@ -43,9 +44,11 @@ private:
     KUKADU_SHARED_PTR<moveit::planning_interface::MoveGroup> group;
     KUKADU_SHARED_PTR<trajectory_planner_moveit::TrajectoryPlanner> planner;
 
-    boost::mutex jointStateMutex;
+    kukadu_mutex jointStateMutex;
+    kukadu_mutex forceTorqueMutex;
 
     ros::Subscriber jointPosSub;
+    ros::Subscriber forceTorqueSub;
 
     ros::ServiceClient execution_client;
 
@@ -59,6 +62,8 @@ private:
 
     void retrieveCartJoints();
     void jointStateCallback(sensor_msgs::JointState js);
+    void forceTorquCallback(std_msgs::Float64MultiArray ft);
+
     geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in);
 
 protected:

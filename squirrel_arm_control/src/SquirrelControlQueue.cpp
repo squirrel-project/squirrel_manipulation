@@ -21,14 +21,15 @@ using namespace std;
 using namespace arma;
 using namespace kukadu;
 
-SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))), baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/robotino_arm/arm/joint_states") {
+SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))),
+    baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/robotino_arm/arm/joint_states"),
+    forceTorqueTopic("/wrist") {
 
     this->node = node;
     this->groupName = groupName;
     currControlType = CONTROLQUEUE_STOP_MODE;
 
     destroyIt = false;
-    firstTimeCartFrcReading = true;
     firstTimeJointFrcReading = true;
 
     group = KUKADU_SHARED_PTR<moveit::planning_interface::MoveGroup>(new moveit::planning_interface::MoveGroup(groupName));
@@ -45,7 +46,8 @@ SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupNa
     execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
     planner = KUKADU_SHARED_PTR<trajectory_planner_moveit::TrajectoryPlanner>(new trajectory_planner_moveit::TrajectoryPlanner(*node, *group, jointNames));
 
-    jointPosSub = node->subscribe(jointStateTopic, 10, &SquirrelControlQueue::jointStateCallback, this);
+    jointPosSub = node->subscribe(jointStateTopic, 2, &SquirrelControlQueue::jointStateCallback, this);
+    forceTorqueSub = node->subscribe(forceTorqueTopic, 2, &SquirrelControlQueue::forceTorquCallback, this);
 
     cartesianStateThread = KUKADU_SHARED_PTR<kukadu_thread>(new kukadu_thread(&SquirrelControlQueue::retrieveCartJoints, this));
 
@@ -244,17 +246,20 @@ mes_result SquirrelControlQueue::getCurrentJntFrcTrq() {
 
 mes_result SquirrelControlQueue::getCurrentCartesianFrcTrq() {
 
-    if(firstTimeCartFrcReading) {
-        firstTimeCartFrcReading = false;
-        ROS_WARN("(SquirrelControlQueue) reading cartesian force values not supported yet");
-    }
-
     mes_result ret;
     ret.time = getCurrentTime();
-    ret.joints = vec(6);
-    // forces currently not supported (this line has to be replaced)
-    ret.joints.fill(0.0);
+    forceTorqueMutex.lock();
+        ret.joints = currentFrqTrq;
+    forceTorqueMutex.unlock();
     return ret;
+
+}
+
+void SquirrelControlQueue::forceTorquCallback(std_msgs::Float64MultiArray ft) {
+
+    forceTorqueMutex.lock();
+        currentFrqTrq = stdToArmadilloVec(ft.data);
+    forceTorqueMutex.unlock();
 
 }
 
