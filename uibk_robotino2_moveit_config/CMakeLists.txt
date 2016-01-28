@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robotinoSH_6dof_moveit_config)
+project(uibk_robotino2_moveit_config)
 
 find_package(catkin REQUIRED)
 

@@ -5,6 +5,6 @@
 
   <arg name="pipeline" default="ompl" />
 
-  <include file="$(find robotinoSH_6dof_moveit_config)/launch/$(arg pipeline)_planning_pipeline.launch.xml" />
+  <include file="$(find uibk_robotino2_moveit_config)/launch/$(arg pipeline)_planning_pipeline.launch.xml" />
 
 </launch>
