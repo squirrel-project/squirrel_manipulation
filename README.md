@@ -24,3 +24,14 @@ sudo apt-get install ros-indigo-desktop-full libgsl0-dev gnuplot gnuplot-x11 lib
 set up environment variable (add to .bashrc):
 export KUKADU_HOME=PATH_TO_SQUIRREL_CATKIN/src/kukadu
 
+
+============ setting up the softhand SoftHand ============
+1. run git submodule init
+2. run git submodule update
+3. cd pisa-iit-soft-hand
+4. git submodule init
+5. git submodule update
+6. cd handtools/qbAPI/src -> run make
+7. cd handtools/handadmin/src -> run make
+8. compile complete package
+9. before you run it, in examples/adaptive_example/robot/soft_hand_adaptive.urdf.xacro set left to true

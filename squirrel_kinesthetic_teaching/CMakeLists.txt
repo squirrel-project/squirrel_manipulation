@@ -32,6 +32,8 @@ add_library(${PROJECT_NAME}
     ${KINTEACHSRC}
 )
 
+catkin_python_setup()
+
 target_link_libraries(${PROJECT_NAME} ${ARMADILLO_LIBRARIES})
 
 add_executable(testkin test/test_kinesthetic_teaching.cpp)
