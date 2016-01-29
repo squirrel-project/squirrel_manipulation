@@ -1,4 +1,4 @@
-#include "../include/squirrel_arm_control/SquirrelControlQueue.hpp"
+#include "../include/squirrel_arm_control/squirrelcontrolqueue.hpp"
 
 #include <iostream>
 #include <kukadu/kukadu.h>
@@ -35,46 +35,6 @@ int main(int argc, char** args) {
 
     ros::AsyncSpinner spinner(5);
     spinner.start();
-
-
-    /* topics are named different in sim and real
-     *
-     * in sim its called /arm_controller/joint_states and in real its /robotino_arm/arm/joint_states
-     *
-     * */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     double tau, az, bz, dmpStepSize, tolAbsErr, tolRelErr, ac;
 
@@ -116,18 +76,13 @@ int main(int argc, char** args) {
     KUKADU_SHARED_PTR<kukadu_thread> queueThr = queue->startQueueThread();
     queue->switchMode(ControlQueue::CONTROLQUEUE_JNT_POS_MODE);
 
-    /*
-    queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));
+    queue->jointPtp(stdToArmadilloVec(createJointsVector(5, 0.0, 0.0, 0.0, 0.0, 0.0)));
     getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
-    */
 
-    geometry_msgs::Pose origin;
-    origin.position.x = origin.position.y = 0.0;
-    origin.position.z = 0.85;
-    origin.orientation.x = 0.00245218;
-    origin.orientation.y = 0.00422713;
-    origin.orientation.z = -0.49833;
-    origin.orientation.w = 0.866973;
+    geometry_msgs::Pose origin = queue->getCurrentCartesianPose();
+
+    queue->jointPtp(stdToArmadilloVec(createJointsVector(5, 1.2, 0.0, 0.0, 0.0, 0.0)));
+    getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
 
     cout << "ready to perfom cartesian ptp?" << endl;
     getchar();
@@ -137,22 +92,19 @@ int main(int argc, char** args) {
     cout << "done" << endl;
     getchar();
 
-    geometry_msgs::Pose newPose;
-    newPose.position.x = 0.0867546;
-    newPose.position.y = -0.151025;
-    newPose.position.z = 0.726772;
-    newPose.orientation.x = 0.114398;
-    newPose.orientation.y = 0.160558;
-    newPose.orientation.z = -0.407022;
-    newPose.orientation.w = 0.89189;
+    geometry_msgs::Pose newPose = origin;
+    newPose.position.z -= 0.12;
 
     cout << "ready to perfom cartesian ptp?" << endl;
     getchar();
 
     queue->cartesianPtp(newPose);
 
-    cout << "done" << endl;
+    cout << "done; moving to homeposition" << endl;
     getchar();
+
+    queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));
+    getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
 
     /*
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0)));
