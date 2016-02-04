@@ -1,14 +1,19 @@
 import rospy
 import actionlib
 import numpy as np
+import mongodb_store_msgs.srv as dc_srv
+import mongodb_store.util as dc_util
+from mongodb_store.message_store import MessageStoreProxy
+from gemoetry_msgs import Pose
+from tf.transformations import quaternion_matrix
+
 
 import squirrel_manipulation_msgs.msg.Grasp as Grasp
 import squirrel_manipulation_msgs.msg.GraspAction as GraspAction
 import squirrel_manipulation_msgs.msg.GraspActionResult as GraspActionResult
 import squirrel_manipulation_msgs.msg.GraspActionFeedback as GraspActionFeedback
+import squirrel_object_perception_msgs.msg.ObjectToDB as ObjectToDB
 
-from gemoetry_msgs import Pose
-from tf.transformations import quaternion_matrix
 
 class GraspServer(object):
 
@@ -33,8 +38,13 @@ class GraspServer(object):
         
         rospy.loginfo(rospy.get_caller_id() + ': Requested grasping of object %s with gripper config %s and pose [pos, rot] [[%i, %i, %i], [%i, %i, %i, %i]]' %
                       (goal.grasp.objbectID, goal.grasp.gripperConfiguration, 
-                      goal.grasp.gripperPose.position.x, goal.grasp.gripperPose.position.y, goal.grasp.gripperPose.position.z,
-                      goal.grasp.gripperPose.orientation.w, goal.grasp.gripperPose.orientation.x, goal.grasp.gripperPose.orientation.y, goal.grasp.gripperPose.orientation.z))
+                      goal.grasp.gripperPose.pose.position.x, 
+                      goal.grasp.gripperPose.pose.position.y, 
+                      goal.grasp.gripperPose.pose.position.z,
+                      goal.grasp.gripperPose.pose.orientation.w, 
+                      goal.grasp.gripperPose.pose.orientation.x, 
+                      goal.grasp.gripperPose.pose.orientation.y, 
+                      goal.grasp.gripperPose.pose.orientation.z))
 
         # check that preempt has not been requested by the client
         # this needs refinement for the next iteration after Y2 review
@@ -49,18 +59,17 @@ class GraspServer(object):
         self._feedback.percent_completed = 0.2
         self._server.publish_feedback(self._feedback)
 
-        transformation = __computeGraspTransformation(goal.grasp, grasp.objectPose)
+        transformation = __computeGraspTransformation(goal.grasp, grasp.objectPose.pose)
 
-
-        self._feedback.current_phase = 'moving gripper to requested pose'
-        self._feedback.current_status = 'moving arm'
-        self._feedback.percent_completed = 0.4
-        self._server.publish_feedback(self._feedback)
-        # move arm using squirrel arm control
+        if transformation == None:
+            self._result.result_status = 'failed to grasp object %s'.format(goal.grasp.objectID) 
+            rospy.loginfo('GraspAction: failed')
+            self.server.set_succeeded(self._result)
+            return            
 
         self._feedback.current_phase = 'configuring gripper'
         self._feedback.current_status = 'reading gripper configuration'
-        self._feedback.percent_completed = 0.6
+        self._feedback.percent_completed = 0.4
         self._server.publish_feedback(self._feedback)
         # read gripper config
         current_config = None
@@ -68,15 +77,21 @@ class GraspServer(object):
         if current_config == goal.grasp.gripperConfiguration:
             self._feedback.current_phase = 'configuring gripper'
             self._feedback.current_status = 'setting gripper to homing position'
-        self._feedback.percent_completed = 0.8
+            self._feedback.percent_completed = 0.6
             self._server.publish_feedback(self._feedback)
             # move gripper to homing in current configuration
         else:
             self._feedback.current_phase = 'configuring gripper'
             self._feedback.current_status = 'setting gripper configuration'
             self._server.publish_feedback(self._feedback)
+            self._feedback.percent_completed = 0.6
+            # move gripper to homing of new configuration
+
+        self._feedback.current_phase = 'moving gripper to requested pose'
+        self._feedback.current_status = 'moving arm'
         self._feedback.percent_completed = 0.8
-            # move gripper to new configuration
+        self._server.publish_feedback(self._feedback)
+        # move arm using squirrel arm control - check with SH
 
         self._feedback.current_phase = 'grasping object'
         self._feedback.current_status = 'closing gripper'
@@ -93,8 +108,10 @@ class GraspServer(object):
     def __computeGraspTransformation(grasp, objectPose):
         assert isinstance(grasp, Grasp)
 
-        gTP = grasp.groundTruth
-        lOP = grasp.learnedObjectPose
+        # get ground truth from knowledge base
+        msg_store = MessageStoreProxy()
+        gTP = grasp.groundTruth.pose
+        lOP = grasp.learnedObjectPose.pose
 
         trans1 = self.__inverseTimes(lOP, gTP)
         trans2 = self.__inverseTimes(gTP, objectPose)
