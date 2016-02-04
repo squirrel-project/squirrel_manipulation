@@ -1,4 +1,4 @@
-#include "../include/squirrel_arm_control/squirrelcontrolqueue.hpp"
+#include "../include/squirrel_arm_control/squirrelarmcontrolqueue.hpp"
 
 #include <tf/tf.h>
 #include <sstream>
@@ -21,7 +21,7 @@ using namespace std;
 using namespace arma;
 using namespace kukadu;
 
-SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))),
+SquirrelArmControlQueue::SquirrelArmControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node) : ControlQueue(5, cycleTime, KUKADU_SHARED_PTR<Kinematics>(new MoveItKinematics(groupName, "link5"))),
     baseFrame("/odomp"), targetFrame("/link5"), jointStateTopic("/arm_controller/joint_states"),
     forceTorqueTopic("/wrist") {
 
@@ -46,19 +46,19 @@ SquirrelControlQueue::SquirrelControlQueue(double cycleTime, std::string groupNa
     execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
     planner = KUKADU_SHARED_PTR<trajectory_planner_moveit::TrajectoryPlanner>(new trajectory_planner_moveit::TrajectoryPlanner(*node, *group, jointNames));
 
-    jointPosSub = node->subscribe(jointStateTopic, 2, &SquirrelControlQueue::jointStateCallback, this);
-    forceTorqueSub = node->subscribe(forceTorqueTopic, 2, &SquirrelControlQueue::forceTorquCallback, this);
+    jointPosSub = node->subscribe(jointStateTopic, 2, &SquirrelArmControlQueue::jointStateCallback, this);
+    forceTorqueSub = node->subscribe(forceTorqueTopic, 2, &SquirrelArmControlQueue::forceTorquCallback, this);
 
-    cartesianStateThread = KUKADU_SHARED_PTR<kukadu_thread>(new kukadu_thread(&SquirrelControlQueue::retrieveCartJoints, this));
+    cartesianStateThread = KUKADU_SHARED_PTR<kukadu_thread>(new kukadu_thread(&SquirrelArmControlQueue::retrieveCartJoints, this));
 
 }
 
-SquirrelControlQueue::~SquirrelControlQueue() {
+SquirrelArmControlQueue::~SquirrelArmControlQueue() {
     destroyIt = true;
     cartesianStateThread->join();
 }
 
-void SquirrelControlQueue::setInitValues() {
+void SquirrelArmControlQueue::setInitValues() {
 
     ros::Rate sl(5);
     while(currentJointState.n_elem <= 1) {
@@ -73,7 +73,7 @@ void SquirrelControlQueue::setInitValues() {
 
 }
 
-void SquirrelControlQueue::jointStateCallback(sensor_msgs::JointState js) {
+void SquirrelArmControlQueue::jointStateCallback(sensor_msgs::JointState js) {
 
     jointStateMutex.lock();
 
@@ -89,7 +89,7 @@ void SquirrelControlQueue::jointStateCallback(sensor_msgs::JointState js) {
 
 }
 
-void SquirrelControlQueue::submitNextJointMove(arma::vec joints) {
+void SquirrelArmControlQueue::submitNextJointMove(arma::vec joints) {
 
     jointPlan.trajectory_start.joint_state = currentJointStateSjs;
 
@@ -110,19 +110,19 @@ void SquirrelControlQueue::submitNextJointMove(arma::vec joints) {
 
 }
 
-void SquirrelControlQueue::submitNextCartMove(geometry_msgs::Pose pose) {
+void SquirrelArmControlQueue::submitNextCartMove(geometry_msgs::Pose pose) {
 
-    ROS_WARN("(SquirrelControlQueue) cartesian command mode is not supported yet");
+    ROS_WARN("(SquirrelArmControlQueue) cartesian command mode is not supported yet");
 
 }
 
-void SquirrelControlQueue::setCurrentControlTypeInternal(int controlType) {
+void SquirrelArmControlQueue::setCurrentControlTypeInternal(int controlType) {
 
     currControlType = controlType;
 
 }
 
-void SquirrelControlQueue::jointPtpInternal(arma::vec joints) {
+void SquirrelArmControlQueue::jointPtpInternal(arma::vec joints) {
 
     moveit_msgs::MotionPlanResponse jointPlan;
     vector<double> jointsVector = armadilloToStdVec(joints);
@@ -131,7 +131,7 @@ void SquirrelControlQueue::jointPtpInternal(arma::vec joints) {
 
 }
 
-void SquirrelControlQueue::cartPtpInternal(geometry_msgs::Pose pose) {
+void SquirrelArmControlQueue::cartPtpInternal(geometry_msgs::Pose pose) {
 
     geometry_msgs::PoseStamped ps;
     ps.header.stamp = ros::Time::now();
@@ -150,37 +150,37 @@ void SquirrelControlQueue::cartPtpInternal(geometry_msgs::Pose pose) {
         planner->executePlan(plan, execution_client);
 
     } else {
-        ROS_ERROR("(SquirrelControlQueue) planning for goal failed!");
+        ROS_ERROR("(SquirrelArmControlQueue) planning for goal failed!");
     }
 
 
 }
 
-void SquirrelControlQueue::setJntPtpThresh(double thresh) {
+void SquirrelArmControlQueue::setJntPtpThresh(double thresh) {
 
-    ROS_WARN("(SquirrelControlQueue) joint ptp threshold setting is not supported yet");
-
-}
-
-void SquirrelControlQueue::setAdditionalLoad(float loadMass, float loadPos) {
-
-    ROS_WARN("(SquirrelControlQueue) additional load setting is not supported yet");
+    ROS_WARN("(SquirrelArmControlQueue) joint ptp threshold setting is not supported yet");
 
 }
 
-void SquirrelControlQueue::setStiffness(float cpstiffnessxyz, float cpstiffnessabc, float cpdamping, float cpmaxdelta, float maxforce, float axismaxdeltatrq) {
+void SquirrelArmControlQueue::setAdditionalLoad(float loadMass, float loadPos) {
 
-    ROS_WARN("(SquirrelControlQueue) stiffness settings are not supported yet");
+    ROS_WARN("(SquirrelArmControlQueue) additional load setting is not supported yet");
 
 }
 
-int SquirrelControlQueue::getCurrentControlType() {
+void SquirrelArmControlQueue::setStiffness(float cpstiffnessxyz, float cpstiffnessabc, float cpdamping, float cpmaxdelta, float maxforce, float axismaxdeltatrq) {
+
+    ROS_WARN("(SquirrelArmControlQueue) stiffness settings are not supported yet");
+
+}
+
+int SquirrelArmControlQueue::getCurrentControlType() {
 
     return currControlType;
 
 }
 
-geometry_msgs::PoseStamped SquirrelControlQueue::tf_stamped2pose_stamped(tf::StampedTransform tf_in) {
+geometry_msgs::PoseStamped SquirrelArmControlQueue::tf_stamped2pose_stamped(tf::StampedTransform tf_in) {
 
     geometry_msgs::PoseStamped emap;
 
@@ -197,7 +197,7 @@ geometry_msgs::PoseStamped SquirrelControlQueue::tf_stamped2pose_stamped(tf::Sta
 
 }
 
-void SquirrelControlQueue::retrieveCartJoints() {
+void SquirrelArmControlQueue::retrieveCartJoints() {
 
     while(!destroyIt) {
         try {
@@ -211,13 +211,13 @@ void SquirrelControlQueue::retrieveCartJoints() {
 
 }
 
-geometry_msgs::Pose SquirrelControlQueue::getCurrentCartesianPose() {
+geometry_msgs::Pose SquirrelArmControlQueue::getCurrentCartesianPose() {
 
     return currentPose;
 
 }
 
-mes_result SquirrelControlQueue::getCurrentJoints() {
+mes_result SquirrelArmControlQueue::getCurrentJoints() {
 
     mes_result ret;
     ret.time = getCurrentTime();
@@ -228,11 +228,11 @@ mes_result SquirrelControlQueue::getCurrentJoints() {
 
 }
 
-mes_result SquirrelControlQueue::getCurrentJntFrcTrq() {
+mes_result SquirrelArmControlQueue::getCurrentJntFrcTrq() {
 
     if(firstTimeJointFrcReading) {
         firstTimeJointFrcReading = false;
-        ROS_WARN("(SquirrelControlQueue) reading joint force values not supported yet");
+        ROS_WARN("(SquirrelArmControlQueue) reading joint force values not supported yet");
     }
 
     mes_result ret;
@@ -244,7 +244,7 @@ mes_result SquirrelControlQueue::getCurrentJntFrcTrq() {
 
 }
 
-mes_result SquirrelControlQueue::getCurrentCartesianFrcTrq() {
+mes_result SquirrelArmControlQueue::getCurrentCartesianFrcTrq() {
 
     mes_result ret;
     ret.time = getCurrentTime();
@@ -255,7 +255,7 @@ mes_result SquirrelControlQueue::getCurrentCartesianFrcTrq() {
 
 }
 
-void SquirrelControlQueue::forceTorquCallback(std_msgs::Float64MultiArray ft) {
+void SquirrelArmControlQueue::forceTorquCallback(std_msgs::Float64MultiArray ft) {
 
     forceTorqueMutex.lock();
         currentFrqTrq = stdToArmadilloVec(ft.data);
@@ -263,30 +263,30 @@ void SquirrelControlQueue::forceTorquCallback(std_msgs::Float64MultiArray ft) {
 
 }
 
-std::string SquirrelControlQueue::getRobotName() {
+std::string SquirrelArmControlQueue::getRobotName() {
     return groupName;
 }
 
-std::string SquirrelControlQueue::getRobotFileName() {
+std::string SquirrelArmControlQueue::getRobotFileName() {
     return groupName;
 }
 
-std::vector<std::string> SquirrelControlQueue::getJointNames() {
+std::vector<std::string> SquirrelArmControlQueue::getJointNames() {
     return jointNames;
 }
 
-void SquirrelControlQueue::safelyDestroy() {
+void SquirrelArmControlQueue::safelyDestroy() {
 
 }
 
-bool SquirrelControlQueue::stopQueueWhilePtp() {
+bool SquirrelArmControlQueue::stopQueueWhilePtp() {
     return true;
 }
 
-std::vector<arma::vec> SquirrelControlQueue::computeIk(geometry_msgs::Pose targetPose) {
+std::vector<arma::vec> SquirrelArmControlQueue::computeIk(geometry_msgs::Pose targetPose) {
 
 }
 
-geometry_msgs::Pose SquirrelControlQueue::computeFk(std::vector<double> joints) {
+geometry_msgs::Pose SquirrelArmControlQueue::computeFk(std::vector<double> joints) {
 
 }
