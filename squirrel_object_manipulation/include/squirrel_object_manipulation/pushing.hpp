@@ -9,7 +9,8 @@
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/range/numeric.hpp>
 
-#include <squirrel_object_manipulation/RobotinoControl.hpp>
+#include <tf/transform_listener.h>
+
 #include <squirrel_rgbd_mapping_msgs/GetPushingPlan.h>
 #include <squirrel_manipulation_msgs/PushAction.h>
 #include <squirrel_manipulation_msgs/PushActionFeedback.h>
@@ -34,6 +35,7 @@
 #include "../src/pushing/include/PIDSimplePush.hpp"
 #include "../src/pushing/include/PIDObjectPush.hpp"
 
+#include "mongodb_store/message_store.h"
 
 #define PUSH_NAME "push"
 
@@ -58,6 +60,8 @@ private:
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
+
+   // mongodb_store::MessageStoreProxy message_store;
 
 
     //navigation path

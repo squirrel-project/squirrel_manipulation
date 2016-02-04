@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="squirrel_object_manipulation" type="push" name="push" cwd="node" required="true" output="screen" />
+  
+</launch>
