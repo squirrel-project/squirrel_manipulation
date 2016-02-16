@@ -16,7 +16,7 @@ SmashAction::SmashAction(const std::string std_SmashServerActionName) :
     private_nh("~")
 {
     smashServer.start();
-    ROS_INFO("Smash: server stated \n");
+    ROS_INFO("Smash: server started \n");
 
     private_nh.param<std::string>("smash/pose_topic", pose_topic_,"/squirrel_localizer_pose");
     private_nh.param("smash/robot_diameter", robot_diameter_, 0.23);
@@ -68,14 +68,13 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
     }
 
     geometry_msgs::Pose2D pose_start_ = pose_robot_;
-    cout<<"start pose"<<pose_start_<<endl;
     geometry_msgs::Twist cmd = getNullTwist();
 
     //orientate first if clutter not in front of the robot
-    double aR2G = getVectorAngle(goaly - pose_robot_.y, goalx - pose_robot_.x);
+    double aR2G = getVectorAngle(goalx - pose_robot_.x, goaly - pose_robot_.y);
     while(abs(rotationDifference(aR2G, pose_robot_.theta)) > angle_toll_){
         cmd = getNullTwist();
-        aR2G = getVectorAngle(goaly - pose_robot_.y, goalx - pose_robot_.x);
+        aR2G = getVectorAngle(goalx - pose_robot_.x, goaly - pose_robot_.y);
         cmd.angular.z = rotation_coefficient_ * rotationDifference(aR2G, pose_robot_.theta);
         if(fabs(cmd.linear.x) > vel_lin_max_) cmd.linear.x = (cmd.linear.x > 0 ? vel_lin_max_ : - vel_lin_max_);
         if(fabs(cmd.linear.y) > vel_lin_max_) cmd.linear.y = (cmd.linear.y > 0 ? vel_lin_max_ : - vel_lin_max_);
@@ -103,7 +102,7 @@ void SmashAction::executeSmash(const squirrel_manipulation_msgs::SmashGoalConstP
         cmd.linear.y = vel_R_(1);
 
         //orientation cmd
-        aR2G = getVectorAngle(goaly - pose_robot_.y, goalx - pose_robot_.x);
+        aR2G = getVectorAngle(goalx - pose_robot_.x, goaly - pose_robot_.y);
         cmd.angular.z = rotation_coefficient_ * rotationDifference(aR2G, pose_robot_.theta);
 
         if(fabs(cmd.linear.x) > vel_lin_max_) cmd.linear.x = (cmd.linear.x > 0 ? vel_lin_max_ : - vel_lin_max_);

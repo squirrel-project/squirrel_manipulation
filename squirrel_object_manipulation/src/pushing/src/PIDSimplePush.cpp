@@ -38,30 +38,24 @@ void PIDSimplePush::initChild() {
 }
 
 geometry_msgs::Twist PIDSimplePush::getVelocities(){
+
     //initialize value
     geometry_msgs::Twist cmd = getNullTwist();
 
     //translation error object-target
-    double dO2T = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
-    cmd.linear.x = pid_x_.computeCommand(dO2T, ros::Duration(time_step_));
+    cmd.linear.x = pid_x_.computeCommand(dO2P, ros::Duration(time_step_));
 
-    //angle object-robot-target
-    double aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
-    //distance robot to the line object-target
-    double dRlOT = distance2Line(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
-    if (aORT > 0) {
+    //angle object-robot-target as reference
+    //distance robot to the line object-target as error
+    if (aORP > 0) {
         cmd.linear.y = pid_y_.computeCommand(dRlOT, ros::Duration(time_step_));
     }
     else {
         cmd.linear.y = pid_y_.computeCommand(-dRlOT, ros::Duration(time_step_));
     }
 
-    //angle between robot pose and target
-    double aR2P = atan2(current_target_.pose.position.y - pose_robot_.y, current_target_.pose.position.x - pose_robot_.x);
-    if (isnan(aR2P)) aR2P = 0;
-
     //orientation error
-    double err_th = aR2P - pose_robot_.theta;
+    double err_th = rotationDifference(aR2P, pose_robot_.theta);
     cmd.angular.z =  pid_theta_.computeCommand(err_th, ros::Duration(time_step_));
 
     return cmd;

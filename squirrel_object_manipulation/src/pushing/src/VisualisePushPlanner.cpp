@@ -46,7 +46,7 @@ void PushPlanner::publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose) 
     marker.header.frame_id = t_pose.header.frame_id;
     marker.header.stamp = ros::Time();
     marker.ns = "push_action";
-    marker.id = 0;
+    marker.id = 1;
     marker.type = visualization_msgs::Marker::SPHERE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose = t_pose.pose;
@@ -66,7 +66,7 @@ void PushPlanner::publishPoint(geometry_msgs::PoseStamped t_pose) {
     marker.header.frame_id = t_pose.header.frame_id;
     marker.header.stamp = ros::Time();
     marker.ns = "push_action";
-    marker.id = 0;
+    marker.id = 2;
     marker.type = visualization_msgs::Marker::SPHERE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose = t_pose.pose;

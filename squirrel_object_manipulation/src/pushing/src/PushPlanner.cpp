@@ -40,10 +40,13 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     this->push_state_ = INACTIVE;
     this->goal_ = pushing_path_.poses[pushing_path_.poses.size() - 1];
 
-    vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 10, true);
-    marker_target_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_target", 10, true);
-    marker_object_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_object_pose", 10, true);
-    marker_point_ = nh.advertise<visualization_msgs::Marker>("/push_action/point", 10, true);
+    vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 100, true);
+    marker_target_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_target", 100, true);
+    marker_object_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_object_pose", 100, true);
+    marker_point_ = nh.advertise<visualization_msgs::Marker>("/push_action/point", 100, true);
+    pushing_plan_pub_ = nh.advertise<nav_msgs::Path>("/push_action/pushing_path", 1000, true);
+
+
     visualise_ = false;
 
     pose_robot_vec_.set_size(pushing_path_.poses.size(), 3);
@@ -62,16 +65,27 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     this->pose_object_ = pose_object_;
     this->current_target_ = this->getLookaheadPoint();
 
+
+    if (visualise_){
+        publishMarkerTargetCurrent(current_target_);
+        publishMarkerObjectCurrent(pose_object_);
+        pushing_plan_pub_.publish(pushing_path_);
+
+    }
+
     this->updateMatrix();
 
     //the angle of a vector object-target point
-    aO2P = getVectorAngle(pose_object_.pose.position.y - current_target_.pose.position.y, pose_object_.pose.position.x - current_target_.pose.position.x);
+    aO2P = getVectorAngle(current_target_.pose.position.x - pose_object_.pose.position.x, current_target_.pose.position.y - pose_object_.pose.position.y);
 
     //the angle of a vector robot-object
-    aR2O = getVectorAngle(pose_robot_.y - pose_object_.pose.position.y, pose_robot_.x - pose_object_.pose.position.x);
+    aR2O = getVectorAngle(pose_object_.pose.position.x - pose_robot_.x, pose_object_.pose.position.y - pose_robot_.y);
+
+    //the angle of a vector robot-target
+    aR2P = getVectorAngle(current_target_.pose.position.x - pose_robot_.x, current_target_.pose.position.y - pose_robot_.y);
 
     //the angle object-robot-target
-    aORT =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
+    aORP =  angle3Points(pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
     //translation error object-goal
     double dO2G = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, goal_ .pose.position.x, goal_.pose.position.y);
@@ -82,6 +96,10 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     //distance robot object
     dR2O = distancePoints(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y);
 
+    //distance robot to the line object-target
+    dRlOT = distance2Line(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
+
+
     switch (push_state_){
 
     case RELOCATE:
@@ -89,7 +107,6 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
         if(!rel_){
             relocate_target_vec_.set_size(3,1);
             relocate_target_.set_size(3);
-
             rel_ = true;
         }
 
@@ -98,21 +115,30 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
         for (int i = 0; i < 3; i ++) relocate_target_(i) = mean(relocate_target_vec_.row(i));
         relocate_target_vec_.resize(3,relocate_target_vec_.n_cols + 1);
 
-        publishPoint(relocate_target_);
+        if (visualise_)publishPoint(relocate_target_);
 
-        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.06) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_))
+        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.06) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_)){
             push_state_ = PUSH;
+            ROS_INFO("(Push) State: PUSH");
+            cout << endl;
+        }
 
-        if((fabs(aO2P - aR2O) < 0.3) && (fabs(rotationDifference(aR2O, pose_robot_.theta)) < 0.3))
+        if((fabs(aO2P - aR2O) < 0.3) && (fabs(rotationDifference(aR2O, pose_robot_.theta)) < 0.3)){
             push_state_ = APPROACH;
+            ROS_INFO("(Push) State: APPROACH");
+            cout << endl;
+        }
 
     }
         break;
 
     case APPROACH:
     {
-        if (dR2O < 1.2 * object_diameter_)
+        if (dR2O < 1.2 * object_diameter_){
             push_state_ = PUSH;
+            ROS_INFO("(Push) State: PUSH");
+            cout << endl;
+        }
 
     }
         break;
@@ -140,7 +166,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
 
 }
 
-geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
+geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(geometry_msgs::PoseStamped pose_object_){
 
     //getting the closests point on path
     int p_min_ind = 0;
@@ -163,7 +189,6 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
         p_lookahead = pushing_path_.poses.size() - 1;
     }
     else{
-
         for (size_t i = p_min_ind; i < pushing_path_.poses.size(); i++) {
 
             double d_curr = distancePoints(pushing_path_.poses[i].pose.position.x, pushing_path_.poses[i].pose.position.y, pushing_path_.poses[p_min_ind].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y);
@@ -174,13 +199,11 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
         }
     }
 
-    if (visualise_){
-        publishMarkerTargetCurrent(pushing_path_.poses[p_lookahead]);
-        publishMarkerObjectCurrent(pose_object_);
-
-    }
-
     return pushing_path_.poses[p_lookahead];
+}
+
+geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
+    return this->getLookaheadPoint(this->pose_object_);
 }
 
 void PushPlanner::setLookahedDistance(double d){
@@ -190,9 +213,17 @@ void PushPlanner::setLookahedDistance(double d){
 
 void PushPlanner::startPush(){
 
-    if (push_state_ == INACTIVE)
-        //push_state_ = RELOCATE;
-        push_state_ = PUSH;
+    if (push_state_ == INACTIVE){
+        if(state_machine_){
+            push_state_ = RELOCATE;
+            ROS_INFO("(Push) State: RELOCATE");
+        } else{
+            push_state_ = PUSH;
+            ROS_INFO("(Push) State: PUSH");
+        }
+        cout << endl;
+    }
+    //push_state_ = PUSH;
 
 
 
@@ -265,7 +296,7 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
     cmd.linear.y = vel_R_(1);
 
     //orientation cmd
-    cmd.angular.z = - rotation_coefficient * rotationDifference(aR2O, pose_robot_.theta);
+    cmd.angular.z = rotation_coefficient * rotationDifference(aR2O, pose_robot_.theta);
 
     return cmd;
 
@@ -288,7 +319,6 @@ geometry_msgs::Twist PushPlanner::approachVelocities(){
     //orientation cmd
     cmd.angular.z = - rotation_coefficient * rotationDifference(aO2P, pose_robot_.theta);
 
-    cout<<"approach"<<endl<<cmd<<endl;
     return cmd;
 
 }

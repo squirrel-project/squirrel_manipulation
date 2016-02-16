@@ -49,6 +49,8 @@ add_library(pushlib
    src/pushing/src/PIDSimplePush.cpp
    src/pushing/src/PIDPush.cpp
    src/pushing/src/PIDObjectPush.cpp
+   src/pushing/src/DipoleField.cpp
+   src/pushing/src/CentroidAlignment.cpp
 )
 
 add_library(utils

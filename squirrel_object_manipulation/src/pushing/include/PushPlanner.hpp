@@ -49,7 +49,7 @@ private:
     double goal_toll_;
     double object_diameter_;
 
-    bool visualise_;
+
     bool state_machine_;
     bool rel_;
 
@@ -57,6 +57,7 @@ private:
     ros::Publisher marker_target_c_;
     ros::Publisher marker_object_c_;
     ros::Publisher marker_point_;
+
     void publishWaypointMarkerArray(ros::NodeHandle nh);
     void updateMatrix();
 
@@ -66,6 +67,9 @@ protected:
 
     PushState push_state_;
     ros::NodeHandle  private_nh;
+    ros::Publisher pushing_plan_pub_;
+
+    bool visualise_;
 
     double err_t_toll_;
     double err_th_toll_;
@@ -74,8 +78,8 @@ protected:
     double vel_x_max_, vel_y_max_;
     double controller_frequency_, time_step_;
 
-    double aO2P, aR2O, aORT;
-    double dO2P, dR2O;
+    double aO2P, aR2O, aR2P, aORP;
+    double dO2P, dR2O, dRlOT;
 
 
 
@@ -94,6 +98,7 @@ protected:
     nav_msgs::Path pushing_path_;
 
     geometry_msgs::PoseStamped getLookaheadPoint();
+    geometry_msgs::PoseStamped getLookaheadPoint(geometry_msgs::PoseStamped pose_object_);
 
     ros::NodeHandle nh;
 

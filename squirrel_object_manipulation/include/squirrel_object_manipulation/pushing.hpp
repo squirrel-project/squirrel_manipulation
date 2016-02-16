@@ -34,6 +34,8 @@
 #include "../src/pushing/include/PIDPush.hpp"
 #include "../src/pushing/include/PIDSimplePush.hpp"
 #include "../src/pushing/include/PIDObjectPush.hpp"
+#include "../src/pushing/include/DipoleField.hpp"
+#include "../src/pushing/include/CentroidAlignment.hpp"
 
 #include "mongodb_store/message_store.h"
 
@@ -60,6 +62,7 @@ private:
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
+
 
    // mongodb_store::MessageStoreProxy message_store;
 
@@ -112,7 +115,8 @@ public:
     ~PushAction();
 
     void executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal);
-
+    void goalCB();
+    void preemptCB();
 
 
 };

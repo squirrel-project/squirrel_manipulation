@@ -102,11 +102,8 @@ vec reflectPointOverPoint(double x0, double y0, double x1, double y1){
 }
 
 
-//angle difference for rotation in first and fourth quadrant
+//angle difference for rotation
 double rotationDifference(double angle, double theta_robot){
-
-//    if (angle < 0) angle = angle + 2 * M_PI;
-//    if (theta_robot < 0) theta_robot = theta_robot + 2 * M_PI;
 
     double err_th = angle - theta_robot;
 
@@ -117,12 +114,11 @@ double rotationDifference(double angle, double theta_robot){
 }
 
 // angle of a vector (x,y)
-double getVectorAngle(double y, double x){
+double getVectorAngle(double x, double y){
 
     double th = atan2(y,x);
 
     if (isnan(th)) th = 0;
-    //if (th < 0) th = 2*M_PI + th;
 
     return th;
 }
