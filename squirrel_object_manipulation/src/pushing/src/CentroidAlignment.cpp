@@ -18,8 +18,8 @@ CentroidAlignment::CentroidAlignment():
 
 geometry_msgs::Twist CentroidAlignment::getVelocities(){
 
-    double sigma_gc = 0.1;
-    double sigma_c = 0.2;
+    double sigma_gc = 0.4;
+    double sigma_c = 0.8;
 
     //initialize value
     geometry_msgs::Twist cmd = getNullTwist();
@@ -38,8 +38,8 @@ geometry_msgs::Twist CentroidAlignment::getVelocities(){
 
     // robot_error_vector = vector sum
     vec u_(2);
-    u_(0) = sigma_gc * robot_displacement_(0) +  sigma_c * object_error_(0);
-    u_(1) = sigma_gc * robot_displacement_(1) +  sigma_c * object_error_(1);
+    u_(0) = sigma_c * robot_displacement_(0) +  sigma_gc * object_error_(0);
+    u_(1) = sigma_c * robot_displacement_(1) +  sigma_gc * object_error_(1);
 
     // transform to robot frame
     vec u_R_ = rotate2DVector(u_, -pose_robot_.theta);

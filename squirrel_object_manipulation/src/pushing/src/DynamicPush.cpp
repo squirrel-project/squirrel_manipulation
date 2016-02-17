@@ -1,9 +1,9 @@
-#include "../include/PIDPush.hpp"
+#include "../include/DynamicPush.hpp"
 
 using namespace std;
 using namespace arma;
 
-PIDPush::PIDPush():
+DynamicPush::DynamicPush():
     PushPlanner()
 {
     private_nh.param("push/error_theta_tolerance", err_th_toll_,0.01);
@@ -31,7 +31,7 @@ PIDPush::PIDPush():
     private_nh.param("push/integral_theta_min", i_theta_min_, -1.0);
 }
 
-void PIDPush::initChild() {
+void DynamicPush::initChild() {
 
     pid_x_.initPid(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
     pid_y_.initPid(p_y_, i_y_, d_y_, i_y_max_, i_y_min_);
@@ -40,7 +40,7 @@ void PIDPush::initChild() {
     pid_theta_.initPid(p_theta_, i_theta_, d_theta_, i_theta_max_, i_theta_min_);
 }
 
-geometry_msgs::Twist PIDPush::getVelocities(){
+geometry_msgs::Twist DynamicPush::getVelocities(){
     //initialize value
     geometry_msgs::Twist cmd = getNullTwist();
 
@@ -77,6 +77,15 @@ geometry_msgs::Twist PIDPush::getVelocities(){
     e_ox = pid_x_.computeCommand(object_error_r(0), ros::Duration(time_step_));
     e_oy = pid_y_.computeCommand(object_error_r(1), ros::Duration(time_step_));
 
+    //the angle object-robot-target
+    double aPOR =  angle3Points(current_target_.pose.position.x, current_target_.pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y);
+
+    double gain_x, gain_y;
+    double gain = 0.3;
+
+    cmd.linear.x = gain * cos(2 * aPOR);
+    cmd.linear.y = - gain * sin(2 * aPOR);
+
 //    // robot_error_vector = vector sum
 //    vec robot_error_(2);
 //    robot_error_(0) = robot_displacement_(0) +  object_error_(0);
@@ -88,8 +97,8 @@ geometry_msgs::Twist PIDPush::getVelocities(){
 //    double err_th = aO2P - pose_robot_.theta;
 //    cmd.angular.z =  pid_theta_.computeCommand(err_th, ros::Duration(time_step_));
 
-    cmd.linear.x = e_ox + e_dx;
-    cmd.linear.y = e_oy + e_dy;
+//    cmd.linear.x = gain_x * abs(e_ox + e_dx);
+//    cmd.linear.y = gain_y * abs(e_oy + e_dy);
 
 
     return cmd;

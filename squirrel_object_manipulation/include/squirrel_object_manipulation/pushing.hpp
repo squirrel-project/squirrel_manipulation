@@ -36,6 +36,7 @@
 #include "../src/pushing/include/PIDObjectPush.hpp"
 #include "../src/pushing/include/DipoleField.hpp"
 #include "../src/pushing/include/CentroidAlignment.hpp"
+#include "../src/pushing/include/DynamicPush.hpp"
 
 #include "mongodb_store/message_store.h"
 

@@ -1,12 +1,12 @@
-#ifndef PIDPUSH_H
-#define PIDPUSH_H
+#ifndef DYNAMICPUSH_H
+#define DYNAMICPUSH_H
 
 #include "PushPlanner.hpp"
 
 #include <geometry_msgs/Pose2D.h>
 #include <control_toolbox/pid.h>
 
-class PIDPush : public PushPlanner {
+class DynamicPush : public PushPlanner {
 
 private:
     ros::NodeHandle nh;
@@ -26,11 +26,11 @@ protected:
 
 public:
 
-    PIDPush();
+    DynamicPush();
     geometry_msgs::Twist getVelocities();
 
 
 };
 
 
-#endif // PIDPUSH_H
+#endif // DynamicPush_H

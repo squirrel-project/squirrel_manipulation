@@ -24,7 +24,7 @@ geometry_msgs::Twist DipoleField::getVelocities(){
     double gain = 0.5;
 
     cmd.linear.x = gain * cos(2 * aPOR);
-    cmd.linear.y = gain * sin(2 * aPOR);
+    cmd.linear.y = - gain * sin(2 * aPOR);
 
     return cmd;
 

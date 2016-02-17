@@ -31,7 +31,9 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDPush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDSimplePush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
-    push_planner_ = boost::shared_ptr<PushPlanner>(new DipoleField());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new DipoleField());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new CentroidAlignment());
+    push_planner_ = boost::shared_ptr<PushPlanner>(new DynamicPush());
 
     //set callback for cancel request
     pushServer.registerPreemptCallback(boost::bind(&PushAction::preemptCB, this));
@@ -162,7 +164,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
             push_planner_->updatePushPlanner(pose_robot_, pose_object_);
             geometry_msgs::Twist cmd = push_planner_->getControlCommand();
-            //cout<<cmd<<endl;
+            cout<<cmd<<endl;
             robotino->singleMove(cmd.linear.x, cmd.linear.y,0.0,0.0,0.0,cmd.angular.z);
 
             lRate.sleep();
