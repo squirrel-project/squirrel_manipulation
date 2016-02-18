@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_arm_control)
 
+find_package(PCL REQUIRED)
+find_package(Boost REQUIRED)
+find_package(Armadillo REQUIRED)
+
+catkin_package(
+  INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS geometry_msgs kukadu moveit_msgs sensor_msgs std_msgs tf trajectory_msgs uibk_planning_node DEPENDS ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PCL_LIBRARIES}
+)
+
 find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     kukadu
@@ -14,14 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
     nav_msgs
     trajectory_msgs
     uibk_planning_node
-)
-
-find_package(PCL REQUIRED)
-find_package(Boost REQUIRED)
-find_package(Armadillo REQUIRED)
-
-catkin_package(
-  INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS geometry_msgs kukadu moveit_msgs sensor_msgs std_msgs tf trajectory_msgs uibk_planning_node DEPENDS ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PCL_LIBRARIES}
 )
 
 include_directories(
