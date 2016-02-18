@@ -6,7 +6,7 @@ find_package(Boost REQUIRED)
 find_package(Armadillo REQUIRED)
 
 catkin_package(
-  INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS geometry_msgs kukadu moveit_msgs sensor_msgs std_msgs tf trajectory_msgs uibk_planning_node DEPENDS ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PCL_LIBRARIES}
+  INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS armadillo geometry_msgs kukadu moveit_msgs sensor_msgs std_msgs tf trajectory_msgs uibk_planning_node DEPENDS ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PCL_LIBRARIES}
 )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
     nav_msgs
     trajectory_msgs
     uibk_planning_node
+		armadillo
 )
 
 include_directories(
