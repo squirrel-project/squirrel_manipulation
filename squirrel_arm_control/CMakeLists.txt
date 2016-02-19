@@ -24,7 +24,6 @@ catkin_package(
   INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS geometry_msgs kukadu moveit_msgs sensor_msgs std_msgs tf trajectory_msgs uibk_planning_node DEPENDS ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PCL_LIBRARIES}
 )
 
-
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
