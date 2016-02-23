@@ -46,7 +46,7 @@ double angle3Points(double x1, double y1, double x2, double y2, double x3, doubl
     double a32 = atan2(y3 - y2, x3 -x2);
     if (isnan(a32)) a32 = 0;
 
-    return a12 - a32;
+    return a32 - a12;
 }
 
 // distance of point 0 from line defined by points 1 and 2
@@ -85,6 +85,7 @@ vec rotate2DVector(double x, double y, double angle){
 
     return rot_vec_;
 }
+
 vec rotate2DVector(vec vec_, double angle){
     return rotate2DVector(vec_(0), vec_(1), angle);
 }
@@ -121,6 +122,15 @@ double getVectorAngle(double x, double y){
     if (isnan(th)) th = 0;
 
     return th;
+}
+
+double getGaussianVal(double x, double sigma, double mi){
+    return exp( - pow( x  - mi, 2) / (2 * pow(sigma, 2)));
+}
+
+int sign(const double z)
+{
+   return (z > 0.0) ? 1 : - 1;
 }
 
 

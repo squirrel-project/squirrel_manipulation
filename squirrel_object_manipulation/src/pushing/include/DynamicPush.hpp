@@ -3,6 +3,7 @@
 
 #include "PushPlanner.hpp"
 
+
 #include <geometry_msgs/Pose2D.h>
 #include <control_toolbox/pid.h>
 
@@ -15,6 +16,7 @@ private:
     control_toolbox::Pid pid_theta_;
     control_toolbox::Pid pid_xd_;
     control_toolbox::Pid pid_yd_;
+    int count;
 
 
     double p_x_, d_x_, i_x_, i_x_min_, i_x_max_;
@@ -23,6 +25,7 @@ private:
 
 protected:
     void initChild();
+    void updateChild();
 
 public:
 

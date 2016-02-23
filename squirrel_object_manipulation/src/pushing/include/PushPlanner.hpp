@@ -81,6 +81,8 @@ protected:
     double aO2P, aR2O, aR2P, aORP;
     double dO2P, dR2O, dRlOT;
 
+    double mi_theta_p_, sigma_theta_p_;
+
 
 
     geometry_msgs::Pose2D pose_robot_;
@@ -103,6 +105,7 @@ protected:
     ros::NodeHandle nh;
 
     virtual void initChild() = 0;
+    virtual void updateChild() = 0;
 
 public:
 

@@ -31,7 +31,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDPush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDSimplePush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
-    //push_planner_ = boost::shared_ptr<PushPlanner>(new DipoleField());
+    // push_planner_ = boost::shared_ptr<PushPlanner>(new DipoleField());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new CentroidAlignment());
     push_planner_ = boost::shared_ptr<PushPlanner>(new DynamicPush());
 

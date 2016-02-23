@@ -145,11 +145,13 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
 
     case PUSH:
     {
+         this->updateChild();
 
         if (dO2G < goal_toll_){
             goal_reached_ = true;
             push_state_ = INACTIVE;
         }
+
 
     }
         break;
@@ -162,6 +164,8 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
         break;
 
     }
+
+
 
 
 }
