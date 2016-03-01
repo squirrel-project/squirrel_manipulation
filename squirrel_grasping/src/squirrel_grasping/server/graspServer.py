@@ -6,8 +6,10 @@ import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
 from gemoetry_msgs import Pose
 from tf.transformations import quaternion_matrix
+from db.db_utils import grasp_importer 
 
 
+import squirrel_manipulation_msgs.srv.GraspImport as Importer
 import squirrel_manipulation_msgs.msg.Grasp as Grasp
 import squirrel_manipulation_msgs.msg.GraspAction as GraspAction
 import squirrel_manipulation_msgs.msg.GraspActionResult as GraspActionResult
@@ -24,6 +26,7 @@ class GraspServer(object):
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting GraspServer')
         self._server = actionlib.SimpleActionServer('grasp', GraspAction, execute_cb=self.execute, auto_start=False)
+        sel._importer = rospy.Service('grasp_importer', Importer, grasp_importer)
         self._server.
         self._server.start()
 
@@ -37,7 +40,7 @@ class GraspServer(object):
         self._server.publish_feedback(self._feedback)
         
         rospy.loginfo(rospy.get_caller_id() + ': Requested grasping of object %s with gripper config %s and pose [pos, rot] [[%i, %i, %i], [%i, %i, %i, %i]]' %
-                      (goal.grasp.objbectID, goal.grasp.gripperConfiguration, 
+                      (goal.grasp.objbect_id, goal.grasp.gripper_config, 
                       goal.grasp.gripperPose.pose.position.x, 
                       goal.grasp.gripperPose.pose.position.y, 
                       goal.grasp.gripperPose.pose.position.z,
@@ -62,7 +65,7 @@ class GraspServer(object):
         transformation = __computeGraspTransformation(goal.grasp, grasp.objectPose.pose)
 
         if transformation == None:
-            self._result.result_status = 'failed to grasp object %s'.format(goal.grasp.objectID) 
+            self._result.result_status = 'failed to grasp object %s'.format(goal.grasp.object_id) 
             rospy.loginfo('GraspAction: failed')
             self.server.set_succeeded(self._result)
             return            
@@ -74,7 +77,7 @@ class GraspServer(object):
         # read gripper config
         current_config = None
 
-        if current_config == goal.grasp.gripperConfiguration:
+        if current_config == goal.grasp.gripper_config:
             self._feedback.current_phase = 'configuring gripper'
             self._feedback.current_status = 'setting gripper to homing position'
             self._feedback.percent_completed = 0.6
@@ -99,22 +102,21 @@ class GraspServer(object):
         self._server.publish_feedback(self._feedback)
         #grasp object
 
-        self._result.result_status = 'object %s grasped'.format(goal.grasp.objectID) 
+        self._result.result_status = 'object %s grasped'.format(goal.grasp.object_id) 
         rospy.loginfo('GraspAction: succeeded')
 
         self.server.set_succeeded(self._result)
 
 
-    def __computeGraspTransformation(grasp, objectPose):
+    def __computeGraspTransformation(grasp, object_pose):
         assert isinstance(grasp, Grasp)
 
         # get ground truth from knowledge base
-        msg_store = MessageStoreProxy()
-        gTP = grasp.groundTruth.pose
-        lOP = grasp.learnedObjectPose.pose
+        ground_truth_pose = grasp.object_ground_truth.pose
+        learned_object_pose = grasp.learned_object_pose.pose
 
-        trans1 = self.__inverseTimes(lOP, gTP)
-        trans2 = self.__inverseTimes(gTP, objectPose)
+        trans1 = self.__inverseTimes(learned_object_pose, ground_truth_pose)
+        trans2 = self.__inverseTimes(learned_object_pose, ground_truth_pose, object_pose)
 
         # combine transformations and return
 
