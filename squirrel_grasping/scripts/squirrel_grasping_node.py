@@ -2,13 +2,13 @@
 
 import rospy
 
-from squirrel_grasping.server.blindGraspServer import BlindGraspServer
+from squirrel_grasping.server.graspServer import GraspServer
 
 
 if __name__ == '__main__':
     try:
         rospy.init_node('squirrel_grasping_node')
-        BGS = BlindGraspServer()
+        BGS = GraspServer()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
