@@ -23,6 +23,8 @@ private:
 
 protected:
     void initChild();
+    void updateChild(){}
+
 
 public:
 

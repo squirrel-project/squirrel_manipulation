@@ -20,8 +20,10 @@ arma::vec reflectPointOverPoint(double x0, double y0, double x1, double y1);
 
 double rotationDifference(double angle, double theta_robot);
 double getVectorAngle(double x, double y);
+double getNorm(arma::vec v);
 
 double getGaussianVal(double x, double sigma, double mi);
+
 
 
 #endif

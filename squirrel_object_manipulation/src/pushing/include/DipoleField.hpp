@@ -16,6 +16,7 @@ public:
     DipoleField();
     geometry_msgs::Twist getVelocities();
     void initChild();
+    void updateChild(){}
 
 
 };

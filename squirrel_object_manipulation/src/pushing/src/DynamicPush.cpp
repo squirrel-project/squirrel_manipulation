@@ -1,4 +1,8 @@
 #include "../include/DynamicPush.hpp"
+#include "gp.h"
+#include "gp_utils.h"
+
+#include <Eigen/Dense>
 
 using namespace std;
 using namespace arma;
@@ -33,95 +37,150 @@ DynamicPush::DynamicPush():
 
 void DynamicPush::initChild() {
 
-    pid_x_.initPid(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
-    pid_y_.initPid(p_y_, i_y_, d_y_, i_y_max_, i_y_min_);
-//    pid_xd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_x_max_, i_x_min_);
-//    pid_yd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_y_max_, i_y_min_);
-//    pid_theta_.initPid(p_theta_, i_theta_, d_theta_, i_theta_max_, i_theta_min_);
-    mi_theta_p_ = 3.14;
-    sigma_theta_p_= 1.0;
-    count = 1;
+    //pid_x_.initPid(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
+
+    pid_x_.initDynamicReconfig(private_nh);
+    pid_x_.setGains(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
+    pid_y_.initDynamicReconfig(private_nh);
+    pid_y_.setGains(p_y_, i_y_, d_y_, i_y_max_, i_y_min_);
+    //    pid_xd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_x_max_, i_x_min_);
+    //    pid_yd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_y_max_, i_y_min_);
+    //    pid_theta_.initPid(p_theta_, i_theta_, d_theta_, i_theta_max_, i_theta_min_);
+
+    mi_dr = 0.0;
+    sigma_dr = 2 * object_diameter_;
+    mi_theta = M_PI;
+
+    sigma_theta= 1.0;
+    count_dr = 100;
+    dO2Pp = dO2P;
+    dRlOTp = dRlOT;
+    aPORp = aPOR;
+    betap = M_PI / 2;
+
+    theta_vec.resize(1);
+    vx_p_.resize(1);
+    vy_p_.resize(1);
+    alpha_vec.resize(1);
+    vdO2P_.resize(1);
+
+
+
 }
 
 void DynamicPush::updateChild() {
 
-    mi_theta_p_ = 3.14;
-    sigma_theta_p_= 1.0;
+
+    //the angle object-robot-target
+    aPOR =  angle3Points(current_target_.pose.position.x, current_target_.pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y);
+
+    if(aPOR < 0) aPOR = 2 * M_PI + aPOR;
+    theta_vec(theta_vec.n_elem - 1) = aPOR;
+
+    theta_vec.resize(theta_vec.n_elem  + 1);
+
+    vx_p_(vx_p_.n_elem - 1) = -cos(aPOR);
+    vy_p_(vy_p_.n_elem - 1) = -sin(aPOR);
+
+    vx_p_.resize(vx_p_.n_elem + 1);
+    vy_p_.resize(vy_p_.n_elem + 1);
+
+    double expected_dir = getVectorAngle(previous_target_.pose.position.x - previous_pose_object_.pose.position.x, previous_target_.pose.position.y - previous_pose_object_.pose.position.y);
+    double executed_dir = getVectorAngle(pose_object_.pose.position.x - previous_pose_object_.pose.position.x, pose_object_.pose.position.y - previous_pose_object_.pose.position.y);
+
+    alpha = expected_dir - executed_dir;
+    alpha_vec(alpha_vec.n_elem - 1) = aPOR;
+    alpha_vec.resize(alpha_vec.n_elem  + 1);
+
+    beta = aO2P - tf::getYaw(pose_object_.pose.orientation);
+
+
+    //distance object target point
+    double dO2Ppn = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, previous_target_.pose.position.x, previous_target_.pose.position.y);
+
+    vdO2P_(vdO2P_.n_elem - 1) = dO2Ppn;
+    vdO2P_.resize(vdO2P_.n_elem + 1);
+
+    if(dO2Ppn < dO2Pp){
+
+        count_dr ++;
+        double tempD = mi_dr;
+        mi_dr = mi_dr + (dRlOTp - mi_dr)/count_dr;
+        sigma_dr = ((count_dr -1) * sigma_dr + (dRlOTp - tempD)*(dRlOTp - mi_dr )) / count_dr;
+
+        double tempT = mi_theta;
+        mi_theta = mi_theta + (aPORp - mi_theta)/count_dr;
+        sigma_theta = ((count_dr -1) * sigma_theta + (aPORp - tempT)*(aPORp - mi_theta)) / count_dr;
+
+        double tempB = mi_beta;
+        mi_beta = mi_beta + (betap - mi_beta)/count_dr;
+        sigma_beta = ((count_dr -1) * sigma_beta + (betap - tempB)*(betap - mi_beta)) / count_dr;
+
+    }
+
+    dO2Pp = dO2Ppn;
+    dRlOTp = dRlOT;
+    aPORp = aPOR;
+    betap = beta;
+
+    psi_push_ = getGaussianVal(dRlOT, sigma_dr, mi_dr);
+    psi_rel_ = 1 - getGaussianVal(aPOR, sigma_theta, mi_theta);
+
+
 }
 
 geometry_msgs::Twist DynamicPush::getVelocities(){
     //initialize value
     geometry_msgs::Twist cmd = getNullTwist();
 
-    //robot displacement from line object-target
- //   vec displacement_point_ = closestPointOnLine(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
-//    geometry_msgs::PoseStamped pp = pose_object_;
-//    pp.pose.position.x = displacement_point_(0);
-//    pp.pose.position.y = displacement_point_(1);
-//    publishPoint(pp);
+    //pid_x_.setGains(p_x_, i_x_, abs(cos(aPOR)/2), i_x_max_, i_x_min_);
+    //pid_y_.setGains(p_y_, i_y_, abs(cos(aPOR)/2), i_y_max_, i_y_min_);
 
-//    cout << displacement_point_<<endl;
-//    vec robot_displacement_(2);
-//    robot_displacement_(0) = displacement_point_(0) - pose_robot_.x;
-//    robot_displacement_(1) = displacement_point_(1) - pose_robot_.y;
+    pid_x_.setGains(p_x_, i_x_, var(vx_p_), i_x_max_, i_x_min_);
+    pid_y_.setGains(p_y_, i_y_, var(vy_p_), i_y_max_, i_y_min_);
 
-//    // transform to robot frame
-//    vec robot_displacement_r = rotate2DVector(robot_displacement_, -pose_robot_.theta);
+    //    double vx_push = - psi_push_ * sign(cos(aPOR)) * pid_x_.computeCommand(-cos(aPOR), ros::Duration(time_step_));
+    //    double vy_push = - psi_push_ * sign(cos(aPOR)) * pid_y_.computeCommand(-sin(aPOR), ros::Duration(time_step_));
 
-//    double e_dx, e_dy;
-//    e_dx = pid_xd_.computeCommand(robot_displacement_r(0), ros::Duration(time_step_));
-//    e_dy = pid_yd_.computeCommand(robot_displacement_r(1), ros::Duration(time_step_));
+    double vx_push =  psi_push_ * sign(cos(aPOR)) * cos(aPOR);
+    double vy_push = psi_push_ * sign(cos(aPOR)) * sin(aPOR);
 
+    double vx_relocate = - psi_rel_ * sign(sin(aPOR)) * sin(aPOR);
+    double vy_relocate =  psi_rel_ * sign(sin(aPOR)) * cos(aPOR);
 
-//    // error object-target
-//    vec object_error_(2);
-//    object_error_(0) = current_target_.pose.position.x - pose_object_.pose.position.x;
-//    object_error_(1) = current_target_.pose.position.y - pose_object_.pose.position.y;
+    //    double vx_compensate =  psi_push_*  cos(aPOR) * var(alpha_vec)  * cos(alpha);
+    double vy_compensate =  psi_push_ * var(alpha_vec)  * sin(alpha);
+    double vx_compensate = -  abs(psi_push_ * var(alpha_vec)* cos(alpha));
+    //vy_compensate = 0;
 
-//    // transform to robot frame
-//    vec object_error_r = rotate2DVector(object_error_, -pose_robot_.theta);
+    double vx_stabilize =  psi_push_ * cos(aPOR) * 0.4 *(mi_beta - beta);
 
-//    double e_ox, e_oy;
-//    e_ox = pid_x_.computeCommand(object_error_r(0), ros::Duration(time_step_));
-//    e_oy = pid_y_.computeCommand(object_error_r(1), ros::Duration(time_step_));
+//    double vx_push = - cos(aPOR) * (-cos(aPOR));
+//    double vy_push = - cos(aPOR) * (-sin(aPOR));
 
-    //the angle object-robot-target
-    double aPOR =  angle3Points(current_target_.pose.position.x, current_target_.pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y);
+//    double vx_relocate = -sin(aPOR) * sin(aPOR);
+//    double vy_relocate = sin(aPOR) * cos(aPOR);
+    //double vx =  gain * cos(2 * aPOR);
+    //double vy =  gain * sin(2 * aPOR);
+    
+    double vx =  vx_push +  vx_relocate + vx_compensate;
+    double vy =  vy_push + vy_relocate + vy_compensate;
+    
+    // transform to robot frame
+    vec v = rotate2DVector(vx, vy, rotationDifference( aO2P, pose_robot_.theta));
 
-    double gain = 0.3;
+    cout<<"vx "<<vx<<" vy "<<vy<<endl;
+    cout <<"psi push "<< psi_push_<<" dRlOT "<<dRlOT<<" "<<sigma_dr<<" "<<mi_dr<<""<<endl;
+    cout <<"psi rel "<< psi_rel_<<" aROP "<<aPOR<<" "<<sigma_theta<<" "<<mi_theta<<""<<endl<<endl;
+    cout<<v<<endl;
 
-
-
-     double vx_push = - sign(cos(aPOR)) * pid_x_.computeCommand(-cos(aPOR), ros::Duration(time_step_));
-     double vy_push = - sign(cos(aPOR)) * pid_y_.computeCommand(-sin(aPOR), ros::Duration(time_step_));
-
-    // double vx_push = - cos(aPOR) * (-cos(aPOR));
-    // double vy_push = - cos(aPOR) * (-sin(aPOR));
-
-    double vx_relocate = -sin(aPOR);
-    double vy_relocate = cos(aPOR);
-   // cmd.linear.x = gain * cos(2 * aPOR);
-   // cmd.linear.y = - gain * sin(2 * aPOR);
-
-    cmd.linear.x = gain * ( vx_push + sin(aPOR) * vx_relocate);
-    cmd.linear.y = gain * ( vy_push + sin(aPOR) * vy_relocate);
-    cout<<aPOR<<" cos(aPOR) "<<cos(aPOR)<<" sin(aPOR) "<<sin(aPOR)<<endl;
-
-//    // robot_error_vector = vector sum
-//    vec robot_error_(2);
-//    robot_error_(0) = robot_displacement_(0) +  object_error_(0);
-//    robot_error_(1) = robot_displacement_(1) +  object_error_(1);
+    //cmd.linear.x = gain * ( vx_push + sin(aPOR) * vx_relocate);
+    // cmd.linear.y = gain * ( vy_push + sin(aPOR) * vy_relocate);
 
 
-    //    //orientation error
-    //    double err_th = aR2P - pose_robot_.theta;
-//    double err_th = aO2P - pose_robot_.theta;
-//    cmd.angular.z =  pid_theta_.computeCommand(err_th, ros::Duration(time_step_));
-
-//    cmd.linear.x = gain_x * abs(e_ox + e_dx);
-//    cmd.linear.y = gain_y * abs(e_oy + e_dy);
-
+    cmd.linear.x = vel_lin_max_ * v(0) / getNorm(v);
+    cmd.linear.y = vel_lin_max_ * v(1) / getNorm(v);
 
     return cmd;
 

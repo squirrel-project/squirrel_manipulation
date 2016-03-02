@@ -90,6 +90,13 @@ vec rotate2DVector(vec vec_, double angle){
     return rotate2DVector(vec_(0), vec_(1), angle);
 }
 
+//get vector norm
+
+double getNorm(vec v){
+
+    return distancePoints (v(0), v(1), 0, 0, 0, 0);
+}
+
 
 //reflection of point p1 over the point p2
 vec reflectPointOverPoint(double x0, double y0, double x1, double y1){
@@ -125,8 +132,10 @@ double getVectorAngle(double x, double y){
 }
 
 double getGaussianVal(double x, double sigma, double mi){
-    return exp( - pow( x  - mi, 2) / (2 * pow(sigma, 2)));
-}
+    double r = exp( - pow( x  - mi, 2) / (2 * pow(sigma, 2)));
+    if (isnan(r)) r = 1.0;
+    return r;
+ }
 
 int sign(const double z)
 {

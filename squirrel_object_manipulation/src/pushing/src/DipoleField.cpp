@@ -23,8 +23,14 @@ geometry_msgs::Twist DipoleField::getVelocities(){
 
     double gain = 0.5;
 
-    cmd.linear.x = gain * cos(2 * aPOR);
-    cmd.linear.y = gain * sin(2 * aPOR);
+    double vx = gain * cos(2 * aPOR);
+    double vy = gain * sin(2 * aPOR);
+
+    arma::vec v = rotate2DVector(vx, vy, rotationDifference( aO2P, pose_robot_.theta));
+
+    cmd.linear.x =  v(0);
+    cmd.linear.y = v(1);
+
 
     return cmd;
 

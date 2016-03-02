@@ -16,14 +16,14 @@ PushPlanner::PushPlanner()
     this->push_active_ = false;
 }
 
-PushPlanner::PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_):
+PushPlanner::PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_):
     private_nh("~")
 {
-    this->initialize(local_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_, controller_frequency_, object_diameter_);
+    this->initialize(local_frame_, global_frame_, pose_robot_, pose_object_, pushing_path_, lookahead_, goal_toll_, state_machine_, controller_frequency_, object_diameter_, robot_diameter_, corridor_width_);
 
 }
 
-void PushPlanner::initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_){
+void PushPlanner::initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_){
 
     this->global_frame_ = global_frame_;
     this->local_frame_ = local_frame_;
@@ -36,6 +36,8 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     this->state_machine_ = state_machine_;
     this->controller_frequency_ = controller_frequency_;
     this->object_diameter_= object_diameter_;
+    this->robot_diameter_ = robot_diameter_;
+    this->corridor_width_ = corridor_width_;
     this->time_step_ = 1 / controller_frequency_;
     this->push_state_ = INACTIVE;
     this->goal_ = pushing_path_.poses[pushing_path_.poses.size() - 1];
@@ -50,6 +52,7 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     visualise_ = false;
 
     pose_robot_vec_.set_size(pushing_path_.poses.size(), 3);
+    current_time_vec_.set_size(pushing_path_.poses.size(), 1);
     pose_object_vec_.set_size(pushing_path_.poses.size(), 3);
     current_target_vec_.set_size(pushing_path_.poses.size(), 3);
     elem_count_ = 0;
@@ -62,9 +65,11 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
 void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_){
 
     this->pose_robot_ = pose_robot_;
+    this->previous_pose_object_  = this->pose_object_ ;
     this->pose_object_ = pose_object_;
-    this->current_target_ = this->getLookaheadPoint();
-
+    this->previous_target_ = this->current_target_;
+    this->current_target_ = this->getLookaheadPointDynamic();
+    this->current_time_ = ros::Time::now().toSec();
 
     if (visualise_){
         publishMarkerTargetCurrent(current_target_);
@@ -145,7 +150,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
 
     case PUSH:
     {
-         this->updateChild();
+        this->updateChild();
 
         if (dO2G < goal_toll_){
             goal_reached_ = true;
@@ -205,9 +210,68 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(geometry_msgs::PoseSta
 
     return pushing_path_.poses[p_lookahead];
 }
+geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::PoseStamped pose_object_){
+
+    //getting the closests point on path
+    int p_min_ind = 0;
+    double d_min = std::numeric_limits<double>::infinity();
+
+    for(size_t i = 0; i < pushing_path_.poses.size(); i++) {
+
+        double d_curr = distancePoints(pushing_path_.poses[i].pose.position.x, pushing_path_.poses[i].pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y);
+        if (d_min > d_curr){
+            p_min_ind = i;
+            d_min = d_curr;
+        }
+    }
+
+    //determining the target point with minimum cost function
+    double cost_min = std::numeric_limits<double>::infinity();
+    int p_lookahead = p_min_ind;
+    double P = distancePoints(pushing_path_.poses[p_min_ind ].pose.position.x, pushing_path_.poses[p_min_ind ].pose.position.y,  pose_object_.pose.position.x, pose_object_.pose.position.y);
+    if (P > corridor_width_ / 2) cout <<" exceded corridor"<<endl;
+    double D = distancePoints(pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.x, pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.y,  pose_object_.pose.position.x, pose_object_.pose.position.y);
+    if(distancePoints(pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.x, pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.y, pushing_path_.poses[p_min_ind].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y) < lookahead_){
+        p_lookahead = pushing_path_.poses.size() - 1;
+    }
+    else{
+        for (size_t i = p_min_ind + 1; i < pushing_path_.poses.size(); i++) {
+            double d = distancePoints(pushing_path_.poses[i].pose.position.x, pushing_path_.poses[i].pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y);
+
+
+            double d_max = 0;
+            for (size_t j = p_min_ind; j < i; j++) {
+                double d_curr = distance2Line(pushing_path_.poses[j].pose.position.x, pushing_path_.poses[j].pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pushing_path_.poses[i].pose.position.x, pushing_path_.poses[i].pose.position.y);
+                if(d_max < d_curr) d_max = d_curr;
+            }
+            double angle_tail = rotationDifference(getVectorAngle(pushing_path_.poses[p_min_ind].pose.position.x - pushing_path_.poses[p_min_ind-1].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y - pushing_path_.poses[p_min_ind-1].pose.position.y),  getVectorAngle(pose_object_.pose.position.x - pushing_path_.poses[i].pose.position.x, pose_object_.pose.position.y - pushing_path_.poses[i].pose.position.y));
+            double tail = abs((corridor_width_ / 2 - d_min) * sin (angle_tail));
+
+            double penalty_curve = corridor_width_ - d_max - robot_diameter_;
+            double penalty_tail = tail - robot_diameter_ - object_diameter_ ;
+
+
+            double cost_curr = D/ d + 2 * (robot_diameter_ + object_diameter_) / corridor_width_ * d_max / penalty_curve + 1 / penalty_tail ;
+            if (cost_curr < cost_min){
+                cost_min = cost_curr;
+                p_lookahead = i;
+
+            }
+
+        }
+    }
+
+    if (p_lookahead == p_min_ind + 1) return current_target_;
+
+    return pushing_path_.poses[p_lookahead];
+}
 
 geometry_msgs::PoseStamped PushPlanner::getLookaheadPoint(){
     return this->getLookaheadPoint(this->pose_object_);
+}
+
+geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(){
+    return this->getLookaheadPointDynamic(this->pose_object_);
 }
 
 void PushPlanner::setLookahedDistance(double d){
@@ -291,7 +355,7 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
         G_rep_x = 0;
         G_rep_y = 0;
     }
-    
+
     double G_x = G_attr_x + G_rep_x;
     double G_y = G_attr_y + G_rep_y;
 
@@ -340,15 +404,58 @@ void PushPlanner::updateMatrix(){
     pose_robot_vec_(elem_count_, 1) = pose_robot_.y;
     pose_robot_vec_(elem_count_, 2) = pose_robot_.theta;
 
+    current_time_vec_(elem_count_, 0) = current_time_;
+
     elem_count_++;
 
     if (elem_count_ == current_target_vec_.n_rows) {
         current_target_vec_.resize(current_target_vec_.n_rows + pushing_path_.poses.size(), 3);
         pose_robot_vec_.resize(current_target_vec_.n_rows + pushing_path_.poses.size(), 3);
         pose_object_vec_.resize(current_target_vec_.n_rows + pushing_path_.poses.size(), 3);
+        current_time_vec_.resize(current_time_vec_.n_rows + pushing_path_.poses.size(), 1);
+
+
     }
 
 }
 
+void PushPlanner::saveData(string path){
+
+    std::ofstream rFile, oFile, tarFile, tFile ;
+
+    string nameF = path + experimentName + "_robot.txt";
+    rFile.open(nameF.c_str());
+
+    string nameO = path + experimentName + "_object.txt";
+    oFile.open(nameO.c_str());
+
+    string nameT = path + experimentName + "_target.txt";
+    tarFile.open(nameT.c_str());
+
+    string namet = path + experimentName + "_time.txt";
+    tFile.open(namet.c_str());
 
 
+    for (int i = 0; i < elem_count_; i ++){
+        for(int j = 0; j < 3; j++){
+            rFile << pose_robot_vec_(i, j) << "\t";
+            oFile << pose_object_vec_(i, j) << "\t";
+            tarFile << current_target_vec_(i, j) << "\t";
+
+        }
+        tFile << current_time_vec_(i, 0) << "\t"<< endl;
+        rFile << endl;
+        oFile << endl;
+        tarFile << endl;
+    }
+
+    tFile.close();
+    rFile.close();
+    tarFile.close();
+    oFile.close();
+
+}
+
+void PushPlanner::setExperimentName(string name){
+    this->experimentName = name;
+}

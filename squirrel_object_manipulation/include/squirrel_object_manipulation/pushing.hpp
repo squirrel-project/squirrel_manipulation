@@ -55,7 +55,7 @@ private:
     tf::TransformListener tfl_;
     std::string node_name_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_ ;
+    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_, robot_diameter_, corridor_width_ ;
 
     std::string robot_base_frame_, global_frame_;
 
@@ -75,7 +75,7 @@ private:
     //robot pose update
     std::string pose_topic_;
     geometry_msgs::Pose2D pose_robot_;
-    ros::Subscriber pose_sub_;
+    ros::Subscriber pose_sub_ ;
     boost::mutex robot_pose_mutex_;
     void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 

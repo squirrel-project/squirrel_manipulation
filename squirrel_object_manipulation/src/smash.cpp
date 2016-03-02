@@ -1,4 +1,5 @@
 #include <squirrel_object_manipulation/smash.hpp>
+#include "gp.h"
 
 using namespace std;
 using namespace arma;
