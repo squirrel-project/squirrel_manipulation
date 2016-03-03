@@ -1,8 +1,8 @@
 #include "../include/DynamicPush.hpp"
-#include "gp.h"
-#include "gp_utils.h"
+//#include "gp.h"
+//#include "gp_utils.h"
 
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 
 using namespace std;
 using namespace arma;

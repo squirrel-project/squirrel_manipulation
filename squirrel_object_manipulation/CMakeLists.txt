@@ -32,7 +32,7 @@ include_directories(
         include
         ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
-        /home/c7031098/squirrel_ws_new/src/squirrel_manipulation/libgp/include
+       # /home/c7031098/squirrel_ws_new/src/squirrel_manipulation/libgp/include
 
 )
 
@@ -70,6 +70,6 @@ add_executable(push src/pushing/pushing.cpp)
 target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(smash src/smash.cpp)
-target_link_libraries(smash robotino utils ${catkin_LIBRARIES} libgp.a)
-
+target_link_libraries(smash robotino utils ${catkin_LIBRARIES})
+#target_link_libraries(smash robotino utils ${catkin_LIBRARIES} libgp.a)
 
