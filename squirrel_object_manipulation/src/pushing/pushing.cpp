@@ -6,10 +6,10 @@
 
 using namespace std;
 
-bool nav = false;
+bool nav = true;
 
 
-bool tag = true ;
+bool tag = false ;
 bool firstSet = false;
 void arCallback(tf::tfMessage msg);
 geometry_msgs::TransformStamped t, tm1,tm2;
@@ -30,6 +30,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     node_name_ = ros::this_node::getName();
 
     private_nh.param("pose_topic", pose_topic_,std::string("/squirrel_localizer_pose"));
+    private_nh.param("costmap_topic", costmap_topic_,std::string("/update_costmap"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.00);
@@ -41,6 +42,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("object_diameter", object_diameter_, 0.2);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.2);
+    private_nh.param("clearance_nav", clearance_nav_, false);
     //private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
@@ -56,6 +58,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     pushServer.registerPreemptCallback(boost::bind(&PushAction::preemptCB, this));
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
+    costmap_pub_ = nh.advertise<std_msgs::Bool>(costmap_topic_, 100);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
@@ -107,36 +110,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     object_id_ = goal->object_id;
 
 
-    //get the object diameter
+//    //get the object diameter
 
-    //    mongodb_store::MessageStoreProxy message_store(nh);
+//        mongodb_store::MessageStoreProxy message_store(nh);
 
-    //    //get the object diameter
+//        //get the object diameter
 
-    //    // fetch position of object from message store
-    //    std::vector< boost::shared_ptr<std_msgs::Float64> > results;
-
-    //    if(message_store.queryNamed<std_msgs::Float64>(object_id_, results)) {
-    //        cout << "matching objects to '" << object_id_ << "'\n";
-    //        for(size_t i = 0; i < results.size(); i++)
-    //            cout << "  " << *results[i] << "\n";
-    //        if(results.size()<1) {
-    //            ROS_ERROR(" no matching obID %s", object_id_.c_str());
-    //            return;
-    //        }
-    //        if(results.size()>1)
-    //            ROS_ERROR("(Push)  multiple objects share the same wpID");
-    //    } else {
-    //        ROS_ERROR("(Push) could not query message store to fetch object size");
-    //        return;
-    //    }
-    //    std_msgs::Float64 val = *results[0];
-
-    //    sleep (5.0);
-    //    cout << "out of datab"<<endl;
-    //    cout << "val "<<val<<endl;
+//        // fetch position of object from message store
+//        std::vector< boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
 
 
+//        if(message_store.queryNamed<squirrel_object_perception_msgs::SceneObject>(object_id_, results)) {
+//            cout << "matching objects to '" << object_id_ << "'\n";
+//            for(size_t i = 0; i < results.size(); i++)
+//                cout << "  " << results[i]->bounding_cylinder.diameter << "\n";
+//            if(results.size()<1) {
+//                ROS_ERROR(" no matching obID %s", object_id_.c_str());
+//                return;
+//            }
+//            if(results.size()>1)
+//                ROS_ERROR("(Push)  multiple objects share the same wpID");
+//        } else {
+//            ROS_ERROR("(Push) could not query message store to fetch object size");
+//            return;
+//        }
 
     //object_diameter_ = *results[0];
 
@@ -154,14 +151,14 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     // start object tracking
     // move camera for vision
-    //robotino->moveTilt(tilt_perception_);
+    robotino->moveTilt(tilt_perception_);
     sleep (5.0);
     if(startTracking()){
-        ROS_INFO("(Push) Waiting for the tracker of the %s to start \n",  goal->object_id.c_str());
+        ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
         trackingStart_ = true;
     }
     else{
-        ROS_ERROR("(Push) Start tracking of the %s failed \n",  goal->object_id.c_str());
+        ROS_ERROR("(Push) Start tracking of the %s failed \n", goal->object_id.c_str());
         abortPush();
         return;
     }
@@ -184,6 +181,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         return;
     }
     cout << endl;
+
 
     //initialize push planner
     if (runPushPlan_){
@@ -224,6 +222,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     cout<<"push duration "<<secs2 - secs;
 
     cout << endl;
+
 
     //end of action instance
 
@@ -421,6 +420,10 @@ bool PushAction::getPushPath(){
                 return false;
             }
         }
+
+        //Get clearance
+        if(clearance_nav_) corridor_width_ = srvPlan.response.clearance;
+
     }
     else{
         pushing_path_.header.frame_id = global_frame_;
@@ -440,6 +443,14 @@ bool PushAction::getPushPath(){
     }
 
     ROS_INFO("(Push) Path ready for pushing \n");
+
+    //turn off costmap
+    std_msgs::Bool costmap_msg_;
+    costmap_msg_.data = false;
+    costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
+
+    ROS_INFO("(Push) Costmaps off \n");
 
 
     return true;
@@ -473,8 +484,16 @@ void PushAction::finishPush(){
 
 
     //moving tilt for navigation configuration
-    //robotino->moveTilt(tilt_nav_);
+    robotino->moveTilt(tilt_nav_);
     ros::spinOnce();
+    ROS_INFO("(Push) Camera in the pose for navigation \n");
+
+    //turn on costmap
+    std_msgs::Bool costmap_msg_;
+    costmap_msg_.data = true;
+    costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
+    ROS_INFO("(Push) Costmaps on \n");
 
 }
 void PushAction::finishSuccess(){
@@ -529,7 +548,6 @@ void PushAction::preemptCB(){
 }
 
 int main(int argc, char** argv) {
-
 
     ros::init(argc, argv, "base_pushing");
 

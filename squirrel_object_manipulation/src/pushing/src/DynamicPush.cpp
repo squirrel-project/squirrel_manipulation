@@ -52,7 +52,7 @@ void DynamicPush::initChild() {
     mi_theta = M_PI;
 
     sigma_theta= 1.0;
-    count_dr = 100;
+    count_dr = 1;
     dO2Pp = dO2P;
     dRlOTp = dRlOT;
     aPORp = aPOR;
@@ -151,8 +151,12 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
 
     //    double vx_compensate =  psi_push_*  cos(aPOR) * var(alpha_vec)  * cos(alpha);
     double vy_compensate =  psi_push_ * var(alpha_vec)  * sin(alpha);
-    double vx_compensate = -  abs(psi_push_ * var(alpha_vec)* cos(alpha));
+    double vx_compensate = -  abs(psi_push_ * var(alpha_vec)*cos(alpha));
+    //vx_compensate = 0;
     //vy_compensate = 0;
+
+    cout<<"vx_compensate "<<vx_compensate<<endl;
+    cout<<"vy_compensate "<<vy_compensate<<endl;
 
     double vx_stabilize =  psi_push_ * cos(aPOR) * 0.4 *(mi_beta - beta);
 

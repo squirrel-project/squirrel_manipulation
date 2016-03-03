@@ -19,6 +19,7 @@
 
 #include <squirrel_object_perception_msgs/StartObjectTracking.h>
 #include <squirrel_object_perception_msgs/StopObjectTracking.h>
+#include <squirrel_object_perception_msgs/SceneObject.h>
 
 #include <actionlib/server/simple_action_server.h>
 #include <geometry_msgs/Pose2D.h>
@@ -59,7 +60,7 @@ private:
 
     std::string robot_base_frame_, global_frame_;
 
-    bool state_machine_;
+    bool state_machine_, clearance_nav_;
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
@@ -67,10 +68,11 @@ private:
 
    // mongodb_store::MessageStoreProxy message_store;
 
-
     //navigation path
     nav_msgs::Path pushing_path_;
     bool getPushPath();
+    std::string costmap_topic_;
+    ros::Publisher costmap_pub_;
 
     //robot pose update
     std::string pose_topic_;
