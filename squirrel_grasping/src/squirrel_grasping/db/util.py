@@ -6,10 +6,11 @@ from squirrel_manipulation_msgs.srv import GraspImportResponse
 from geometry_msgs.msg import PoseStamped
 
 
-def store_grasp(object_id, learned_object_pose, gripper_config, gripper_pose, quality):
+def store_grasp(object_class, object_id, learned_object_pose, gripper_config, gripper_pose, quality):
     msg_store = MessageStoreProxy()
 
     g = Grasp();
+    g.object_class = object_class
     g.object_id = object_id
     g.quality = quality
     g.gripper_config = gripper_config
@@ -38,7 +39,7 @@ def grasp_import_callback(msg):
             pose.pose.orientation.w = g[4]
             pose.pose.orientation.w = g[5]
             pose.pose.orientation.w = g[6]
-            store_grasp(msg.object_id, msg.learned_object_pose, msg.gripper_config, msg.gripper_pose, g[7])    
+            store_grasp(msg.object_class, msg.object_id, msg.learned_object_pose, msg.gripper_config, msg.gripper_pose, g[7])    
     except rospy.ROSException, e:
         rospy.logerr('Grasp import failed: %s' % e)
         return GraspImportResponse(False)
