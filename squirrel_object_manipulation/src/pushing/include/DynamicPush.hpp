@@ -30,10 +30,12 @@ private:
     double mi_dr, sigma_dr, dRlOTp, dO2Pp;
     double mi_theta, sigma_theta, aPORp;
     double mi_beta, sigma_beta, betap;
-    int count_dr;
+    double mi_theta_all, sigma_theta_all, thetap;
+    double mi_e, sigma_e, ep;
+    int count_dr, count_all;
     double psi_push_, psi_rel_;
 
-    double alpha, beta;
+    double alpha, beta, alpha_old;
 
 
 protected:

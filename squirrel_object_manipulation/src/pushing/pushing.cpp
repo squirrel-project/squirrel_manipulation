@@ -7,8 +7,6 @@
 using namespace std;
 
 bool nav = true;
-
-
 bool tag = false ;
 bool firstSet = false;
 void arCallback(tf::tfMessage msg);
@@ -389,6 +387,7 @@ bool PushAction::getPushPath(){
         if ( ros::service::call("/getPushingPlan", srvPlan) ) {
             if ( srvPlan.response.plan.poses.empty() ) {
                 ROS_WARN("(Push) Got an empty plan");
+                return false;
 
             } else {
                 BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/map" ||
@@ -498,11 +497,13 @@ void PushAction::finishPush(){
 }
 void PushAction::finishSuccess(){
 
+    finishPush();
+
     ROS_INFO("(Push) Push action executed sucessfully \n");
 
     pushResult.result_status = "success";
     pushServer.setSucceeded(pushResult);
-    finishPush();
+
 
 }
 
