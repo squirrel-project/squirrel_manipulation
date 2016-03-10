@@ -191,7 +191,8 @@ void PushPlanner::setLookahedDistance(double d){
 void PushPlanner::startPush(){
 
     if (push_state_ == INACTIVE)
-        push_state_ = RELOCATE;
+        //push_state_ = RELOCATE;
+        push_state_ = PUSH;
 
 
 
@@ -227,7 +228,7 @@ geometry_msgs::Twist PushPlanner::getControlCommand(){
 
     if(fabs(cmd.linear.x) > vel_lin_max_) cmd.linear.x = (cmd.linear.x > 0 ? vel_lin_max_ : - vel_lin_max_);
     if(fabs(cmd.linear.y) > vel_lin_max_) cmd.linear.y = (cmd.linear.y > 0 ? vel_lin_max_ : - vel_lin_max_);
-    if(fabs(cmd.angular.y) > vel_ang_max_) cmd.angular.y = (cmd.angular.y > 0 ? vel_ang_max_ : - vel_ang_max_);
+    if(fabs(cmd.angular.z) > vel_ang_max_) cmd.angular.z = (cmd.angular.z > 0 ? vel_ang_max_ : - vel_ang_max_);
 
     return cmd;
 }

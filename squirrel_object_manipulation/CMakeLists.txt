@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   control_toolbox
   cmake_modules
   costmap_2d
+  mongodb_store
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
 )
@@ -22,13 +23,13 @@ filesystem
 )
 
 catkin_package(
-    CATKIN_DEPENDS 
+    CATKIN_DEPENDS
 )
 
 
 include_directories(
-	include
-	${catkin_INCLUDE_DIRS}
+        include
+        ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -62,7 +63,5 @@ target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
 add_executable(push src/pushing/pushing.cpp)
 target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-
 add_executable(smash src/smash.cpp)
-target_link_libraries(smash robotino ${catkin_LIBRARIES})
-
+target_link_libraries(smash robotino utils ${catkin_LIBRARIES})

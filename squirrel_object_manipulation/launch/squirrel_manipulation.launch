@@ -1,6 +1,0 @@
-<launch>
-
-  <node pkg="squirrel_object_manipulation" type="pickup" name="pickup" cwd="node" required="true" output="screen" />
-  <node pkg="squirrel_object_manipulation" type="push" name="push" cwd="node" required="true" output="screen" />
-  
-</launch>

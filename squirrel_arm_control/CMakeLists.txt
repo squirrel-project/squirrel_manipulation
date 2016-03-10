@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     std_msgs
     tf
+    nav_msgs
     trajectory_msgs
     uibk_planning_node
 )

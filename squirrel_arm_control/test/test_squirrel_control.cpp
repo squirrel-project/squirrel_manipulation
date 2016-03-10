@@ -1,4 +1,4 @@
-#include "../include/squirrel_arm_control/squirrelcontrolqueue.hpp"
+#include "../include/squirrel_arm_control/squirrelarmcontrolqueue.hpp"
 
 #include <iostream>
 #include <kukadu/kukadu.h>
@@ -31,7 +31,7 @@ int main(int argc, char** args) {
 
     ros::init(argc, args, "test_squirrel_control"); KUKADU_SHARED_PTR<ros::NodeHandle> node = KUKADU_SHARED_PTR<ros::NodeHandle>(new ros::NodeHandle()); usleep(1e6);
 
-    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelControlQueue(0.1, "arm", node));
+    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelArmControlQueue(0.1, "arm", node));
 
     ros::AsyncSpinner spinner(5);
     spinner.start();

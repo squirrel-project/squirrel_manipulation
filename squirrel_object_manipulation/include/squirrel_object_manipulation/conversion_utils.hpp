@@ -5,12 +5,7 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <tf/transform_listener.h>
-
-geometry_msgs::PoseStamped TransformFrame(geometry_msgs::PoseStamped pose_in, std::string frame_out);
-geometry_msgs::PoseStamped Map2Base_link(double x, double y);
-geometry_msgs::PoseStamped Base_link2Map(double x, double y);
-geometry_msgs::PoseStamped Kinect2Base_link(double x, double y, double z);
+#include <tf/tf.h>
 
 geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in);
 
