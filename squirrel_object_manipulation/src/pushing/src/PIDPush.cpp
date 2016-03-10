@@ -9,8 +9,8 @@ PIDPush::PIDPush():
     private_nh.param("push/error_theta_tolerance", err_th_toll_,0.01);
     private_nh.param("push/error_target_tolerance", err_t_toll_ ,0.01);
     private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.6);
-    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.8);
-    private_nh.param("push/velocity_y_max", vel_y_max_ , 0.8);
+    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.2);
+    private_nh.param("push/velocity_y_max", vel_y_max_ , 0.2);
 
     private_nh.param("push/proportional_x", p_x_, 0.5);
     private_nh.param("push/derivative_x", d_x_, 0.1);

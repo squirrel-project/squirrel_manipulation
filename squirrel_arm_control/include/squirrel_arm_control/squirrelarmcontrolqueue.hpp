@@ -1,5 +1,5 @@
-#ifndef SQUIRREL_CONTROL_QUEUE
-#define SQUIRREL_CONTROL_QUEUE
+#ifndef SQUIRREL_ARM_CONTROL_QUEUE
+#define SQUIRREL_ARM_CONTROL_QUEUE
 
 #include <string>
 #include <vector>
@@ -17,7 +17,7 @@
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit/planning_interface/planning_interface.h>
 
-class SquirrelControlQueue : public kukadu::ControlQueue {
+class SquirrelArmControlQueue : public kukadu::ControlQueue {
 
 private:
 
@@ -80,8 +80,8 @@ protected:
 
 public:
 
-    SquirrelControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node);
-    ~SquirrelControlQueue();
+    SquirrelArmControlQueue(double cycleTime, std::string groupName, KUKADU_SHARED_PTR<ros::NodeHandle> node);
+    ~SquirrelArmControlQueue();
 
     virtual void setJntPtpThresh(double thresh);
     virtual void setAdditionalLoad(float loadMass, float loadPos);

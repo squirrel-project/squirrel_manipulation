@@ -19,18 +19,18 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("global_frame", global_frame_, std::string("map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.0);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
-    private_nh.param("tilt_perception", tilt_perception_, 0.60);
-    private_nh.param("lookahead", lookahead_, 0.30);
+    private_nh.param("tilt_perception", tilt_perception_, 1.1);
+    private_nh.param("lookahead", lookahead_, 0.20);
     private_nh.param("goal_tolerance", goal_toll_, 0.20);
     private_nh.param("state_machine", state_machine_, true);
     private_nh.param("object_diameter", object_diameter_, 0.2);
     // private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
-    //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
+    push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new BangBangPush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDPush());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDSimplePush());
-    push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
+    //push_planner_ = boost::shared_ptr<PushPlanner>(new PIDObjectPush());
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
@@ -46,6 +46,7 @@ PushAction::~PushAction() {
 
     object_tracking_thread_->interrupt();
     object_tracking_thread_->join();
+    robotino->stopRobot();
 
     delete object_tracking_thread_;
 }
@@ -67,7 +68,42 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     push_goal_.pose = goal->pose;
     object_id_ = goal->object_id;
 
-    if(!isQuaternionValid(goal->pose.orientation)){
+    //get the object diameter
+
+    mongodb_store::MessageStoreProxy message_store(nh);
+
+    //get the object diameter
+
+    // fetch position of object from message store
+    std::vector< boost::shared_ptr<std_msgs::Float64> > results;
+
+    if(message_store.queryNamed<std_msgs::Float64>(object_id_, results)) {
+        cout << "matching objects to '" << object_id_ << "'\n";
+        for(size_t i = 0; i < results.size(); i++)
+            cout << "  " << *results[i] << "\n";
+        if(results.size()<1) {
+            ROS_ERROR("PUSH: no matching obID %s", object_id_.c_str());
+            return;
+        }
+        if(results.size()>1)
+            ROS_ERROR("PUSH:  multiple objects share the same wpID");
+    } else {
+        ROS_ERROR("PUSH: could not query message store to fetch object size");
+        return;
+    }
+    std_msgs::Float64 val = *results[0];
+
+    sleep (5.0);
+    cout << "out of datab"<<endl;
+    cout << "val "<<val<<endl;
+
+
+
+    //object_diameter_ = *results[0];
+
+
+
+    /*if(!isQuaternionValid(goal->pose.orientation)){
         ROS_INFO("(Push): Invalid target orientation \n");
         cout << endl;
         abortPush();
@@ -78,7 +114,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     // start object tracking
     // move camera for vision
-    robotino->moveTilt(tilt_nav_);
+    //robotino->moveTilt(tilt_perception_);
+    sleep (5.0);
     if(startTracking()){
         ROS_INFO("(Push) Wait for tracking  of the %s to start \n",  goal->object_id.c_str());
         trackingStart_ = true;
@@ -135,7 +172,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     //end of action instance
 
     //if pushing did not result with success for any reason
-    abortPush();
+    abortPush();*/
     return;
 
 
@@ -211,9 +248,9 @@ bool PushAction::getPushPath(){
     // part which has to be revised
     geometry_msgs::PoseStamped start_m;
     try {
-        tfl_.waitForTransform(global_frame_, "/base_link", ros::Time::now(), ros::Duration(1.0));
-        tfl_.transformPose("/base_link", pose_object_, start_m);
-        start_m.header.frame_id = "/base_link";
+        tfl_.waitForTransform(global_frame_, "/map", ros::Time::now(), ros::Duration(1.0));
+        tfl_.transformPose("/map", pose_object_, start_m);
+        start_m.header.frame_id = "/map";
     } catch ( tf::TransformException& ex ) {
         ROS_ERROR("%s: %s", node_name_.c_str(), ex.what());
         return true;
@@ -222,7 +259,7 @@ bool PushAction::getPushPath(){
     // Getting pushing plan
     srvPlan.request.start.x =  start_m.pose.position.x;
     srvPlan.request.start.y =  start_m.pose.position.y;
-    srvPlan.request.start.theta =  0;
+    srvPlan.request.start.theta =  pose_robot_.theta;
 
     srvPlan.request.goal.x = push_goal_.pose.position.x;
     srvPlan.request.goal.y = push_goal_.pose.position.y;
@@ -232,10 +269,10 @@ bool PushAction::getPushPath(){
 
     geometry_msgs::Point32 p1, p2, p3, p4;
 
-    p1.x = 0.20; p1.y = -0.20;
-    p2.x = 0.20; p1.y = 0.20;
-    p3.x = -0.20; p1.y = -0.20;
-    p4.x = -0.20; p1.y = 0.20;
+    p1.x = start_m.pose.position.x + 0.20; p1.y = start_m.pose.position.y -0.20;
+    p2.x = start_m.pose.position.x + 0.20; p2.y = start_m.pose.position.y + 0.20;
+    p3.x = start_m.pose.position.x -0.20; p3.y = start_m.pose.position.y -0.20;
+    p4.x = start_m.pose.position.x -0.20; p4.y = start_m.pose.position.y +0.20;
 
     //----------------------------------------
 
@@ -248,8 +285,8 @@ bool PushAction::getPushPath(){
         if ( srvPlan.response.plan.poses.empty() ) {
             ROS_WARN("Push:got an empty plan");
         } else {
-            BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/odom" ||
-                              srvPlan.response.plan.header.frame_id == "odom" ,
+            BOOST_ASSERT_MSG( srvPlan.response.plan.header.frame_id == "/map" ||
+                              srvPlan.response.plan.header.frame_id == "map" ,
                               "returned path is not in requested frame");
             ROS_INFO("Push: got a path for pushing");
         }
@@ -263,7 +300,7 @@ bool PushAction::getPushPath(){
     for (unsigned int i=0; i<srvPlan.response.plan.poses.size(); ++i) {
         try {
             geometry_msgs::PoseStamped p;
-            tfl_.waitForTransform("/odom", global_frame_, ros::Time::now(), ros::Duration(0.5));
+            tfl_.waitForTransform("/map", global_frame_, ros::Time::now(), ros::Duration(0.5));
             tfl_.transformPose(global_frame_, srvPlan.response.plan.poses[i], p);
             p.header.frame_id = global_frame_;
             pushing_path_.poses.push_back(p);
@@ -303,7 +340,7 @@ void PushAction::finishPush(){
     trackingStart_ = false;
 
     //moving tilt for navigation configuration
-    robotino->moveTilt(tilt_nav_);
+    //robotino->moveTilt(tilt_nav_);
     ros::spinOnce();
 
 }
