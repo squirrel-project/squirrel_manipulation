@@ -28,13 +28,15 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+
 AUX_SOURCE_DIRECTORY(src/ SQUIRRLCONTSRC)
 
 add_library(${PROJECT_NAME}
     ${SQUIRRLCONTSRC}
 )
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${ARMADILLO_LIBRARIES})
 
 add_executable(test_squirrel_control test/test_squirrel_control.cpp)
 target_link_libraries(test_squirrel_control ${PROJECT_NAME} ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
