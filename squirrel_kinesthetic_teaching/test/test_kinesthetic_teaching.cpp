@@ -20,20 +20,42 @@ using namespace arma;
 
 int main(int argc, char** args) {
 
+    vector<double> jp;
+    jp.push_back(0.0); jp.push_back(0.0); jp.push_back(0.0); jp.push_back(0.0); jp.push_back(0.0);
+    if(argc == 6) {
+        jp.clear();
+        cout << "received joints" << endl;
+        for(int i = 0; i < 5; ++i)
+            jp.push_back(atof(args[i + 1]));
+    }
+
+    geometry_msgs::PoseStamped newPose;
+    double x, y, z;
+    if(argc == 4) {
+        x = atof(args[1]);
+        y = atof(args[2]);
+        z = atof(args[3]);
+    }
+
     ros::init(argc, args, "robotino_demo"); ros::NodeHandle* node = new ros::NodeHandle(); usleep(1e6);
 
-    string groupName = "Arm";
+    string groupName = "arm";
 
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
     ROS_INFO("Retrieving joint state...");
+    cout << 1 << endl;
     moveit::planning_interface::MoveGroup group(groupName);
+    cout << 2 << endl;
     group.setPlannerId("LBKPIECEkConfigDefault");
+    cout << 3 << endl;
     group.setEndEffectorLink("link5");
-
+cout << 4 << endl;
     vector<double> jointVals = group.getCurrentJointValues();
+    cout << 5 << endl;
     for(int i = 0; i < jointVals.size(); ++i) {
+        cout << 6 << endl;
         cout << jointVals.at(i) << " ";
     }
 
@@ -49,11 +71,20 @@ int main(int argc, char** args) {
     ros::ServiceClient execution_client = node->serviceClient<moveit_msgs::ExecuteKnownTrajectory>("execute_kinematic_path");
     trajectory_planner_moveit::TrajectoryPlanner planner(*node, group, jointNames);
 
-    geometry_msgs::PoseStamped newPose = group.getCurrentPose();
+    newPose = group.getCurrentPose();
     cout << "current pose: " << newPose << endl;
+
+    if(argc == 4) {
+        newPose.pose.position.x = x;
+        newPose.pose.position.y = y;
+        newPose.pose.position.z = z;
+    }
+
+    cout << "new pose: " << newPose << endl;
 
     // this works fine (joint planning and movement)
     // waving behaviour
+    /*
     moveit_msgs::MotionPlanResponse jointPlan;
     moveit::core::robotStateToRobotStateMsg(*group.getCurrentState(), jointPlan.trajectory_start);
     jointPlan.group_name = group.getName();
@@ -84,7 +115,7 @@ int main(int argc, char** args) {
             //sign *= -1;
 
         }
-
+*/
 /*
         if(j % 20)  {
 
@@ -118,10 +149,12 @@ int main(int argc, char** args) {
         }
         */
 
+        /*
         jointPlan.trajectory.joint_trajectory = jt;
         planner.executePlan(jointPlan, execution_client);
 
     }
+    */
 
 
     ROS_INFO("joint execution done...press enter to continue...");
@@ -133,6 +166,7 @@ int main(int argc, char** args) {
     newPose.pose.position.z -= 0.5;
     */
 
+    /*
 	// this is another position that is valid
     newPose.pose.position.x = -0.109621;
     newPose.pose.position.y = 0.19786;
@@ -141,8 +175,16 @@ int main(int argc, char** args) {
     newPose.pose.orientation.y = 0.0108443;
     newPose.pose.orientation.z = 0.326966;
     newPose.pose.orientation.w = 0.692768;
+    */
 
     moveit_msgs::MotionPlanResponse plan;
+
+    int success = 0;
+    if(argc == 4) {
+        success = planner.plan(newPose, plan);
+    } else {
+        success = planner.plan(jp, plan);
+    }
 
 /*
     // approach 2 --> uses the cartesian path service directly
