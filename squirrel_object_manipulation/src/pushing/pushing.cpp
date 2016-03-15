@@ -6,16 +6,6 @@
 
 using namespace std;
 
-bool nav = true;
-bool tag = false ;
-bool firstSet = false;
-void arCallback(tf::tfMessage msg);
-geometry_msgs::TransformStamped t, tm1,tm2;
-int count_tr = 0;
-double dro = 0.21 + 0.1;
-double offsetX, offsetY; // ar tags calibration. inital offset
-
-
 
 PushAction::PushAction(const std::string std_PushServerActionName) :
     pushServer(nh, std_PushServerActionName , boost::bind(&PushAction::executePush, this, _1), false),
@@ -23,7 +13,8 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     runPushPlan_(false),
     trackingStart_(false),
     objectLost_(false),
-    first_pose_(false)
+    first_pose_(false),
+    firstSet (false)
 {
     node_name_ = ros::this_node::getName();
 
@@ -37,10 +28,15 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.20);
     private_nh.param("state_machine", state_machine_, false);
-    private_nh.param("object_diameter", object_diameter_, 0.2);
+    private_nh.param("object_diameter", object_diameter_, 0.1);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.2);
     private_nh.param("clearance_nav", clearance_nav_, false);
+    private_nh.param("navigation_", nav_, false);
+    private_nh.param("artag_", artag_, true);
+    private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
+
+
     //private_nh.param("push_planner", push_planner_, new PushPlanner());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePathFollowing());
     //push_planner_ = boost::shared_ptr<PushPlanner>(new SimplePush());
@@ -60,6 +56,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
+    marker_sub_ = nh.subscribe(tracker_tf_, 100,  &PushAction::arCallback, this);
 
     pushServer.start();
     ROS_INFO("(Push) Ready to push objects");
@@ -77,9 +74,9 @@ PushAction::~PushAction() {
 
 void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal) {
 
-    ros::Subscriber  markerSub = nh.subscribe("/tf2", 10, arCallback);
 
-    if(!nav){
+
+    if(!nav_){
         ros::ServiceClient rO=nh.serviceClient<robotino_msgs::ResetOdometry>("/reset_odometry");
         robotino_msgs::ResetOdometry R;
         R.request.x=0;
@@ -108,30 +105,30 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     object_id_ = goal->object_id;
 
 
-//    //get the object diameter
+    //    //get the object diameter
 
-//        mongodb_store::MessageStoreProxy message_store(nh);
+    //        mongodb_store::MessageStoreProxy message_store(nh);
 
-//        //get the object diameter
+    //        //get the object diameter
 
-//        // fetch position of object from message store
-//        std::vector< boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
+    //        // fetch position of object from message store
+    //        std::vector< boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
 
 
-//        if(message_store.queryNamed<squirrel_object_perception_msgs::SceneObject>(object_id_, results)) {
-//            cout << "matching objects to '" << object_id_ << "'\n";
-//            for(size_t i = 0; i < results.size(); i++)
-//                cout << "  " << results[i]->bounding_cylinder.diameter << "\n";
-//            if(results.size()<1) {
-//                ROS_ERROR(" no matching obID %s", object_id_.c_str());
-//                return;
-//            }
-//            if(results.size()>1)
-//                ROS_ERROR("(Push)  multiple objects share the same wpID");
-//        } else {
-//            ROS_ERROR("(Push) could not query message store to fetch object size");
-//            return;
-//        }
+    //        if(message_store.queryNamed<squirrel_object_perception_msgs::SceneObject>(object_id_, results)) {
+    //            cout << "matching objects to '" << object_id_ << "'\n";
+    //            for(size_t i = 0; i < results.size(); i++)
+    //                cout << "  " << results[i]->bounding_cylinder.diameter << "\n";
+    //            if(results.size()<1) {
+    //                ROS_ERROR(" no matching obID %s", object_id_.c_str());
+    //                return;
+    //            }
+    //            if(results.size()>1)
+    //                ROS_ERROR("(Push)  multiple objects share the same wpID");
+    //        } else {
+    //            ROS_ERROR("(Push) could not query message store to fetch object size");
+    //            return;
+    //        }
 
     //object_diameter_ = *results[0];
 
@@ -205,7 +202,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
     catch (...){
     }
-    push_planner_->setExperimentName("straightD120real");
+    push_planner_->setExperimentName("straightD120realbox");
     push_planner_->saveData("/home/c7031098/squirrel_ws_new/data/");
 
     if (push_planner_->goal_reached_){
@@ -235,7 +232,7 @@ bool PushAction::getFirstObjectPose(){
     first_pose_ = false;
     tf::StampedTransform trans;
 
-    if(!tag){
+    if(!artag_){
 
         if(trackingStart_&&(!first_pose_)){
             try {
@@ -268,7 +265,7 @@ void PushAction::objectTrackingThread(){
     while (n.ok()){
 
 
-        if(!nav){
+        if(!nav_){
 
             robot_pose_mutex_.lock();
             nav_msgs::Odometry Odometry = robotino->getOdom();;
@@ -282,7 +279,7 @@ void PushAction::objectTrackingThread(){
         object_pose_mutex_.lock();
         lRate.sleep();
 
-        if(!tag){
+        if(!artag_){
 
             if(trackingStart_&&first_pose_){
                 try {
@@ -298,31 +295,28 @@ void PushAction::objectTrackingThread(){
             }
         }
 
-        if(tag&firstSet){
+        if(artag_&firstSet){
 
             pose_object_.header.frame_id =  global_frame_;
 
-            if (count_tr < 2) {
-                tm2 = t;
-                tm1 = t;}
 
-            double Olx=(t.transform.translation.x + tm1.transform.translation.x+ tm2.transform.translation.x) / 3 -offsetX;
-            double Oly= (t.transform.translation.y + tm1.transform.translation.y+ tm2.transform.translation.y) / 3 -offsetY;
-            double th = pose_robot_.theta;
+            if (t_artag.header.stamp.nsec != tag_t_prev){
 
-            pose_object_.pose.position.x = pose_robot_.x - Oly*cos(th)+Olx*sin(th);;
-            pose_object_.pose.position.y = pose_robot_.y - Oly*sin(th)-Olx*cos(th);
-            pose_object_.pose.position.z = 0;
-            pose_object_.pose.orientation = t.transform.rotation;
+                double Olxt = t_artag.transform.translation.x  - artag_offsetX;
+                double Olyt = t_artag.transform.translation.y  - artag_offsetY;
+                if(distancePoints(Olx, Oly, Olxt, Olyt)< 0.05){
+                    Olx = Olxt;
+                    Oly = Olyt;
+                }
+                double th = pose_robot_.theta;
 
-            if (count_tr > 2) {
-                tm2 = tm1;
-                tm1 = t;}
-            count_tr ++;
+                pose_object_.pose.position.x = pose_robot_.x - Oly*cos(th)+Olx*sin(th);;
+                pose_object_.pose.position.y = pose_robot_.y - Oly*sin(th)-Olx*cos(th);
+                pose_object_.pose.position.z = 0;
+                pose_object_.pose.orientation = t_artag.transform.rotation;
+                tag_t_prev = t_artag.header.stamp.nsec;
+            }
 
-            cout<<" Olx "<<Olx<<" Oly "<< Oly<<" off x "<<offsetX<<" off Y "<<offsetY<<endl;
-
-            cout<<pose_object_<<endl;
         }
         object_pose_mutex_.unlock();
     }
@@ -331,7 +325,7 @@ void PushAction::objectTrackingThread(){
 
 void PushAction::updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_msg ){
 
-    if(nav){
+    if(nav_){
 
         robot_pose_mutex_.lock();
         pose_robot_.x = pose_msg->pose.pose.position.x;
@@ -344,7 +338,7 @@ void PushAction::updatePose( const geometry_msgs::PoseWithCovarianceStamped::Con
 
 bool PushAction::getPushPath(){
 
-    if (nav){
+    if (nav_){
 
         squirrel_rgbd_mapping_msgs::GetPushingPlan srvPlan;
 
@@ -421,20 +415,24 @@ bool PushAction::getPushPath(){
         }
 
         //Get clearance
-        if(clearance_nav_) corridor_width_ = srvPlan.response.clearance;
+        if(clearance_nav_){ corridor_width_ = srvPlan.response.clearance;
+            cout <<"from nav clearance"<< corridor_width_<<endl;
+        }
 
     }
     else{
         pushing_path_.header.frame_id = global_frame_;
         int size = 100;
-        double x_max = 1.5;
+        double x_max = 3.14;
         for (unsigned int i=0; i<size; ++i) {
 
             geometry_msgs::PoseStamped p;
 
             p.header.frame_id = global_frame_;
             p.pose.position.x = x_max/size * i;
-            p.pose.position.y = 0.0;
+            //p.pose.position.y = 0.0; //line
+            p.pose.position.y = sin(2 * p.pose.position.x ); //sin
+
 
             pushing_path_.poses.push_back(p);
 
@@ -508,7 +506,7 @@ void PushAction::finishSuccess(){
 }
 
 bool PushAction::startTracking() {
-    if(!tag){
+    if(!artag_){
 
         squirrel_object_perception_msgs::StartObjectTracking srvStartTrack;
         srvStartTrack.request.object_id.data = object_id_;
@@ -524,12 +522,13 @@ bool PushAction::startTracking() {
 
 bool PushAction::stopTracking() {
     bool track = true;
-    if(!tag){
+    if(!artag_){
         squirrel_object_perception_msgs::StopObjectTracking srvStopTrack;
         track = ros::service::call("/squirrel_stop_object_tracking", srvStopTrack);
         trackingStart_ = false;
         first_pose_ = false;
         objectLost_ = false;
+        firstSet = false;
     }
     else firstSet = false;
 
@@ -543,8 +542,23 @@ void PushAction::preemptCB(){
     cout<<endl;
     runPushPlan_ = false;
     //this->finishPush();
-    // pushServer.setPreempted();
+    //pushServer.setPreempted();
 
+}
+
+
+void PushAction::arCallback(tf::tfMessage msg) {
+    t_artag = msg.transforms.at(0);
+
+    if (!firstSet){
+        firstSet = true;
+        artag_offsetX = t_artag.transform.translation.x;
+        artag_offsetY = t_artag.transform.translation.y + (object_diameter_ + robot_diameter_) / 2;
+        Olx = t_artag.transform.translation.x  - artag_offsetX;
+        Oly = t_artag.transform.translation.y  - artag_offsetY;
+        tag_t_prev = t_artag.header.stamp.nsec;
+
+    }
 
 }
 
@@ -558,17 +572,4 @@ int main(int argc, char** argv) {
     return 0;
 
 }
-
-void arCallback(tf::tfMessage msg) {
-    t = msg.transforms.at(0);
-
-    if (!firstSet){
-        firstSet = true;
-        offsetX = t.transform.translation.x;
-        offsetY = t.transform.translation.y + dro;
-
-    }
-
-}
-
 

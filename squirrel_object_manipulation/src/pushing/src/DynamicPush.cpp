@@ -12,21 +12,21 @@ DynamicPush::DynamicPush():
 {
     private_nh.param("push/error_theta_tolerance", err_th_toll_,0.01);
     private_nh.param("push/error_target_tolerance", err_t_toll_ ,0.01);
-    private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.6);
-    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.3);
-    private_nh.param("push/velocity_y_max", vel_y_max_ , 0.3);
+    private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.3);
+    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.1);
+    //   private_nh.param("push/velocity_y_max", vel_y_max_ , 0.2);
     
-    private_nh.param("push/proportional_x", p_x_, 1.0);
-    private_nh.param("push/derivative_x", d_x_, 0.0);
-    private_nh.param("push/integral_x", i_x_, 0.0);
-    private_nh.param("push/integral_x_max", i_x_max_, 1.0);
-    private_nh.param("push/integral_x_min", i_x_min_, -1.0);
+    //    private_nh.param("push/proportional_x", p_x_, 1.0);
+    //    private_nh.param("push/derivative_x", d_x_, 0.0);
+    //    private_nh.param("push/integral_x", i_x_, 0.0);
+    //    private_nh.param("push/integral_x_max", i_x_max_, 1.0);
+    //    private_nh.param("push/integral_x_min", i_x_min_, -1.0);
     
-    private_nh.param("push/proportional_y", p_y_, 1.0);
-    private_nh.param("push/derivative_y", d_y_, 0.0);
-    private_nh.param("push/integral_y", i_y_, 0.0);
-    private_nh.param("push/integral_y_max", i_y_max_, 1.0);
-    private_nh.param("push/integral_y_min", i_y_min_, -1.0);
+    //    private_nh.param("push/proportional_y", p_y_, 1.0);
+    //    private_nh.param("push/derivative_y", d_y_, 0.0);
+    //    private_nh.param("push/integral_y", i_y_, 0.0);
+    //    private_nh.param("push/integral_y_max", i_y_max_, 1.0);
+    //    private_nh.param("push/integral_y_min", i_y_min_, -1.0);
     
     private_nh.param("push/proportional_theta", p_theta_, 1.0);
     private_nh.param("push/derivative_theta", d_theta_, 0.3);
@@ -39,38 +39,43 @@ void DynamicPush::initChild() {
     
     //pid_x_.initPid(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
     
-    pid_x_.initDynamicReconfig(private_nh);
-    pid_x_.setGains(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
-    pid_y_.initDynamicReconfig(private_nh);
-    pid_y_.setGains(p_y_, i_y_, d_y_, i_y_max_, i_y_min_);
+    //    pid_x_.initDynamicReconfig(private_nh);
+    //    pid_x_.setGains(p_x_, i_x_, d_x_, i_x_max_, i_x_min_);
+    //    pid_y_.initDynamicReconfig(private_nh);
+    //    pid_y_.setGains(p_y_, i_y_, d_y_, i_y_max_, i_y_min_);
     //    pid_xd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_x_max_, i_x_min_);
     //    pid_yd_.initPid(2 * p_x_, 2 * i_x_,2 * d_x_, i_y_max_, i_y_min_);
     pid_theta_.initPid(p_theta_, i_theta_, d_theta_, i_theta_max_, i_theta_min_);
     
-    mi_dr = 0.0;
-    sigma_dr = 2 * object_diameter_;
+//    mi_dr = 0.0;
+//    sigma_dr = 2 * object_diameter_;
+
     mi_theta = M_PI;
-    
     sigma_theta= 1.0;
     count_dr = 100;
-    dO2Pp = dO2P;
-    dRlOTp = dRlOT;
+
+//    dO2Pp = dO2P;
+//    dRlOTp = dRlOT;
+
     aPORp = aPOR;
     betap = M_PI / 2;
     
-    sigma_e = 0.5;
-    ep = 1;
-    mi_e = 0.5;
+    //    sigma_e = 0.5;
+    //    ep = 1;
+    //    mi_e = 0.5;
     
     sigma_theta_all = 1.0;
     mi_theta_all = M_PI;
     thetap = aPOR;
+
+    mi_angle_delta = 0;
+    sigma_angle_delta = 1.0;
     
-    count_all = 0;
+    count_all = 1;
     
     theta_vec.resize(1);
-    vx_p_.resize(1);
-    vy_p_.resize(1);
+    //vx_p_.resize(1);
+    //vy_p_.resize(1);
     alpha_vec.resize(1);
     vdO2P_.resize(1);
     
@@ -83,17 +88,20 @@ void DynamicPush::updateChild() {
     
     //the angle object-robot-target
     aPOR =  angle3Points(current_target_.pose.position.x, current_target_.pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pose_robot_.x, pose_robot_.y);
-    
     if(aPOR < 0) aPOR = 2 * M_PI + aPOR;
     theta_vec(theta_vec.n_elem - 1) = aPOR;
-    
     theta_vec.resize(theta_vec.n_elem  + 1);
+    count_all ++;
+
+    //    double tempTA = mi_theta_all;
+    //    mi_theta_all = mi_theta_all + (aPOR - mi_theta_all)/count_all;
+    //    sigma_theta_all = ((count_all -1) * sigma_theta_all + (aPOR - tempTA)*(aPOR - mi_theta_all)) / count_all;
     
-    vx_p_(vx_p_.n_elem - 1) = -cos(aPOR);
-    vy_p_(vy_p_.n_elem - 1) = -sin(aPOR);
+    //    vx_p_(vx_p_.n_elem - 1) = -cos(aPOR);
+    //    vy_p_(vy_p_.n_elem - 1) = -sin(aPOR);
     
-    vx_p_.resize(vx_p_.n_elem + 1);
-    vy_p_.resize(vy_p_.n_elem + 1);
+    //    vx_p_.resize(vx_p_.n_elem + 1);
+    //    vy_p_.resize(vy_p_.n_elem + 1);
     
     double expected_dir = getVectorAngle(previous_target_.pose.position.x - previous_pose_object_.pose.position.x, previous_target_.pose.position.y - previous_pose_object_.pose.position.y);
     double executed_dir = getVectorAngle(pose_object_.pose.position.x - previous_pose_object_.pose.position.x, pose_object_.pose.position.y - previous_pose_object_.pose.position.y);
@@ -104,14 +112,16 @@ void DynamicPush::updateChild() {
     alpha_vec.resize(alpha_vec.n_elem  + 1);
     
     beta = aO2P - tf::getYaw(pose_object_.pose.orientation);
-    
+
     
     //distance object target point
-    double dO2Ppn = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, previous_target_.pose.position.x, previous_target_.pose.position.y);
+    // double dO2Ppn = distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, previous_target_.pose.position.x, previous_target_.pose.position.y);
     
-    vdO2P_(vdO2P_.n_elem - 1) = dO2Ppn;
-    vdO2P_.resize(vdO2P_.n_elem + 1);
-    double e_c = 0.0;
+    //    vdO2P_(vdO2P_.n_elem - 1) = dO2Ppn;
+    //    vdO2P_.resize(vdO2P_.n_elem + 1);
+
+
+    //double angle_delta = 1.0;
     
     //if(dO2Ppn < dO2Pp){
     if(abs(alpha)< abs(alpha_old)){
@@ -129,26 +139,32 @@ void DynamicPush::updateChild() {
         mi_beta = mi_beta + (betap - mi_beta)/count_dr;
         sigma_beta = ((count_dr -1) * sigma_beta + (betap - tempB)*(betap - mi_beta)) / count_dr;
         
-        e_c = 1.0;
+
+        // angle_delta = 0.0;
     }
     
+    //    double tempAD = mi_angle_delta;
+    //    mi_angle_delta = mi_angle_delta + (aPORp - mi_angle_delta) / count_all;
+    //    sigma_angle_delta = ((count_all -1) * sigma_angle_delta + (angle_delta - tempAD)*(angle_delta - mi_angle_delta)) / count_all;
     
-    dO2Pp = dO2Ppn;
-    dRlOTp = dRlOT;
+    //dO2Pp = dO2Ppn;
+   // dRlOTp = dRlOT;
     aPORp = aPOR;
     betap = beta;
     
-    count_all ++;
-    double tempE = mi_e;
-    mi_e = mi_e + (e_c - mi_e)/count_all;
-    sigma_e = ((count_all -1) * sigma_e + (ep - tempE)*(ep - mi_e )) / count_dr;
+
+    //    double tempE = mi_e;
+    //    mi_e = mi_e + (e_c - mi_e)/count_all;
+    //    sigma_e = ((count_all -1) * sigma_e + (ep - tempE)*(ep - mi_e )) / count_all;
     
     
     
     // psi_push_ = getGaussianVal(dRlOT, sigma_dr, mi_dr);
     // psi_rel_ = 1 - psi_push_;
-    psi_rel_ = 1 - getGaussianVal(aPOR, sigma_theta, mi_theta);
+
     psi_push_ = getGaussianVal(aPOR, sigma_theta, mi_theta);
+    //psi_push_ = getGaussianVal(aPOR, sigma_theta, mi_theta) * getGaussianVal(angle_delta, sigma_angle_delta, mi_angle_delta) /  getGaussianVal(aPOR, sigma_theta_all, mi_theta_all);
+    psi_rel_ = 1 - psi_push_;
     
     if(abs(aPOR - M_PI) > 0.4){
         psi_push_  = 0;
@@ -180,13 +196,17 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     double vy_relocate =  psi_rel_ * sign(sin(aPOR)) * cos(aPOR);
     
     //    double vx_compensate =  psi_push_*  cos(aPOR) * var(alpha_vec)  * cos(alpha);
-    double vy_compensate =  psi_push_ * var(alpha_vec)  * sin(alpha);
-    double vx_compensate = -  abs(psi_push_ * var(alpha_vec)*cos(alpha));
+    //    double vy_compensate =   var(alpha_vec) * psi_push_  * sin(alpha);
+    //    double vx_compensate = -   var(alpha_vec)* abs(psi_push_ *cos(alpha));
+    double vy_compensate =   0.1 * sin(alpha);
+    double vx_compensate =  - 0.1 *cos(alpha);
+
+    
+    //    cout<<"vx_compensate "<<vx_compensate<<endl;
+    //    cout<<"vy_compensate "<<vy_compensate<<endl;
+
     vx_compensate = 0;
     vy_compensate = 0;
-    
-    cout<<"vx_compensate "<<vx_compensate<<endl;
-    cout<<"vy_compensate "<<vy_compensate<<endl;
     
     double vx_stabilize =  psi_push_ * cos(aPOR) * 0.4 *(mi_beta - beta);
     
@@ -204,11 +224,11 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     // transform to robot frame
     vec v = rotate2DVector(vx, vy, rotationDifference( aO2P, pose_robot_.theta));
     
-    cout<<"vx "<<vx<<" vy "<<vy<<endl;
-    cout <<"psi push "<< psi_push_<<" dRlOT "<<dRlOT<<" "<<sigma_dr<<" "<<mi_dr<<""<<endl;
-    cout <<"psi rel "<< psi_rel_<<" aROP "<<aPOR<<" "<<sigma_theta<<" "<<mi_theta<<""<<endl<<endl;
-    cout <<"count "<< count_dr<<endl;
-    cout<<v<<endl;
+    //    cout<<"vx "<<vx<<" vy "<<vy<<endl;
+    //    cout <<"psi push "<< psi_push_<<" dRlOT "<<dRlOT<<" "<<sigma_dr<<" "<<mi_dr<<""<<endl;
+    //    cout <<"psi rel "<< psi_rel_<<" aROP "<<aPOR<<" "<<sigma_theta<<" "<<mi_theta<<""<<endl<<endl;
+    //    cout <<"count "<< count_dr<<endl;
+    //    cout<<v<<endl;
     
     //cmd.linear.x = gain * ( vx_push + sin(aPOR) * vx_relocate);
     // cmd.linear.y = gain * ( vy_push + sin(aPOR) * vy_relocate);
@@ -217,6 +237,11 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     cmd.linear.x = vel_lin_max_ * v(0) / getNorm(v);
     cmd.linear.y = vel_lin_max_ * v(1) / getNorm(v);
 
+    if(rotationDifference(aR2O,pose_robot_.theta)>0.3){
+        cmd.linear.x = 0;
+        cmd.linear.y = 0;
+
+    }
     cmd.angular.z = pid_theta_.computeCommand(rotationDifference(aR2O,pose_robot_.theta), ros::Duration(time_step_));
     
     return cmd;

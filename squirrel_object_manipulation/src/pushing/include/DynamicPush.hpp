@@ -31,11 +31,13 @@ private:
     double mi_theta, sigma_theta, aPORp;
     double mi_beta, sigma_beta, betap;
     double mi_theta_all, sigma_theta_all, thetap;
+    double mi_angle_delta, sigma_angle_delta;
     double mi_e, sigma_e, ep;
     int count_dr, count_all;
     double psi_push_, psi_rel_;
 
     double alpha, beta, alpha_old;
+
 
 
 protected:

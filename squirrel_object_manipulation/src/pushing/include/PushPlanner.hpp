@@ -57,9 +57,10 @@ private:
     bool state_machine_;
     bool rel_;
 
-    ros::Publisher vis_points_pub_;
+    ros::Publisher vis_corridor_;
     ros::Publisher marker_target_c_;
     ros::Publisher marker_object_c_;
+    ros::Publisher marker_robot_c_;
     ros::Publisher marker_point_;
 
     void publishWaypointMarkerArray(ros::NodeHandle nh);
@@ -148,8 +149,10 @@ public:
     void visualisationOff();
     void publishMarkerTargetCurrent(geometry_msgs::PoseStamped t_pose);
     void publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose);
+    void publishMarkerRobotCurrent(geometry_msgs::Pose2D t_pose);
     void publishPoint(geometry_msgs::PoseStamped t_pose);
     void publishPoint(arma::vec t);
+    void publishCorridor();
 
     void saveData(string path);
     void setExperimentName(string name);

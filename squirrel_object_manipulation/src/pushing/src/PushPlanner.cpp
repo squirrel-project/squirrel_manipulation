@@ -42,9 +42,10 @@ void PushPlanner::initialize(string local_frame_, string global_frame_, geometry
     this->push_state_ = INACTIVE;
     this->goal_ = pushing_path_.poses[pushing_path_.poses.size() - 1];
 
-    vis_points_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_markers", 100, true);
+    vis_corridor_ = nh.advertise<visualization_msgs::MarkerArray>("/push_action/push_corridor", 100, true);
     marker_target_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_target", 100, true);
     marker_object_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_object_pose", 100, true);
+    marker_robot_c_ = nh.advertise<visualization_msgs::Marker>("/push_action/current_robot_pose", 100, true);
     marker_point_ = nh.advertise<visualization_msgs::Marker>("/push_action/point", 100, true);
     pushing_plan_pub_ = nh.advertise<nav_msgs::Path>("/push_action/pushing_path", 1000, true);
 
@@ -74,6 +75,8 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     if (visualise_){
         publishMarkerTargetCurrent(current_target_);
         publishMarkerObjectCurrent(pose_object_);
+        publishMarkerRobotCurrent(pose_robot_);
+        publishCorridor();
         pushing_plan_pub_.publish(pushing_path_);
 
     }
@@ -244,19 +247,26 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
                 double d_curr = distance2Line(pushing_path_.poses[j].pose.position.x, pushing_path_.poses[j].pose.position.y, pose_object_.pose.position.x, pose_object_.pose.position.y, pushing_path_.poses[i].pose.position.x, pushing_path_.poses[i].pose.position.y);
                 if(d_max < d_curr) d_max = d_curr;
             }
-            double angle_tail = rotationDifference(getVectorAngle(pushing_path_.poses[p_min_ind].pose.position.x - pushing_path_.poses[p_min_ind-1].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y - pushing_path_.poses[p_min_ind-1].pose.position.y),  getVectorAngle(pose_object_.pose.position.x - pushing_path_.poses[i].pose.position.x, pose_object_.pose.position.y - pushing_path_.poses[i].pose.position.y));
-            double tail = abs((corridor_width_ / 2 - d_min) * sin (angle_tail));
+            double angle_tail = abs(rotationDifference(getVectorAngle(pushing_path_.poses[p_min_ind].pose.position.x - pushing_path_.poses[p_min_ind-1].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y - pushing_path_.poses[p_min_ind-1].pose.position.y),  getVectorAngle(pose_object_.pose.position.x - pushing_path_.poses[i].pose.position.x, pose_object_.pose.position.y - pushing_path_.poses[i].pose.position.y)));
+            double tail = (corridor_width_ / 2 - d_min) * sin (angle_tail);
 
             double penalty_curve = corridor_width_ - d_max - robot_diameter_;
             double penalty_tail = tail - robot_diameter_ - object_diameter_ ;
+            penalty_tail = 0.1;
+
+            //cout<<"d "<<d<<" dmax "<<d_max<<endl;
+            //cout<<" tail " <<tail<<endl;
+            //cout<<" penatly curve "<<penalty_curve<<" penatly_tail "<<penalty_tail<<endl;
 
 
-            double cost_curr = D/ d + 2 * (robot_diameter_ + object_diameter_) / corridor_width_ * d_max / penalty_curve + 1 / penalty_tail ;
+            double cost_curr = 1 / d + 2 * (robot_diameter_ + object_diameter_) / corridor_width_ * d_max;
+            if ((penalty_curve <= 0)||((penalty_tail <= 0))) cost_curr = std::numeric_limits<double>::infinity();
             if (cost_curr < cost_min){
                 cost_min = cost_curr;
                 p_lookahead = i;
 
             }
+            //cout<< "current cost "<<cost_curr<< " min "<<cost_min<<" point "<<i<<endl<<endl;
 
         }
     }
@@ -292,8 +302,6 @@ void PushPlanner::startPush(){
         cout << endl;
     }
     //push_state_ = PUSH;
-
-
 
     push_active_ = true;
     goal_reached_ = false;

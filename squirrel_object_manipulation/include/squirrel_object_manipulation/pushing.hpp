@@ -61,9 +61,12 @@ private:
     std::string robot_base_frame_, global_frame_;
 
     bool state_machine_, clearance_nav_;
+    bool nav_, artag_, firstSet;
+    double artag_offsetX, artag_offsetY, tag_t_prev;
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
+
 
 
    // mongodb_store::MessageStoreProxy message_store;
@@ -77,7 +80,7 @@ private:
     //robot pose update
     std::string pose_topic_;
     geometry_msgs::Pose2D pose_robot_;
-    ros::Subscriber pose_sub_ ;
+    ros::Subscriber pose_sub_, marker_sub_ ;
     boost::mutex robot_pose_mutex_;
     void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
@@ -85,6 +88,10 @@ private:
     bool runPushPlan_;
 
     //object tracking
+    double Olx, Oly;
+    std::string tracker_tf_;
+    geometry_msgs::TransformStamped t_artag;
+
     geometry_msgs::PoseStamped pose_object_;
     tf::TransformListener tf_listener_;
     bool trackingStart_;
@@ -120,6 +127,7 @@ public:
     void executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal);
     void goalCB();
     void preemptCB();
+    void arCallback(tf::tfMessage msg);
 
 
 };
