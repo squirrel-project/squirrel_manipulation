@@ -66,7 +66,6 @@ private:
     void publishWaypointMarkerArray(ros::NodeHandle nh);
     void updateMatrix();
 
-    
 
 protected:
 
@@ -103,7 +102,7 @@ protected:
     arma::mat current_time_vec_;
     int elem_count_;
 
-    double current_time_;
+    double current_time_, start_time_;
 
     geometry_msgs::PoseStamped goal_;
     nav_msgs::Path pushing_path_;
@@ -155,6 +154,7 @@ public:
     void publishCorridor();
 
     void saveData(string path);
+    virtual void saveDataChild(string path) = 0;
     void setExperimentName(string name);
 
 };

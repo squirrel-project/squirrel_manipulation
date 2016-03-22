@@ -22,18 +22,18 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("costmap_topic", costmap_topic_,std::string("/update_costmap"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
-    private_nh.param("controller_frequency", controller_frequency_, 20.00);
+    private_nh.param("controller_frequency", controller_frequency_, 50.00);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 1.1);
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.20);
     private_nh.param("state_machine", state_machine_, false);
-    private_nh.param("object_diameter", object_diameter_, 0.1);
+    private_nh.param("object_diameter", object_diameter_, 0.12);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.2);
     private_nh.param("clearance_nav", clearance_nav_, false);
-    private_nh.param("navigation_", nav_, false);
-    private_nh.param("artag_", artag_, true);
+    private_nh.param("navigation_", nav_, true);
+    private_nh.param("artag_", artag_, false;
     private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
 
 
@@ -56,7 +56,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
-    marker_sub_ = nh.subscribe(tracker_tf_, 100,  &PushAction::arCallback, this);
+    marker_sub_ = nh.subscribe(tracker_tf_, 1000,  &PushAction::arCallback, this);
 
     pushServer.start();
     ROS_INFO("(Push) Ready to push objects");
@@ -202,7 +202,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
     catch (...){
     }
-    push_planner_->setExperimentName("straightD120realbox");
+    push_planner_->setExperimentName(object_id_ );
     push_planner_->saveData("/home/c7031098/squirrel_ws_new/data/");
 
     if (push_planner_->goal_reached_){
@@ -213,7 +213,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         //if pushing did not result with success for any reason
         abortPush();
     }
-    double secs2 =ros::Time::now().toSec();
+    double secs2 = ros::Time::now().toSec();
     cout<<"push duration "<<secs2 - secs;
 
     cout << endl;

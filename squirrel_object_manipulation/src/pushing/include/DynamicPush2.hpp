@@ -24,7 +24,6 @@ private:
     int count;
 
     double aPOR;
-    bool rotate2Object;
 
 
     double p_x_, d_x_, i_x_, i_x_min_, i_x_max_;
@@ -42,13 +41,13 @@ private:
     int count_dr, count_all;
     double psi_push_, psi_rel_;
 
-    double alpha, beta, alpha_old, mi_alpha;
+    double alpha, beta, alpha_old;
 
     arma::mat data_cont_mat_;
 
     geometry_msgs::Twist cmd;
 
-    double expected_dir, executed_dir;
+    double predicted_dir, executed_dir;
 
     boost::shared_ptr<libgp::GaussianProcess> gp;
 

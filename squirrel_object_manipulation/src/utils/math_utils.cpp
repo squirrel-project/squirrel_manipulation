@@ -126,7 +126,7 @@ double getVectorAngle(double x, double y){
 
     double th = atan2(y,x);
 
-    if (isnan(th)) th = 0;
+    if (isnan(th)) th = 0.0;
 
     return th;
 }
