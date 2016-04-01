@@ -15,10 +15,10 @@
   <!-- kinect mount positions | handeye calibration | relative to tilt_link -->
   <!-- anglebracketusb mount positions | handeye calibration | relative to base_link -->
   <!--gazebo>
-    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/robotino</robotNamespace>
-    </plugin>
-  </gazebo-->
+      </plugin>
+      </gazebo-->
   <!-- WHEEL -->
   <!-- Wheel transmission   -->
   <!--GAZEBO PLUGIN-->
@@ -67,7 +67,7 @@
     </sensor>
   </gazebo>
   <!--gazebo>
-      <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+	<plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>100.0</updateRate>
         <bodyName>${name}_link</bodyName>
@@ -77,9 +77,9 @@
   <!-- initialize odometry for fake localization-->
   <!--rpyOffsets>0 0 0</rpyOffsets>
         <gaussianNoise>0.01</gaussianNoise>
-      </plugin>
-      <canonicalBody>${name}_footprint</canonicalBody>
-    </gazebo-->
+	</plugin>
+	<canonicalBody>${name}_footprint</canonicalBody>
+	</gazebo-->
   <!-- position controller -->
   <gazebo>
     <plugin filename="libgazebo_ros_planar_move.so" name="base_controller">
@@ -135,7 +135,7 @@
     <kp value="1000000.0"/>
     <kd value="1.0"/>
     <!--fdir1>0 1 0</fdir1>
-      <maxContacts>1</maxContacts-->
+	  <maxContacts>1</maxContacts-->
   </gazebo>
   <joint name="wheel1_joint" type="continuous">
     <parent link="base_link"/>
@@ -182,7 +182,7 @@
     <kp value="1000000.0"/>
     <kd value="1.0"/>
     <!--fdir1>0 1 0</fdir1>
-      <maxContacts>1</maxContacts-->
+	  <maxContacts>1</maxContacts-->
   </gazebo>
   <joint name="wheel2_joint" type="continuous">
     <parent link="base_link"/>
@@ -229,39 +229,8 @@
     <kp value="1000000.0"/>
     <kd value="1.0"/>
     <!--fdir1>0 1 0</fdir1>
-      <maxContacts>1</maxContacts-->
+	  <maxContacts>1</maxContacts-->
   </gazebo>
-  <joint name="fixed_base_link_base" type="fixed">
-    <parent link="base_link"/>
-    <child link="base"/>
-    <origin rpy="0 0 -1.0471975511965976" xyz="0.0 0.0 0.185"/>
-  </joint>
-  <link name="odomp">
-    <inertial>
-      <mass value="0.01"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-    </inertial>
-  </link>
-  <gazebo reference="odomp">
-    <material>Gazebo/Black</material>
-  </gazebo>
-  <joint name="rotatory" type="continuous">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="odomp"/>
-    <child link="base_link"/>
-    <axis xyz="0 0 1"/>
-  </joint>
-  <transmission name="rotatory_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="rotatory">
-      <hardwareInterface>VelocityJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="rotatory_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>VelocityJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
   <gazebo>
     <plugin filename="libhwi_switch_gazebo_ros_control.so" name="ros_control">
       <robotNamespace>base_controller</robotNamespace>
@@ -302,15 +271,15 @@
       <ray>
         <scan>
           <horizontal>
-            <samples>640</samples>
+            <samples>512</samples>
             <resolution>1.0</resolution>
-            <min_angle>-2.2689</min_angle>
-            <max_angle>2.2689</max_angle>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
           </horizontal>
         </scan>
         <range>
           <min>0.05</min>
-          <max>10.0</max>
+          <max>6.0</max>
           <resolution>0.01</resolution>
         </range>
         <noise>
@@ -326,6 +295,43 @@
     </sensor>
     <material>Gazebo/White</material>
   </gazebo>
+  <joint name="fixed_base_link_base" type="fixed">
+    <parent link="base_link"/>
+    <child link="base"/>
+    <origin rpy="0 0 -1.0471975511965976" xyz="0.0 0.0 0.185"/>
+  </joint>
+  <link name="odomp">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <gazebo reference="odomp">
+    <material>Gazebo/Black</material>
+  </gazebo>
+  <joint name="rotatory" type="continuous">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="odomp"/>
+    <child link="base_link"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <transmission name="rotatory_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rotatory">
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rotatory_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+  <gazebo>
+    <plugin filename="libhwi_switch_gazebo_ros_control.so" name="ros_control">
+      <robotNamespace>rotatory_controller</robotNamespace>
+      <filterJointsParam>joint_names</filterJointsParam>
+    </plugin>
+  </gazebo>
   <link name="base">
     <inertial>
       <mass value="0.01"/>
@@ -334,12 +340,12 @@
     </inertial>
     <visual>
       <geometry>
-        <cylinder length="0.105" radius="0.005"/>
+        <box size="0.04096 0.0473 0.105"/>
       </geometry>
-      <material name="blue">
-        <color rgba="0 0 .8 1"/>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
       </material>
-      <origin rpy="0 0.01 0.01" xyz="0 0 0.0525"/>
+      <origin rpy="0 0 0" xyz="0 0 0.0525"/>
     </visual>
   </link>
   <joint name="fixed_base_motor1" type="fixed">
@@ -355,13 +361,20 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.07 0.123 0.067"/>
+        <mesh filename="package://robotino_arm_description/meshes/motor1.stl"/>
+        <!--box size="0.07 0.123 0.067" /-->
       </geometry>
-      <material name="blue">
-        <color rgba="0 0 .8 1"/>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0.0615 0."/>
+      <origin rpy="0 0 0" xyz="0 0 0."/>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0."/>
+      <geometry>
+        <mesh filename="package://robotino_arm_description/meshes/motor1_collision.stl"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="joint1" type="revolute">
     <parent link="motor1"/>
@@ -378,21 +391,27 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.06 0.012 0.3"/>
+        <mesh filename="package://robotino_arm_description/meshes/link1.stl"/>
       </geometry>
-      <material name="blue"/>
-      <origin rpy="0 0 0" xyz="0 0. 0.125"/>
+      <material name="white"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotino_arm_description/meshes/link1_collision.stl"/>
+      </geometry>
+    </collision>
   </link>
   <gazebo reference="link1">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/White</material>
   </gazebo>
   <joint name="joint2" type="revolute">
     <parent link="link1"/>
     <child link="motor2"/>
     <origin rpy="0 0 0" xyz="0.0 0.0 0.250"/>
     <axis xyz="0 1 0"/>
-    <limit effort="190" lower="-2.443460952792061" upper="2.443460952792061" velocity="30"/>
+    <limit effort="190" lower="-1.9" upper="1.9" velocity="30"/>
   </joint>
   <link name="motor2">
     <inertial>
@@ -402,9 +421,10 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.064 0.125 0.054"/>
+        <box size="0 0 0"/>
+        <!--box size="0.064 0.125 0.054" /-->
       </geometry>
-      <material name="blue"/>
+      <material name="white"/>
       <origin rpy="0 0 0" xyz="0 0.0625 0."/>
     </visual>
   </link>
@@ -421,21 +441,28 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.064 0.054 0.158"/>
+        <!--box size="0.064 0.054 0.158" /-->
+        <mesh filename="package://robotino_arm_description/meshes/link2.stl"/>
       </geometry>
-      <material name="blue"/>
-      <origin rpy="0 0 0" xyz="0.0 0.0 0.079"/>
+      <material name="white"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotino_arm_description/meshes/link2_collision.stl"/>
+      </geometry>
+    </collision>
   </link>
   <gazebo reference="link2">
-    <material>Gazebo/Grey</material>
+    <material>Gazebo/White</material>
   </gazebo>
   <joint name="joint3" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
     <origin rpy="0 0 0" xyz="0.0 0.0 0.158"/>
     <axis xyz="0 0 1"/>
-    <limit effort="190" lower="-3.141592653589793" upper="3.141592653589793" velocity="30"/>
+    <limit effort="190" lower="-1.7" upper="1.7" velocity="30"/>
   </joint>
   <link name="link3">
     <inertial>
@@ -445,21 +472,29 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.052 0.084 0.086"/>
+        <mesh filename="package://robotino_arm_description/meshes/link3.stl"/>
+        <!--box size="0.052 0.084 0.086" /-->
       </geometry>
-      <material name="blue"/>
-      <origin rpy="0 0 0" xyz="0 -0.015 0.043"/>
+      <material name="white"/>
+      <!--origin rpy="0 0 0" xyz="0 -0.015 0.043"/-->
+      <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotino_arm_description/meshes/link3_collision.stl"/>
+      </geometry>
+    </collision>
   </link>
   <gazebo reference="link3">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/White</material>
   </gazebo>
   <joint name="joint4" type="revolute">
     <parent link="link3"/>
     <child link="link4"/>
     <origin rpy="0 0 0" xyz="0.0 -0.057 0.065"/>
     <axis xyz="0 1 0"/>
-    <limit effort="160" lower="-3.141592653589793" upper="3.141592653589793" velocity="30"/>
+    <limit effort="160" lower="-1.7" upper="1.7" velocity="30"/>
   </joint>
   <link name="link4">
     <inertial>
@@ -469,21 +504,29 @@
     </inertial>
     <visual>
       <geometry>
-        <box size="0.042 0.042 0.084"/>
+        <!--box size="0.042 0.042 0.084" /-->
+        <mesh filename="package://robotino_arm_description/meshes/link4.stl"/>
       </geometry>
-      <material name="blue"/>
-      <origin rpy="0 0 0" xyz="0. -0.021 -0.007"/>
+      <material name="white"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <!--origin rpy="0 0 0" xyz="0. -0.021 -0.007"/-->
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotino_arm_description/meshes/link4_collision.stl"/>
+      </geometry>
+    </collision>
   </link>
   <gazebo reference="link4">
-    <material>Gazebo/Grey</material>
+    <material>Gazebo/White</material>
   </gazebo>
   <joint name="joint5" type="revolute">
     <parent link="link4"/>
     <child link="link5"/>
     <origin rpy="0 0 0" xyz="0.0 -0.027 0.035"/>
     <axis xyz="0 0 1"/>
-    <limit effort="160" lower="-3.141592653589793" upper="3.141592653589793" velocity="30"/>
+    <limit effort="160" lower="-1.7" upper="1.7" velocity="30"/>
   </joint>
   <link name="link5">
     <inertial>
@@ -493,7 +536,7 @@
     </inertial>
   </link>
   <gazebo reference="link5">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/White</material>
   </gazebo>
   <transmission name="arm_1_trans">
     <type>transmission_interface/SimpleTransmission</type>
