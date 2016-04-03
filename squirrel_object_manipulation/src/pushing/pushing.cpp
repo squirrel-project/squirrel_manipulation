@@ -5,6 +5,7 @@
 
 
 using namespace std;
+using namespace arma;
 
 
 PushAction::PushAction(const std::string std_PushServerActionName) :
@@ -22,18 +23,19 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("costmap_topic", costmap_topic_,std::string("/update_costmap"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
-    private_nh.param("controller_frequency", controller_frequency_, 50.00);
+    private_nh.param("controller_frequency", controller_frequency_, 20.00);
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 1.1);
     private_nh.param("lookahead", lookahead_, 0.30);
-    private_nh.param("goal_tolerance", goal_toll_, 0.20);
+    private_nh.param("goal_tolerance", goal_toll_, 0.05);
     private_nh.param("state_machine", state_machine_, false);
-    private_nh.param("object_diameter", object_diameter_, 0.12);
+    private_nh.param("object_diameter", object_diameter_, 0.20);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
-    private_nh.param("corridor_width", corridor_width_ , 1.2);
+    private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
     private_nh.param("navigation_", nav_, true);
-    private_nh.param("artag_", artag_, false;
+    private_nh.param("artag_", artag_, false);
+    private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
 
 
@@ -193,7 +195,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
             push_planner_->updatePushPlanner(pose_robot_, pose_object_);
             geometry_msgs::Twist cmd = push_planner_->getControlCommand();
-            // cout<<cmd<<endl;
+            //cout<<cmd<<endl;
             robotino->singleMove(cmd.linear.x, cmd.linear.y,0.0,0.0,0.0,cmd.angular.z);
 
             lRate.sleep();
@@ -202,8 +204,8 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
     catch (...){
     }
-    push_planner_->setExperimentName(object_id_ );
-    push_planner_->saveData("/home/c7031098/squirrel_ws_new/data/");
+    push_planner_->setExperimentName(object_id_ + "sim");
+    if (save_data_) push_planner_->saveData("/home/c7031098/squirrel_ws_new/data/");
 
     if (push_planner_->goal_reached_){
         ROS_INFO("Goal reached sucessfully \n");
@@ -423,16 +425,25 @@ bool PushAction::getPushPath(){
     else{
         pushing_path_.header.frame_id = global_frame_;
         int size = 100;
-        double x_max = 3.14;
+        double x_max = 2.5;
+        vec a;
         for (unsigned int i=0; i<size; ++i) {
 
             geometry_msgs::PoseStamped p;
 
             p.header.frame_id = global_frame_;
-            p.pose.position.x = x_max/size * i;
+            double x, y;
+            //p.pose.position.x = x_max/size * i;
+            x = x_max/size * i;
+            //p.pose.position.x = x;
             //p.pose.position.y = 0.0; //line
-            p.pose.position.y = sin(2 * p.pose.position.x ); //sin
-
+             y = sin(2 * x ); //sin
+            a = rotate2DVector(x, y, -M_PI /4);
+            //cout<<" x "<<x<<" y"<<y<<" a "<<a<<endl;
+            p.pose.position.x = a(0);
+            p.pose.position.y = a(1);
+             //p.pose.position.x = x;
+             //p.pose.position.y = y;
 
             pushing_path_.poses.push_back(p);
 

@@ -142,6 +142,57 @@ int sign(const double z)
    return (z > 0.0) ? 1 : - 1;
 }
 
+//double pointOnLineWithDistanceFromPoint(double x1, double y1, double x2, double y2, double d){
+//    //slope
+//    double m = (y2 - y1)/(x2 - x1);
+//    //intercept  line
+//    double b = y1 - m * x1;
+
+//    vec out = linecirc(m, b, x1, y1, d);
+
+//    if  ( abs(norm([xout(1); yout(1)] - [x2; y2])) >  abs(norm([xout(2); yout(2)] - [x2; y2])))
+//        p = [xout(1); yout(1)];
+//    else
+//    p = [xout(2); yout(2)];
+//    end
+//}
+
+//vec flinecirc(slope,intercpt,centerx,centery,radius) {
+//    /*finds
+//%  the points of intersection given a circle defined by a center and
+//%  radius in x-y coordinates, and a line defined by slope and
+//%  y-intercept, or a slope of "inf" and an x-intercept.  Two points
+//%  are returned.  When the objects do not intersect, NaNs are returned.
+//%  When the line is tangent to the circle, two identical points are
+//%  returned. All inputs must be scalars
+//%
+//*/
+
+//    if (!isnan(slope))
+//        // From the law of cosines
+
+//        double a = 1 + slope^2;
+//    double b=2 * (slope * (intercpt - centery) - centerx);
+//    double c=centery^2 + centerx^2 + intercpt^2 - 2*centery.*intercpt-radius.^2;
+
+//    x=roots([a,b,c])';
+
+//            %  Make NaN's if they don't intersect.
+
+//            if ~isreal(x)
+//            x=[NaN NaN]; y=[NaN NaN];
+//            else
+//            y=[intercpt intercpt]+[slope slope].*x;
+//            end
+
+//            % vertical slope case
+//            elseif abs(centerx-intercpt)>radius  % They don't intercept
+//            x=[NaN;NaN]; y=[NaN;NaN];
+//            else
+//            x=[intercpt intercpt];
+//            step=sqrt(radius^2-(intercpt-centerx)^2);
+//            y=centery+[step,-step];
+//            end
 
 
-
+//}

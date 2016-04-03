@@ -85,6 +85,7 @@ protected:
 
     double aO2P, aR2O, aR2P, aORP;
     double dO2P, dR2O, dRlOT;
+    double zeta;
 
     string experimentName;
 

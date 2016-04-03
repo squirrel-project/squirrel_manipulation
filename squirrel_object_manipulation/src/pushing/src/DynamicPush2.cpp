@@ -212,7 +212,7 @@ void DynamicPush::updateChild() {
     data_cont_mat_(elem_count_, 5) = cmd.linear.x;
     data_cont_mat_(elem_count_, 6) = cmd.linear.y;
     data_cont_mat_(elem_count_, 7) = cmd.angular.z;
-    data_cont_mat_(elem_count_, 8) = predicted_dir;
+    //data_cont_mat_(elem_count_, 8) = predicted_dir;
     data_cont_mat_(elem_count_, 9) = executed_dir;
     if (elem_count_ == data_cont_mat_.n_rows - 1) data_cont_mat_.resize(data_cont_mat_.n_rows + pushing_path_.poses.size(), 11);
 
