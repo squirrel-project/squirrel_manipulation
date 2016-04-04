@@ -45,15 +45,10 @@ int main(int argc, char** args) {
     spinner.start();
 
     ROS_INFO("Retrieving joint state...");
-    cout << 1 << endl;
     moveit::planning_interface::MoveGroup group(groupName);
-    cout << 2 << endl;
     group.setPlannerId("LBKPIECEkConfigDefault");
-    cout << 3 << endl;
     group.setEndEffectorLink("link5");
-cout << 4 << endl;
     vector<double> jointVals = group.getCurrentJointValues();
-    cout << 5 << endl;
     for(int i = 0; i < jointVals.size(); ++i) {
         cout << 6 << endl;
         cout << jointVals.at(i) << " ";
