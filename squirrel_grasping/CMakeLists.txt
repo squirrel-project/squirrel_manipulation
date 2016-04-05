@@ -4,17 +4,14 @@ project(squirrel_grasping)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED 
-  rospy 
-  squirrel_manipulation_msgs 
-  geometry_msgs
+find_package(catkin REQUIRED
+  rospy
+  squirrel_manipulation_msgs
   actionlib
   actionlib_msgs
-  rospy
   mongodb_store
   tf
-  squirrel_arm_control
-##  kcl_hand_control
+  kclhand_control
   geometry_msgs
 )
 

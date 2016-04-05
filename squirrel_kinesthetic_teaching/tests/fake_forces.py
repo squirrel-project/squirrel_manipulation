@@ -2,32 +2,12 @@
 
 import rospy
 from std_msgs.msg import Float64MultiArray
-from std_srvs.srv import Empty, EmptyRequest
 import random
 
 
 def setup():
     rospy.init_node('force_faker', anonymous=True)
     random.seed()
-
-
-def start():
-    rospy.loginfo('starting teacher')
-    rospy.wait_for_service('/squirrel_manipulation/start_teaching')
-    try:
-        start_ = rospy.ServiceProxy('/squirrel_manipulation/start_teaching', Empty)
-        start_(EmptyRequest())
-    except rospy.ServiceException, e:
-        print 'Service call failed: %s'%e    
-
-def stop():
-    rospy.loginfo('stopping teacher')
-    rospy.wait_for_service('/squirrel_manipulation/stop_teaching')
-    try:
-        stop_ = rospy.ServiceProxy('/squirrel_manipulation/stop_teaching', Empty)
-        stop_(EmptyRequest())
-    except rospy.ServiceException, e:
-        print 'Service call failed: %s'%e    
 
 
 def chat():
@@ -48,8 +28,5 @@ def chat():
 
 
 if __name__ == '__main__':
-    setup()
-    start()
     chat()
-    stop()
 

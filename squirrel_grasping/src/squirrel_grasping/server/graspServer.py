@@ -60,8 +60,8 @@ class GraspServer(object):
             rospy.loginfo('GraspAction: failed')
             self.server.set_succeeded(self._result)
             return            
-
-        # TODO: compute new gripper pose given goal.gripper_pose
+ 
+       # TODO: compute new gripper pose given goal.gripper_pose
 
         self._feedback.current_phase = 'configuring gripper'
         self._feedback.current_status = 'preparing action execution'
@@ -88,20 +88,3 @@ class GraspServer(object):
         self.server.set_succeeded(self._result)
 
 
-    def __inverseTimes(self, pose1, pose2):
-        v1 = np.array([pose1.position.x, pose1.position.y, pose1.position.z])
-        m1 = quaternion_matrix([pose1.orientation.w,
-                                pose1.orientation.x,
-                                pose1.orientation.y,
-                                pose1.orientation.z,])
-
-        v2 = np.array([pose2.position.x, pose2.position.y, pose2.position.z])
-        m2 = quaternion_matrix([pose2.orientation.w,
-                                pose2.orientation.x,
-                                pose2.orientation.y,
-                                pose2.orientation.z,])
-
-        trans = (v2 - v1)*m1
-        rot = m1.T()*m2
-
-        return (rot, trans)
