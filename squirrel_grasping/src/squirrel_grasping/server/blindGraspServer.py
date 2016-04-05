@@ -107,7 +107,7 @@ class BlindGraspServer(object):
 
             self._prepareGrasp()
             group.go(wait=True)
-            self._closeFingers(1.0)
+            self._closeFinger(1.0)
 
             # lift object
             group.clear_pose_targets()
