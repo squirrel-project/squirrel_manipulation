@@ -26,7 +26,7 @@ class BlindGraspServer(object):
     def __init__(self):
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting BlindGraspServer')
-        self._server = actionlib.SimpleActionServer('blingGrasp', BlindGraspActionAction, execute_cb=self.execute_grasp, auto_start=False)
+        self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspActionAction, execute_cb=self.execute_grasp, auto_start=False)
         self._prepareGrasp = rospy.ServiceProxy('prepareGrasp', graspPreparation)
         self._closeFinger = rospy.ServiceProxy('closeFinger', graspCurrent)
         self._openFinger = rospy.ServiceProxy('openFinger', graspPreparation)
