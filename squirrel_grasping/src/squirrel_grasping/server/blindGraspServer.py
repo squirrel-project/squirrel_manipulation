@@ -86,6 +86,7 @@ class BlindGraspServer(object):
         group.set_start_state_to_current_state()
         group.set_pose_target(pose)
         plan = group.plan()
+        print plan
 
         if self.is_empty(plan):
             self._feedback.current_phase = 'BlindGrasp: aborted - no plan found'
