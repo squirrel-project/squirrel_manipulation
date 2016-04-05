@@ -41,7 +41,7 @@ class BlindGraspServer(object):
 
         self._server.publish_feedback(self._feedback)
         
-        rospy.loginfo(rospy.get_caller_id() + ': Requested blind grasp of object %s'.format(goal.object_id))
+        rospy.loginfo(rospy.get_caller_id() + ': Requested blind grasp of object %s at pose %s'.format(goal.object_id, goal.heap_center_pose))
 
         # check that preempt has not been requested by the client
         # this needs refinement for the next iteration after Y2 review
@@ -68,6 +68,8 @@ class BlindGraspServer(object):
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
 
+        rospy.loginfo(rospy.get_caller_id() + ': Computed gripper pose: %s'.format(pose))
+
         '''
         if goal.heap_bounding_box.x > self._span:
             d_ = goal.heap_bounding_cylinder.diameter/2.0
@@ -86,7 +88,6 @@ class BlindGraspServer(object):
         group.set_start_state_to_current_state()
         group.set_pose_target(pose)
         plan = group.plan()
-        print plan
 
         if self.is_empty(plan):
             self._feedback.current_phase = 'BlindGrasp: aborted - no plan found'
@@ -130,5 +131,5 @@ class BlindGraspServer(object):
     def is_empty(self, plan):
         if len(plan.joint_trajectory.points) == 0 and \
             len(plan.multi_dof_joint_trajectory.points) == 0:
-            return False
-        return True
+            return True
+        return False
