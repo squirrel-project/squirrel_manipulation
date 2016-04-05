@@ -97,8 +97,8 @@ class BlindGraspServer(object):
             self._server.publish_feedback(self._feedback)
 
             self._result.result_status = 'BlindGrasp: failed to grasp object %s'.format(goal.object_id) 
-            rospy.loginfo('BlindGrasp: failed')
-            self.server.set_succeeded(self._result)
+            rospy.loginfo('BlindGrasp: failed - no motion plan found')
+            self._server.set_succeeded(self._result)
            
         else:
             self._feedback.current_phase = 'BlindGrasp: grasping'
@@ -126,7 +126,7 @@ class BlindGraspServer(object):
 
             self._result.result_status = 'BlindGrasp: grasped object %s'.format(goal.object_id) 
             rospy.loginfo('BlindGrasp: succeeded')
-            self.server.set_succeeded(self._result)            
+            self._server.set_succeeded(self._result)            
             
 
     def is_empty(self, plan):
