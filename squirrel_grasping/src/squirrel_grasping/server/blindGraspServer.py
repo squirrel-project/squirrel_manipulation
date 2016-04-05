@@ -5,8 +5,8 @@ import tf
 from geometry_msgs.msg import PoseStamped
 
 from squirrel_manipulation_msgs.msg import BlindGraspAction
-from squirrel_manipulation_msgs.msg import BlindGraspActionResult
-from squirrel_manipulation_msgs.msg import BlindGraspActionFeedback
+from squirrel_manipulation_msgs.msg import BlindGraspResult
+from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
 from kclhand_control.srv import graspCurrent, graspPreparation
 
@@ -18,8 +18,8 @@ class BlindGraspServer(object):
 
     #units in meter?
 
-    _result = BlindGraspActionResult()
-    _feedback = BlindGraspActionFeedback()
+    _result = BlindGraspResult()
+    _feedback = BlindGraspFeedback()
     _span = .1 #10 cm
     _dist_2_hand = .025 #2.5 cm
 
