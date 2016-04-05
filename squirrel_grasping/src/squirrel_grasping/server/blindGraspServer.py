@@ -81,7 +81,7 @@ class BlindGraspServer(object):
 
         roscpp_initialize(sys.argv)
         group = MoveGroupCommander('arm')
-        group.set_end_pose_reference_frame(goal.heap_center_pose.header.frame_id)
+        group.set_pose_reference_frame(goal.heap_center_pose.header.frame_id)
         group.clear_pose_targets()
         group.set_start_state_to_current_state()
         group.set_pose_target(pose)
