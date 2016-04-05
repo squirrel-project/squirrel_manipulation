@@ -56,7 +56,7 @@ class BlindGraspServer(object):
         self._feedback.percent_completed = 0.3
         self._server.publish_feedback(self._feedback)
 
-        d = goal.heap_bounding.box.z/2.0
+        d = goal.heap_bounding_cylinder.height/2.0
 
         pose = PoseStamped()
         pose.header.stamp = rospy.Time.now()
@@ -71,7 +71,7 @@ class BlindGraspServer(object):
 
         '''
         if goal.heap_bounding_box.x > _span:
-            d_ = goal.heap_bounding.box.x/2.0
+            d_ = goal.heap_bounding_cylinder.diameter/2.0
             pose.pose.position.x = pose.pose.position.x + d_
         '''
 
