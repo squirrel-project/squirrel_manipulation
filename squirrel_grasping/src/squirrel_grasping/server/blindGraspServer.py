@@ -26,9 +26,9 @@ class BlindGraspServer(object):
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting BlindGraspServer')
         self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspAction, execute_cb=self.execute_grasp, auto_start=False)
-        self._prepareGrasp = rospy.ServiceProxy('prepareGrasp', graspPreparation)
-        self._closeFinger = rospy.ServiceProxy('closeFinger', graspCurrent)
-        self._openFinger = rospy.ServiceProxy('openFinger', graspPreparation)
+        self._prepareGrasp = rospy.ServiceProxy('hand_controller/prepareGrasp', graspPreparation)
+        self._closeFinger = rospy.ServiceProxy('hand_controller/closeFinger', graspCurrent)
+        self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
         self._server.start()
         self._tf = tf.TransformListener()
 
