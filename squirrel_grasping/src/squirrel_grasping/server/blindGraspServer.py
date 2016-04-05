@@ -2,6 +2,7 @@ import rospy
 import actionlib
 import numpy as np
 import tf
+import sys
 from geometry_msgs.msg import PoseStamped
 
 from squirrel_manipulation_msgs.msg import BlindGraspAction
