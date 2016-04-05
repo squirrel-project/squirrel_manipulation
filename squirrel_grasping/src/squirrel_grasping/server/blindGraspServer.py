@@ -4,7 +4,7 @@ import numpy as np
 import tf
 from geometry_msgs.msg import PoseStamped
 
-from squirrel_manipulation_msgs.msg import BlindGraspActionAction
+from squirrel_manipulation_msgs.msg import BlindGraspAction
 from squirrel_manipulation_msgs.msg import BlindGraspActionResult
 from squirrel_manipulation_msgs.msg import BlindGraspActionFeedback
 
@@ -26,7 +26,7 @@ class BlindGraspServer(object):
     def __init__(self):
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting BlindGraspServer')
-        self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspActionAction, execute_cb=self.execute_grasp, auto_start=False)
+        self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspAction, execute_cb=self.execute_grasp, auto_start=False)
         self._prepareGrasp = rospy.ServiceProxy('prepareGrasp', graspPreparation)
         self._closeFinger = rospy.ServiceProxy('closeFinger', graspCurrent)
         self._openFinger = rospy.ServiceProxy('openFinger', graspPreparation)
@@ -128,7 +128,7 @@ class BlindGraspServer(object):
             
 
     def is_empty(self, plan):
-        if len(plan.joint_trajectory.points) == 0 and
+        if len(plan.joint_trajectory.points) == 0 and \
             len(plan.multi_dof_joint_trajectory.points) == 0:
             return False
         return True
