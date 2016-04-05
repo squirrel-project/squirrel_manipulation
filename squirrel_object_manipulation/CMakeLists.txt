@@ -27,6 +27,7 @@ catkin_package(
     CATKIN_DEPENDS tf roscpp std_msgs nav_msgs actionlib sensor_msgs geometry_msgs control_toolbox cmake_modules costmap_2d mongodb_store squirrel_manipulation_msgs squirrel_rgbd_mapping_msgs squirrel_object_perception_msgs
 )
 
+include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 include_directories(
         include
@@ -35,7 +36,7 @@ include_directories(
 )
 
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
-target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} ${ARMADILLO_LIBRARIES})
 
 add_library(robotino
    src/RobotinoControl.cpp
