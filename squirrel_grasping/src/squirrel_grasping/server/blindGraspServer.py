@@ -20,7 +20,7 @@ class BlindGraspServer(object):
     _result = BlindGraspResult()
     _feedback = BlindGraspFeedback()
     _span = .1 #10 cm
-    _dist_2_hand = .025 #2.5 cm
+    _dist_2_hand = .18
 
     def __init__(self):
         while rospy.get_time() == 0.0: pass
@@ -83,6 +83,7 @@ class BlindGraspServer(object):
 
         roscpp_initialize(sys.argv)
         group = MoveGroupCommander('arm')
+        group.set_num_planning_attempts(5)
         group.set_pose_reference_frame(goal.heap_center_pose.header.frame_id)
         group.clear_pose_targets()
         group.set_start_state_to_current_state()
