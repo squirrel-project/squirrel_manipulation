@@ -16,8 +16,6 @@ from moveit_commander import roscpp_initialize, roscpp_shutdown, MoveGroupComman
 
 class BlindGraspServer(object):
 
-    #units in meter?
-
     _result = BlindGraspResult()
     _feedback = BlindGraspFeedback()
     _span = .1 #10 cm
@@ -63,14 +61,14 @@ class BlindGraspServer(object):
         pose.header.frame_id = goal.heap_center_pose.header.frame_id
         pose.pose.position.x = goal.heap_center_pose.pose.position.x
         pose.pose.position.x = goal.heap_center_pose.pose.position.y
-        pose.pose.position.x = goal.heap_center_pose.pose.position.z + d + _dist_2_hand
+        pose.pose.position.x = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         pose.pose.orientation.w = 0.0
         pose.pose.orientation.x = -1.0
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
 
         '''
-        if goal.heap_bounding_box.x > _span:
+        if goal.heap_bounding_box.x > self._span:
             d_ = goal.heap_bounding_cylinder.diameter/2.0
             pose.pose.position.x = pose.pose.position.x + d_
         '''
