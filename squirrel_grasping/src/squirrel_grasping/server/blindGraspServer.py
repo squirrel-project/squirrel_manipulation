@@ -69,9 +69,11 @@ class BlindGraspServer(object):
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
 
+        '''
         if goal.heap_bounding_box.x > _span:
             d_ = goal.heap_bounding.box.x/2.0
             pose.pose.position.x = pose.pose.position.x + d_
+        '''
 
         self._feedback.current_phase = 'BlindGrasp: moving gripper'
         self._feedback.current_status = 'BlindGrasp: executing action'
