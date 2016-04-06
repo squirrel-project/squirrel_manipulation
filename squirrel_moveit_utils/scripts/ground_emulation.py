@@ -1,7 +1,9 @@
-#! /usr/bin/env python                                                                                                                                                                                                                                                          
+#! /usr/bin/env python                                                                                                                                                                                                                                             
 
-from moveit_commander import roscpp_initialize, roscpp_shutdown, MoveGroupCommander, PlanningSceneInterface
+from moveit_commander import PlanningSceneInterface
 import threading
+
+from geometry_msgs.msg import PoseStamped
 
 import rospy
 
