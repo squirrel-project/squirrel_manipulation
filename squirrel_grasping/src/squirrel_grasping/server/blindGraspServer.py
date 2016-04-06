@@ -27,7 +27,6 @@ class BlindGraspServer(object):
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
-#        self._group.set_planner_id('RRTConnectkConfigDefault')
         self._group.set_num_planning_attempts(5)
         self._server.start()
         self._result = BlindGraspResult()
@@ -113,7 +112,7 @@ class BlindGraspServer(object):
             # lift object
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
-            self._pose.pose.position.z = pose.pose.position.z + 0.3
+            pose.pose.position.z = pose.pose.position.z + 0.3
             self._group.set_pose_target(pose)
             self._group.plan()
             self._group.go(wait=True)
