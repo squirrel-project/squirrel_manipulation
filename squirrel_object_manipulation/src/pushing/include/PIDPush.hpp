@@ -13,6 +13,9 @@ private:
     control_toolbox::Pid pid_x_;
     control_toolbox::Pid pid_y_;
     control_toolbox::Pid pid_theta_;
+    control_toolbox::Pid pid_xd_;
+    control_toolbox::Pid pid_yd_;
+
 
     double p_x_, d_x_, i_x_, i_x_min_, i_x_max_;
     double p_y_, d_y_, i_y_, i_y_min_, i_y_max_;
@@ -20,6 +23,8 @@ private:
 
 protected:
     void initChild();
+    void updateChild(){}
+
 
 public:
 

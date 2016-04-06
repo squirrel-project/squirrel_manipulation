@@ -19,6 +19,7 @@
 
 #include <squirrel_object_perception_msgs/StartObjectTracking.h>
 #include <squirrel_object_perception_msgs/StopObjectTracking.h>
+#include <squirrel_object_perception_msgs/SceneObject.h>
 
 #include <actionlib/server/simple_action_server.h>
 #include <geometry_msgs/Pose2D.h>
@@ -34,6 +35,9 @@
 #include "../src/pushing/include/PIDPush.hpp"
 #include "../src/pushing/include/PIDSimplePush.hpp"
 #include "../src/pushing/include/PIDObjectPush.hpp"
+#include "../src/pushing/include/DipoleField.hpp"
+#include "../src/pushing/include/CentroidAlignment.hpp"
+#include "../src/pushing/include/DynamicPush.hpp"
 
 #include "mongodb_store/message_store.h"
 
@@ -52,26 +56,31 @@ private:
     tf::TransformListener tfl_;
     std::string node_name_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_ ;
+    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_, robot_diameter_, corridor_width_ ;
 
     std::string robot_base_frame_, global_frame_;
 
-    bool state_machine_;
+    bool state_machine_, clearance_nav_;
+    bool nav_, artag_, firstSet, save_data_;
+    double artag_offsetX, artag_offsetY, tag_t_prev;
 
     geometry_msgs::PoseStamped push_goal_;
     std::string object_id_;
 
-   // mongodb_store::MessageStoreProxy message_store;
 
+
+   // mongodb_store::MessageStoreProxy message_store;
 
     //navigation path
     nav_msgs::Path pushing_path_;
     bool getPushPath();
+    std::string costmap_topic_;
+    ros::Publisher costmap_pub_;
 
     //robot pose update
     std::string pose_topic_;
     geometry_msgs::Pose2D pose_robot_;
-    ros::Subscriber pose_sub_;
+    ros::Subscriber pose_sub_, marker_sub_ ;
     boost::mutex robot_pose_mutex_;
     void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
 
@@ -79,6 +88,10 @@ private:
     bool runPushPlan_;
 
     //object tracking
+    double Olx, Oly;
+    std::string tracker_tf_;
+    geometry_msgs::TransformStamped t_artag;
+
     geometry_msgs::PoseStamped pose_object_;
     tf::TransformListener tf_listener_;
     bool trackingStart_;
@@ -112,7 +125,9 @@ public:
     ~PushAction();
 
     void executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal);
-
+    void goalCB();
+    void preemptCB();
+    void arCallback(tf::tfMessage msg);
 
 
 };

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <armadillo>
 
+int sign(const double z);
+
 double distancePoints(double x1, double y1, double z1, double x2, double y2, double z2);
 double distancePoints(double x1, double y1, double x2, double y2);
 double angle3Points(double x1, double y1, double x2, double y2, double x3, double y3);
@@ -17,5 +19,11 @@ arma::vec rotate2DVector(arma::vec vec_, double angle);
 arma::vec reflectPointOverPoint(double x0, double y0, double x1, double y1);
 
 double rotationDifference(double angle, double theta_robot);
-double getVectorAngle(double y, double x);
+double getVectorAngle(double x, double y);
+double getNorm(arma::vec v);
+
+double getGaussianVal(double x, double sigma, double mi);
+
+
+
 #endif
