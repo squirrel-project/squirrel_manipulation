@@ -46,7 +46,7 @@ double angle3Points(double x1, double y1, double x2, double y2, double x3, doubl
     double a32 = atan2(y3 - y2, x3 -x2);
     if (isnan(a32)) a32 = 0;
 
-    return a12 - a32;
+    return a32 - a12;
 }
 
 // distance of point 0 from line defined by points 1 and 2
@@ -85,8 +85,16 @@ vec rotate2DVector(double x, double y, double angle){
 
     return rot_vec_;
 }
+
 vec rotate2DVector(vec vec_, double angle){
     return rotate2DVector(vec_(0), vec_(1), angle);
+}
+
+//get vector norm
+
+double getNorm(vec v){
+
+    return distancePoints (v(0), v(1), 0, 0, 0, 0);
 }
 
 
@@ -102,11 +110,8 @@ vec reflectPointOverPoint(double x0, double y0, double x1, double y1){
 }
 
 
-//angle difference for rotation in first and fourth quadrant
+//angle difference for rotation
 double rotationDifference(double angle, double theta_robot){
-
-//    if (angle < 0) angle = angle + 2 * M_PI;
-//    if (theta_robot < 0) theta_robot = theta_robot + 2 * M_PI;
 
     double err_th = angle - theta_robot;
 
@@ -117,16 +122,77 @@ double rotationDifference(double angle, double theta_robot){
 }
 
 // angle of a vector (x,y)
-double getVectorAngle(double y, double x){
+double getVectorAngle(double x, double y){
 
     double th = atan2(y,x);
 
-    if (isnan(th)) th = 0;
-    //if (th < 0) th = 2*M_PI + th;
+    if (isnan(th)) th = 0.0;
 
     return th;
 }
 
+double getGaussianVal(double x, double sigma, double mi){
+    double r = exp( - pow( x  - mi, 2) / (2 * pow(sigma, 2)));
+    if (isnan(r)) r = 1.0;
+    return r;
+ }
+
+int sign(const double z)
+{
+   return (z > 0.0) ? 1 : - 1;
+}
+
+//double pointOnLineWithDistanceFromPoint(double x1, double y1, double x2, double y2, double d){
+//    //slope
+//    double m = (y2 - y1)/(x2 - x1);
+//    //intercept  line
+//    double b = y1 - m * x1;
+
+//    vec out = linecirc(m, b, x1, y1, d);
+
+//    if  ( abs(norm([xout(1); yout(1)] - [x2; y2])) >  abs(norm([xout(2); yout(2)] - [x2; y2])))
+//        p = [xout(1); yout(1)];
+//    else
+//    p = [xout(2); yout(2)];
+//    end
+//}
+
+//vec flinecirc(slope,intercpt,centerx,centery,radius) {
+//    /*finds
+//%  the points of intersection given a circle defined by a center and
+//%  radius in x-y coordinates, and a line defined by slope and
+//%  y-intercept, or a slope of "inf" and an x-intercept.  Two points
+//%  are returned.  When the objects do not intersect, NaNs are returned.
+//%  When the line is tangent to the circle, two identical points are
+//%  returned. All inputs must be scalars
+//%
+//*/
+
+//    if (!isnan(slope))
+//        // From the law of cosines
+
+//        double a = 1 + slope^2;
+//    double b=2 * (slope * (intercpt - centery) - centerx);
+//    double c=centery^2 + centerx^2 + intercpt^2 - 2*centery.*intercpt-radius.^2;
+
+//    x=roots([a,b,c])';
+
+//            %  Make NaN's if they don't intersect.
+
+//            if ~isreal(x)
+//            x=[NaN NaN]; y=[NaN NaN];
+//            else
+//            y=[intercpt intercpt]+[slope slope].*x;
+//            end
+
+//            % vertical slope case
+//            elseif abs(centerx-intercpt)>radius  % They don't intercept
+//            x=[NaN;NaN]; y=[NaN;NaN];
+//            else
+//            x=[intercpt intercpt];
+//            step=sqrt(radius^2-(intercpt-centerx)^2);
+//            y=centery+[step,-step];
+//            end
 
 
-
+//}

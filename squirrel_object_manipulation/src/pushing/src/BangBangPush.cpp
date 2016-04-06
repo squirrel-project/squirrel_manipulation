@@ -40,11 +40,11 @@ geometry_msgs::Twist BangBangPush::getVelocities(){
     }
 
     //the angle object-robot-target
-    if (aORT < - err_th_toll_) {
+    if (aORP < - err_th_toll_) {
         // moving left
         cmd.linear.y = vel_y_max_;
     }
-    else if (aORT > err_th_toll_){
+    else if (aORP > err_th_toll_){
         // moving right
         cmd.linear.y = - vel_y_max_;
     }

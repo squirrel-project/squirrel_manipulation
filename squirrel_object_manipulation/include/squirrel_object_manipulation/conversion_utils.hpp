@@ -6,6 +6,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 geometry_msgs::PoseStamped tf_stamped2pose_stamped(tf::StampedTransform tf_in);
 
