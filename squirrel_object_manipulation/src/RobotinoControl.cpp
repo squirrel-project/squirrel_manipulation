@@ -184,6 +184,31 @@ void RobotinoControl::rotateDistance(double rot) {
 
 }
 
+void RobotinoControl::rotateAngle(double rot) {
+    ros::Rate spinRate(spinRateVal);
+    ros::spinOnce();
+    geometry_msgs::Pose2D pose_robot_;
+
+    nav_msgs::Odometry Odometry = this->getOdom();
+    //robotino position in /odom world
+    pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+    double desired_theta_ = pose_robot_.theta + rot;
+    double vel_;
+    geometry_msgs::Twist cmd;
+
+    while(rotationDifference(desired_theta_, pose_robot_.theta) > 0.02){
+        vel_ = 2.4 * rotationDifference(desired_theta_, pose_robot_.theta);
+        if(abs(vel_) > 0.6) vel_ = sign(vel_) * 0.6;
+        cmd = getNullTwist();
+        cmd.angular.z = vel_;
+        singleMove(cmd);
+        spinRate.sleep();
+        Odometry = this->getOdom();
+        pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+    }
+
+}
+
 
 void  RobotinoControl::moveFwd(double speed){
 

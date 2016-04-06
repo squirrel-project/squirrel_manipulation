@@ -33,8 +33,8 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
-    private_nh.param("navigation_", nav_, true);
-    private_nh.param("artag_", artag_, false);
+    private_nh.param("navigation_", nav_, false);
+    private_nh.param("artag_", artag_, true);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
 
@@ -270,7 +270,7 @@ void PushAction::objectTrackingThread(){
         if(!nav_){
 
             robot_pose_mutex_.lock();
-            nav_msgs::Odometry Odometry = robotino->getOdom();;
+            nav_msgs::Odometry Odometry = robotino->getOdom();
             //robotino position in /odom world
             pose_robot_.x = Odometry.pose.pose.position.x;
             pose_robot_.y = Odometry.pose.pose.position.y;
@@ -317,6 +317,9 @@ void PushAction::objectTrackingThread(){
                 pose_object_.pose.position.z = 0;
                 pose_object_.pose.orientation = t_artag.transform.rotation;
                 tag_t_prev = t_artag.header.stamp.nsec;
+            }
+            else{
+                cout<<"object lost"<<endl;
             }
 
         }
@@ -437,13 +440,13 @@ bool PushAction::getPushPath(){
             x = x_max/size * i;
             //p.pose.position.x = x;
             //p.pose.position.y = 0.0; //line
-             y = sin(2 * x ); //sin
+            y = sin(2 * x ); //sin
             a = rotate2DVector(x, y, -M_PI /4);
             //cout<<" x "<<x<<" y"<<y<<" a "<<a<<endl;
             p.pose.position.x = a(0);
             p.pose.position.y = a(1);
-             //p.pose.position.x = x;
-             //p.pose.position.y = y;
+            //p.pose.position.x = x;
+            //p.pose.position.y = y;
 
             pushing_path_.poses.push_back(p);
 

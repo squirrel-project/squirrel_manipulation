@@ -30,6 +30,7 @@ catkin_package(
 
 include_directories(
         include
+        /src/pushing/include
         ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         /home/c7031098/squirrel_ws_new/src/squirrel_manipulation/libgp/include
@@ -37,7 +38,7 @@ include_directories(
 )
 
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
-target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} utils)
 
 add_library(robotino
    src/RobotinoControl.cpp
@@ -63,8 +64,11 @@ add_library(utils
    src/utils/gnuplot-cpp/gnuplot_i.cpp
 )
 
+target_link_libraries(robotino utils)
+target_link_libraries(pushlib utils)
+
 add_executable(ardemo src/ARDemo.cpp)
-target_link_libraries(ardemo robotino ${catkin_LIBRARIES})
+target_link_libraries(ardemo robotino utils ${catkin_LIBRARIES})
 
 add_executable(push src/pushing/pushing.cpp)
 target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES} libgp.a)

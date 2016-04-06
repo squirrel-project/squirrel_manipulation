@@ -13,6 +13,11 @@
 #include <tf/tfMessage.h>
 #include <std_msgs/Float64.h>
 #include <boost/thread.hpp>
+#include <geometry_msgs/Pose2D.h>
+#include <tf/transform_listener.h>
+
+#include <squirrel_object_manipulation/math_utils.hpp>
+#include <squirrel_object_manipulation/conversion_utils.hpp>
 
 
 #define ROBOTINO_MOVE_TOPIC "/cmd_vel"
@@ -108,6 +113,7 @@ public:
     void moveLinearDistance(double x, double y, double z);
     void rotateDistance(double rot);
     void rotateDistanceTime(double rot);
+    void rotateAngle(double rot);
 
     int sign(double d);
 

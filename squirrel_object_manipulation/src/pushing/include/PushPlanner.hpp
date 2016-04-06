@@ -21,10 +21,6 @@
 #include <squirrel_object_manipulation/math_utils.hpp>
 #include <squirrel_object_manipulation/conversion_utils.hpp>
 
-#include "../../utils/gnuplot-cpp/gnuplot_i.hpp"
-
-
-
 using namespace ros;
 using namespace std;
 
@@ -78,7 +74,7 @@ protected:
 
     double err_t_toll_;
     double err_th_toll_;
-    double vel_lin_max_;
+    double vel_lin_max_, vel_lin_min_;
     double vel_ang_max_;
     double vel_x_max_, vel_y_max_;
     double controller_frequency_, time_step_;

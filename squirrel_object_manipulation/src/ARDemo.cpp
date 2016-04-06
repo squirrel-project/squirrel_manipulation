@@ -72,7 +72,10 @@ int main(int argc, char** args) {
 
         */
 
-        ros::spinOnce();
+        robotino.rotateAngle(0.5);
+        cout<<"done"<<endl;
+
+       /* ros::spinOnce();
         // if angle changed
         if(abs(prevRobotinoAngle - robotinoAngle) > 0.01 && abs(prevRobotinoAngle - robotinoAngle) < 2.5) {
             if(robotinoDist < minDist)
@@ -82,7 +85,7 @@ int main(int argc, char** args) {
             prevRobotinoAngle = robotinoAngle;
             prevRobotinoDist = robotinoDist;
         }
-        lRate.sleep();
+        lRate.sleep();*/
 
     }
 

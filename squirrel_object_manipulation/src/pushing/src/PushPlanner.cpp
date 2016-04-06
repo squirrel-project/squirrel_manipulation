@@ -383,7 +383,7 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
     
     //orientation cmd
     cmd.angular.z = rotation_coefficient * rotationDifference(aR2O, pose_robot_.theta);
-    
+    cout<<cmd.angular.z<<endl;
     return cmd;
     
 }
