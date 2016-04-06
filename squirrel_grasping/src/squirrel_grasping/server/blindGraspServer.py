@@ -27,7 +27,7 @@ class BlindGraspServer(object):
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
-        self._group.set_planner_id('RRTConnectkConfigDefault')
+#        self._group.set_planner_id('RRTConnectkConfigDefault')
         self._group.set_num_planning_attempts(5)
         self._server.start()
         self._result = BlindGraspResult()
@@ -84,8 +84,7 @@ class BlindGraspServer(object):
         self._feedback.current_status = 'BlindGrasp: executing action'
         self._feedback.percent_completed = 0.6
         self._server.publish_feedback(self._feedback)
-
-        self._group.set_pose_reference_frame(goal.heap_center_pose.header.frame_id)
+        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
         self._group.set_pose_target(pose)
