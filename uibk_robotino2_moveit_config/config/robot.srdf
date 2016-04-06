@@ -178,4 +178,12 @@
     <disable_collisions link1="wheel0_link" link2="wheel1_link" reason="Never" />
     <disable_collisions link1="wheel0_link" link2="wheel2_link" reason="Never" />
     <disable_collisions link1="wheel1_link" link2="wheel2_link" reason="Never" />
+    <disable_collisions link1="hand_right_finger_upper_link" link2="hand_left_finger_upper_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_right_finger_upper_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_left_finger_upper_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_left_finger_lower_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_right_finger_lower_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_left_coupler" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_right_coupler" reason="Never" />
+
 </robot>
