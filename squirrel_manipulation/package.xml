@@ -14,7 +14,6 @@
   <run_depend>robotino_5dof_moveit_config</run_depend>
   <run_depend>uibk_robotino2_moveit_config</run_depend>
   <run_depend>uibk_robotino2_5dof_moveit_config</run_depend>
-  <run_depend>squirrel_kinesthetic_teaching</run_depend>
   <run_depend>squirrel_object_manipulation</run_depend>
 
   <export>
