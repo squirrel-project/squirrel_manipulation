@@ -20,6 +20,9 @@
   <run_depend>joint_state_publisher</run_depend>
   <run_depend>robot_state_publisher</run_depend>
   <run_depend>xacro</run_depend>
+  <build_depend>uibk_robotino2_moveit_config</build_depend>
+  <run_depend>uibk_robotino2_moveit_config</run_depend>
+
 
   <buildtool_depend>catkin</buildtool_depend>
   

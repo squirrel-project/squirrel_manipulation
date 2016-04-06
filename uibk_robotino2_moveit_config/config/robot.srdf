@@ -11,19 +11,20 @@
     <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
     <group name="arm">
         <link name="base" />
+        <link name="motor1" />
         <link name="link1" />
+        <link name="motor2" />
         <link name="link2" />
         <link name="link3" />
         <link name="link4" />
         <link name="link5" />
-        <link name="motor2" />
-        <link name="motor1" />
+        <joint name="rotatory" />
         <joint name="joint1" />
         <joint name="joint2" />
         <joint name="joint3" />
         <joint name="joint4" />
         <joint name="joint5" />
-        <joint name="rotatory" />
+        <group name="hand" />
     </group>
     <group name="hand">
         <link name="hand_wrist_link" />

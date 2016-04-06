@@ -7,6 +7,16 @@ controller_list:
       - joint3
       - joint4
       - joint5
+      - hand_left_crank_base_joint
+      - hand_left_coupler_crank_joint
+      - hand_left_finger_lower_joint
+      - hand_left_finger_upper_joint
+      - hand_middle_finger_lower_joint
+      - hand_middle_finger_upper_joint
+      - hand_right_crank_base_joint
+      - hand_right_coupler_crank_joint
+      - hand_right_finger_lower_joint
+      - hand_right_finger_upper_joint
   - name: fake_hand_controller
     joints:
       - hand_left_crank_base_joint
