@@ -6,15 +6,6 @@ import threading
 import rospy
 
 
-if __name__ == '__main__':
-    try:
-        rospy.init_node('moveit_ground_emulation')
-        add_ground()
-        rospy.spin()
-    except rospy.ROSInterruptException:
-        pass
-
-
 def add_ground():
     psi = PlanningSceneInterface()
     pose = PoseStamped()
@@ -29,3 +20,12 @@ def add_ground():
     pose.header.stamp = rospy.get_rostime()
     pose.header.frame_id = "base_link"
     psi.attach_box("base_link", "ground", pose, (3, 3, 0.1))
+
+
+if __name__ == '__main__':
+    try:
+        rospy.init_node('moveit_ground_emulation')
+        add_ground()
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        pass
