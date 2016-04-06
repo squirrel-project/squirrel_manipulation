@@ -32,7 +32,8 @@ int main(int argc, char** args) {
 //    robotino.singleMove(10, 0, 0, 0, 0, 0);
 //    robotino.moveLinearDistance(1.0, 0, 0);
 
-    ros::Subscriber markerSub = node.subscribe("arMarker/tf", 1, arCallback);
+    ros::Subscriber markerSub = node.subscribe("tf1", 1, arCallback);
+    //ros::Subscriber markerSub = node.subscribe("arMarker/tf", 1, arCallback);
     ros::Rate lRate(5);
 
     cout << "everything initialized" << endl;
@@ -46,7 +47,7 @@ int main(int argc, char** args) {
     double prevRobotinoDist = robotinoDist;
     double minDist = 0.5;
 
-    while(true) {
+    //while(true) {
 
         /*
 
@@ -71,8 +72,9 @@ int main(int argc, char** args) {
         robotino.singleMove(0, 0, 0, 0, 0, moveAngle);
 
         */
+        cout<<"start rotate"<<endl;
 
-        robotino.rotateAngle(0.5);
+        robotino.rotateAngle(-0.5);
         cout<<"done"<<endl;
 
        /* ros::spinOnce();
@@ -87,7 +89,7 @@ int main(int argc, char** args) {
         }
         lRate.sleep();*/
 
-    }
+   // }
 
 }
 
