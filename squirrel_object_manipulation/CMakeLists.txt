@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   mongodb_store
   squirrel_manipulation_msgs
   squirrel_rgbd_mapping_msgs
-
+  squirrel_object_perception_msgs
 )
 
 
@@ -24,7 +24,7 @@ filesystem
 )
 
 catkin_package(
-    CATKIN_DEPENDS
+    CATKIN_DEPENDS tf roscpp std_msgs nav_msgs actionlib sensor_msgs geometry_msgs control_toolbox cmake_modules costmap_2d mongodb_store squirrel_manipulation_msgs squirrel_rgbd_mapping_msgs squirrel_object_perception_msgs
 )
 
 

@@ -31,7 +31,7 @@ int main(int argc, char** args) {
 
     ros::init(argc, args, "test_squirrel_control"); KUKADU_SHARED_PTR<ros::NodeHandle> node = KUKADU_SHARED_PTR<ros::NodeHandle>(new ros::NodeHandle()); usleep(1e6);
 
-    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelArmControlQueue(0.1, "arm", node));
+    KUKADU_SHARED_PTR<ControlQueue> queue = KUKADU_SHARED_PTR<ControlQueue>(new SquirrelArmControlQueue(0.1, "Arm", node));
 
     ros::AsyncSpinner spinner(5);
     spinner.start();
@@ -106,7 +106,6 @@ int main(int argc, char** args) {
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));
     getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
 
-    /*
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0)));
     getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 0.4, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0)));
@@ -122,7 +121,6 @@ int main(int argc, char** args) {
     queue->jointPtp(stdToArmadilloVec(createJointsVector(8, 1.4, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0)));
     cout << "that was the last one" << endl;
     getchar(); cout << "current cartesian pos: " << queue->getCurrentCartesianPose() << endl;
-    */
 
     /*
 
