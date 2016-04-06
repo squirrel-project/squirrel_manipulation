@@ -27,8 +27,6 @@ class BlindGraspServer(object):
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
-        self._group.set_planner_id('RRTConnectkConfigDefault')
-        self._group.set_num_planning_attempts(1)
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
         self._span = .1
@@ -44,7 +42,7 @@ class BlindGraspServer(object):
 
         self._server.publish_feedback(self._feedback)
         
-        rospy.loginfo(rospy.get_caller_id() + ': Requested blind grasp of object %s at pose %s'.format(goal.object_id, goal.heap_center_pose))
+        rospy.loginfo(rospy.get_caller_id() + ': Requested blind grasp of object {} at pose {}'.format(goal.object_id, goal.heap_center_pose))
 
         # check that preempt has not been requested by the client
         # this needs refinement for the next iteration after Y2 review
@@ -71,7 +69,7 @@ class BlindGraspServer(object):
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
 
-        rospy.loginfo(rospy.get_caller_id() + ': Computed gripper pose: %s'.format(pose))
+        rospy.loginfo(rospy.get_caller_id() + ': Computed gripper pose: {}'.format(pose))
 
         '''
         if goal.heap_bounding_box.x > self._span:
@@ -83,7 +81,9 @@ class BlindGraspServer(object):
         self._feedback.current_status = 'BlindGrasp: executing action'
         self._feedback.percent_completed = 0.6
         self._server.publish_feedback(self._feedback)
-        
+
+        self._group.set_planner_id('RRTConnectkConfigDefault')
+        self._group.set_num_planning_attempts(1)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
         self._group.set_pose_target(pose)
@@ -95,7 +95,7 @@ class BlindGraspServer(object):
             self._feedback.percent_completed = 1
             self._server.publish_feedback(self._feedback)
 
-            self._result.result_status = 'BlindGrasp: failed to grasp object %s'.format(goal.object_id) 
+            self._result.result_status = 'BlindGrasp: failed to grasp object {}'.format(goal.object_id) 
             rospy.loginfo('BlindGrasp: failed - no motion plan found')
             self._server.set_succeeded(self._result)
            
@@ -122,7 +122,7 @@ class BlindGraspServer(object):
             self._feedback.percent_completed = 1
             self._server.publish_feedback(self._feedback)
 
-            self._result.result_status = 'BlindGrasp: grasped object %s'.format(goal.object_id) 
+            self._result.result_status = 'BlindGrasp: grasped object {}'.format(goal.object_id) 
             rospy.loginfo('BlindGrasp: succeeded')
             self._server.set_succeeded(self._result)            
             
