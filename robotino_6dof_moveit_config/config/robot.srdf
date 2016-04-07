@@ -184,4 +184,11 @@
     <disable_collisions link1="wheel0_link" link2="wheel1_link" reason="Never" />
     <disable_collisions link1="wheel0_link" link2="wheel2_link" reason="Never" />
     <disable_collisions link1="wheel1_link" link2="wheel2_link" reason="Never" />
+    <disable_collisions link1="base" link2="case_link" reason="Never" />
+    <disable_collisions link1="base_link" link2="case_link" reason="Adjacent" />
+    <disable_collisions link1="base_pan_link" link2="case_link" reason="Never" />
+    <disable_collisions link1="case_link" link2="hokuyo_link" reason="Never" />
+    <disable_collisions link1="case_link" link2="kinect_link" reason="Default" />
+    <disable_collisions link1="case_link" link2="profile_link" reason="Default" />
+
 </robot>
