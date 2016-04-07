@@ -18,6 +18,8 @@ if __name__ == '__main__':
   psi = PlanningSceneInterface()
   rospy.sleep(1.0)
 
+  rospy.wait_for_service("/get_planning_scene")
+  rospy.sleep(5.0)
 	### Add a floor
 
     #psi = PlanningSceneInterface()
