@@ -59,8 +59,8 @@ class BlindGraspServer(object):
         pose.header.stamp = rospy.Time.now()
         pose.header.frame_id = goal.heap_center_pose.header.frame_id
         pose.pose.position.x = goal.heap_center_pose.pose.position.x
-        pose.pose.position.x = goal.heap_center_pose.pose.position.y
-        pose.pose.position.x = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
+        pose.pose.position.y = goal.heap_center_pose.pose.position.y
+        pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         pose.pose.orientation.w = 0.0
         pose.pose.orientation.x = -1.0
         pose.pose.orientation.y = 0.0
