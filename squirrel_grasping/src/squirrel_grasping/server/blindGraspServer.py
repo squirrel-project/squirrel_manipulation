@@ -26,8 +26,7 @@ class BlindGraspServer(object):
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
-        self._span = .1
-        self._dist_2_hand = .18
+        self._dist_2_hand = .20
         self._server.start()
 
     
@@ -55,35 +54,34 @@ class BlindGraspServer(object):
 
         d = goal.heap_bounding_cylinder.height/2.0
 
-        pose = PoseStamped()
-        pose.header.stamp = rospy.Time.now()
-        pose.header.frame_id = goal.heap_center_pose.header.frame_id
-        pose.pose.position.x = goal.heap_center_pose.pose.position.x
-        pose.pose.position.x = goal.heap_center_pose.pose.position.y
-        pose.pose.position.x = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
-        pose.pose.orientation.w = 0.0
-        pose.pose.orientation.x = -1.0
-        pose.pose.orientation.y = 0.0
-        pose.pose.orientation.z = 0.0
+        pre_pose = PoseStamped()
+        pre_pose.header.stamp = rospy.Time.now()
+        pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id
+        pre_pose.pose.position.x = goal.heap_center_pose.pose.position.x
+        pre_pose.pose.position.y = goal.heap_center_pose.pose.position.y
+        pre_pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.2
+        pre_pose.pose.orientation.x, pre_pose.pose.orientation.y, pre_pose.pose.orientation.z, pre_pose.pose.orientation.w = quaternion_from_euler( 3.142, 0.050, 2.094 )
+
+        grasp_pose = PoseStamped()
+        grasp_pose.header.stamp = rospy.Time.now()
+        grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id
+        grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x
+        grasp_pose.pose.position.y = goal.heap_center_pose.pose.position.y
+        grasp_pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
+        grasp_pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w = quaternion_from_euler( 3.142, 0.050, 2.094 )
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed gripper pose: {}'.format(pose))
 
-        '''
-        if goal.heap_bounding_box.x > self._span:
-            d_ = goal.heap_bounding_cylinder.diameter/2.0
-            pose.pose.position.x = pose.pose.position.x + d_
-        '''
-
         self._feedback.current_phase = 'BlindGrasp: moving gripper'
         self._feedback.current_status = 'BlindGrasp: executing action'
-        self._feedback.percent_completed = 0.6
+        self._feedback.percent_completed = 0.4
         self._server.publish_feedback(self._feedback)
 
         self._group.set_planner_id('RRTConnectkConfigDefault')
         self._group.set_num_planning_attempts(1)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
-        self._group.set_pose_target(pose)
+        self._group.set_pose_target(pre_pose)
         plan = self._group.plan()
 
         if self.is_empty(plan):
@@ -97,31 +95,59 @@ class BlindGraspServer(object):
             self._server.set_succeeded(self._result)
            
         else:
-            self._feedback.current_phase = 'BlindGrasp: grasping'
-            self._feedback.current_status = 'BlindGrasp: executing action'
-            self._feedback.percent_completed = 9
+            self._feedback.current_phase = 'BlindGrasp: moving gripper to pre pose {}'.format(prePose) 
+            self._feedback.current_status = 'BlindGrasp: preparing grasp'
+            self._feedback.percent_completed = 0.6 
             self._server.publish_feedback(self._feedback)
-
-            self._prepareGrasp()
             self._group.go(wait=True)
-            self._closeFinger(1.0)
-
-            # lift object
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
-            pose.pose.position.z = pose.pose.position.z + 0.3
-            self._group.set_pose_target(pose)
-            self._group.plan()
-            self._group.go(wait=True)
-            
-            self._feedback.current_phase = 'BlindGrasp: grasping succeeded'
-            self._feedback.current_status = 'BlindGrasp: finished action execution'
-            self._feedback.percent_completed = 1
-            self._server.publish_feedback(self._feedback)
+            self._group.set_pose_target(grasp_pose)
+            plan = self._group.plan()
 
-            self._result.result_status = 'BlindGrasp: grasped object {}'.format(goal.object_id) 
-            rospy.loginfo('BlindGrasp: succeeded')
-            self._server.set_succeeded(self._result)            
+            if self.is_empty(plan):
+                self._feedback.current_phase = 'BlindGrasp: aborted - no plan found'
+                self._feedback.current_status = 'BlindGrasp: aborted action execution'
+                self._feedback.percent_completed = 1
+                self._server.publish_feedback(self._feedback)
+
+                self._result.result_status = 'BlindGrasp: failed to grasp object {}'.format(goal.object_id) 
+                rospy.loginfo('BlindGrasp: failed - no motion plan found')
+                self._server.set_succeeded(self._result)
+            else:
+                self._feedback.current_phase = 'BlindGrasp: attempting to grasp'
+                self._feedback.current_status = 'BlindGrasp: moving ro grasp pose'
+                self._feedback.percent_completed = 0.8
+                self._server.publish_feedback(self._feedback)
+
+                self._prepareGrasp()
+                self._group.go(wait=True)
+                self._closeFinger(1.0)
+
+                self._group.clear_pose_targets()
+                self._group.set_start_state_to_current_state()
+                self._group.set_pose_target(pre_pose)
+                plan = self._group.plan()
+
+                if self.is_empty(plan):
+                    self._feedback.current_phase = 'BlindGrasp: aborted - no plan found'
+                    self._feedback.current_status = 'BlindGrasp: aborted action execution'
+                    self._feedback.percent_completed = 1
+                    self._server.publish_feedback(self._feedback)
+
+                    self._result.result_status = 'BlindGrasp: failed to grasp object {}'.format(goal.object_id) 
+                    rospy.loginfo('BlindGrasp: failed - no motion plan found')
+                    self._server.set_succeeded(self._result)
+                else:
+                    self._group.go(wait=True)
+                    self._feedback.current_phase = 'BlindGrasp: grasping succeeded'
+                    self._feedback.current_status = 'BlindGrasp: finished action execution'
+                    self._feedback.percent_completed = 1
+                    self._server.publish_feedback(self._feedback)
+
+                    self._result.result_status = 'BlindGrasp: grasped object {}'.format(goal.object_id) 
+                    rospy.loginfo('BlindGrasp: succeeded')
+                    self._server.set_succeeded(self._result)            
             
 
     def is_empty(self, plan):
