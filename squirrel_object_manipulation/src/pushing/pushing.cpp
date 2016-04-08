@@ -27,8 +27,8 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("tilt_nav", tilt_nav_, 0.60);
     private_nh.param("tilt_perception", tilt_perception_, 1.1);
     private_nh.param("lookahead", lookahead_, 0.30);
-    private_nh.param("goal_tolerance", goal_toll_, 0.05);
-    private_nh.param("state_machine", state_machine_, false);
+    private_nh.param("goal_tolerance", goal_toll_, 0.15);
+    private_nh.param("state_machine", state_machine_, true);
     private_nh.param("object_diameter", object_diameter_, 0.20);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
@@ -196,7 +196,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
             push_planner_->updatePushPlanner(pose_robot_, pose_object_);
             geometry_msgs::Twist cmd = push_planner_->getControlCommand();
             //cout<<cmd<<endl;
-            robotino->singleMove(cmd.linear.x, cmd.linear.y,0.0,0.0,0.0,cmd.angular.z);
+            //robotino->singleMove(cmd.linear.x, cmd.linear.y,0.0,0.0,0.0,cmd.angular.z);
 
             lRate.sleep();
 
@@ -318,9 +318,9 @@ void PushAction::objectTrackingThread(){
                 pose_object_.pose.orientation = t_artag.transform.rotation;
                 tag_t_prev = t_artag.header.stamp.nsec;
             }
-            else{
-                cout<<"object lost"<<endl;
-            }
+//            else{
+//                cout<<"object lost"<<endl;
+//            }
 
         }
         object_pose_mutex_.unlock();
@@ -428,7 +428,7 @@ bool PushAction::getPushPath(){
     else{
         pushing_path_.header.frame_id = global_frame_;
         int size = 100;
-        double x_max = 2.5;
+        double x_max = 3.14;
         vec a;
         for (unsigned int i=0; i<size; ++i) {
 
@@ -440,7 +440,7 @@ bool PushAction::getPushPath(){
             x = x_max/size * i;
             //p.pose.position.x = x;
             //p.pose.position.y = 0.0; //line
-            y = sin(2 * x ); //sin
+            y = 0.8 * sin(2 * x ); //sin
             a = rotate2DVector(x, y, -M_PI /4);
             //cout<<" x "<<x<<" y"<<y<<" a "<<a<<endl;
             p.pose.position.x = a(0);

@@ -112,35 +112,39 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     //distance robot to the line object-target
     dRlOT = distance2Line(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
     
-    
+
     switch (push_state_){
     
     case RELOCATE:
     {
         if(!rel_){
-            relocate_target_vec_.set_size(3,1);
+            //relocate_target_vec_.set_size(3,1);
             relocate_target_.set_size(3);
+            relocate_target_(span(0,1)) = pointOnLineWithDistanceFromPointOuter(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y, object_diameter_ / 2 + robot_diameter_ / 2);
+            relocate_target_(2) = aO2P;
             rel_ = true;
+            cout<<"here 2"<<endl;
         }
         
-        relocate_target_vec_(span(0,1),relocate_target_vec_.n_cols - 1) = reflectPointOverPoint(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y);
-        relocate_target_vec_(2, relocate_target_vec_.n_cols - 1) = aO2P;
-        for (int i = 0; i < 3; i ++) relocate_target_(i) = mean(relocate_target_vec_.row(i));
-        relocate_target_vec_.resize(3,relocate_target_vec_.n_cols + 1);
+        //relocate_target_vec_(span(0,1),relocate_target_vec_.n_cols - 1) = pointOnLineWithDistanceFromPointOuter(pose_object_.pose.position.x, pose_object_.pose.position.y,  current_target_.pose.position.x, current_target_.pose.position.y, object_diameter_ / 2);
+       
+//        relocate_target_vec_(2, relocate_target_vec_.n_cols - 1) = aO2P;
+//        for (int i = 0; i < 3; i ++) relocate_target_(i) = mean(relocate_target_vec_.row(i));
+//        relocate_target_vec_.resize(3,relocate_target_vec_.n_cols + 1);
         
         if (visualise_)publishPoint(relocate_target_);
         
-        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.06) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_)){
+        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.1) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_)){
             push_state_ = PUSH;
             ROS_INFO("(Push) State: PUSH");
             cout << endl;
         }
         
-        if((fabs(aO2P - aR2O) < 0.3) && (fabs(rotationDifference(aR2O, pose_robot_.theta)) < 0.3)){
-            push_state_ = APPROACH;
-            ROS_INFO("(Push) State: APPROACH");
-            cout << endl;
-        }
+//        if((fabs(aO2P - aR2O) < 0.3) && (fabs(rotationDifference(aR2O, pose_robot_.theta)) < 0.3)){
+//            push_state_ = APPROACH;
+//            ROS_INFO("(Push) State: APPROACH");
+//            cout << endl;
+//        }
         
     }
         break;
@@ -164,6 +168,13 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
             goal_reached_ = true;
             push_state_ = INACTIVE;
         }
+
+        if ((dR2O < robot_diameter_ / 2) || (dR2O > 2 * robot_diameter_)){
+            cout<<"dR2O "<< dR2O<<endl;
+            push_state_ = RELOCATE;
+            cout<<"push state: RELOCATE"<<endl;
+        }
+
         
         
     }
@@ -179,7 +190,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     }
     
     
-    
+    if(push_state_ != RELOCATE)rel_ = false;
     
 }
 
@@ -237,7 +248,7 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
     double cost_min = std::numeric_limits<double>::infinity();
     int p_lookahead = p_min_ind;
     double P = distancePoints(pushing_path_.poses[p_min_ind ].pose.position.x, pushing_path_.poses[p_min_ind ].pose.position.y,  pose_object_.pose.position.x, pose_object_.pose.position.y);
-    if (P > corridor_width_ / 2) cout <<" exceded corridor"<<endl;
+    // if (P > corridor_width_ / 2) cout <<" exceded corridor"<<endl;
     double D = distancePoints(pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.x, pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.y,  pose_object_.pose.position.x, pose_object_.pose.position.y);
     if(distancePoints(pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.x, pushing_path_.poses[pushing_path_.poses.size() - 1].pose.position.y, pushing_path_.poses[p_min_ind].pose.position.x, pushing_path_.poses[p_min_ind].pose.position.y) < lookahead_){
         p_lookahead = pushing_path_.poses.size() - 1;
@@ -355,7 +366,7 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
     
     double attraction_coefficient = 0.6;
     double repulsion_coefficient = 0.6;
-    double repulsion_threshold = 2 * object_diameter_;
+    double repulsion_threshold = 2.5 * object_diameter_;
     double rotation_coefficient = 0.3;
     
     // Attraction
@@ -364,8 +375,9 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
     
     // Repulsion
     double G_rep_x, G_rep_y;
+
     
-    if (dR2O < repulsion_threshold){
+    if ((dR2O < repulsion_threshold) && (abs(aORP) > 0.3)){
         G_rep_x =  - repulsion_coefficient * (pose_robot_.x - pose_object_.pose.position.x) * (1 / pow(dR2O,2) - repulsion_threshold / pow(dR2O,3));
         G_rep_y =  - repulsion_coefficient * (pose_robot_.y - pose_object_.pose.position.y) * (1 / pow(dR2O,2) - repulsion_threshold / pow(dR2O,3));
     }

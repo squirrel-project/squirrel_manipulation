@@ -74,7 +74,7 @@ int main(int argc, char** args) {
         */
         cout<<"start rotate"<<endl;
 
-        robotino.rotateAngle(-0.5);
+        robotino.rotateAngle(-1.5);
         cout<<"done"<<endl;
 
        /* ros::spinOnce();
