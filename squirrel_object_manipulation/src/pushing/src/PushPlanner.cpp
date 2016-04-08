@@ -169,7 +169,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
             push_state_ = INACTIVE;
         }
 
-        if ((dR2O < robot_diameter_ / 2) || (dR2O > 2 * robot_diameter_)){
+        if (((dR2O < robot_diameter_ / 2) || (dR2O > 2 * robot_diameter_)) && state_machine_){
             cout<<"dR2O "<< dR2O<<endl;
             push_state_ = RELOCATE;
             cout<<"push state: RELOCATE"<<endl;
