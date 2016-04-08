@@ -1,0 +1,3 @@
+<launch>
+	<node name="squirrel_grasping_node" pkg="squirrel_grasping" type="squirrel_grasping_node.py" output="screen"/>
+</launch>

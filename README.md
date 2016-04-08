@@ -67,4 +67,3 @@ libfreenect-dev \
 
 set up environment variable (add to .bashrc):
 export KUKADU_HOME=PATH_TO_SQUIRREL_CATKIN/src/kukadu
-
