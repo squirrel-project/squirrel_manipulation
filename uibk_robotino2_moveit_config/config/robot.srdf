@@ -87,6 +87,12 @@
     <disable_collisions link1="hand_base_link" link2="link3" reason="Never" />
     <disable_collisions link1="hand_base_link" link2="link4" reason="Never" />
     <disable_collisions link1="hand_base_link" link2="motor2" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_left_coupler" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_left_finger_lower_link" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_middle_finger_upper_link" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_right_coupler" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_right_finger_lower_link" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_right_finger_upper_link" reason="Never" />
     <disable_collisions link1="hand_cableCanal_link" link2="hand_left_coupler" reason="Never" />
     <disable_collisions link1="hand_cableCanal_link" link2="hand_left_crank" reason="Never" />
     <disable_collisions link1="hand_cableCanal_link" link2="hand_middle_finger_lower_link" reason="Never" />
@@ -142,6 +148,7 @@
     <disable_collisions link1="hand_wrist_link" link2="link4" reason="Adjacent" />
     <disable_collisions link1="hand_wrist_link" link2="motor2" reason="Never" />
     <disable_collisions link1="hand_wrist_link" link2="wheel1_link" reason="Never" />
+    <disable_collisions link1="hand_left_finger_upper_link" link2="hand_right_finger_upper_link" reason="Never" />
     <disable_collisions link1="hokuyo_link" link2="kinect_link" reason="Never" />
     <disable_collisions link1="hokuyo_link" link2="link1" reason="Never" />
     <disable_collisions link1="hokuyo_link" link2="link2" reason="Never" />
