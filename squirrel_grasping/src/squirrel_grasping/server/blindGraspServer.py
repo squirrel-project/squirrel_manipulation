@@ -58,7 +58,7 @@ class BlindGraspServer(object):
         pre_pose.header.frame_id = 'odom'#goal.heap_center_pose.header.frame_id
         pre_pose.pose.position.x = 0.392694652081#goal.heap_center_pose.pose.position.x
         pre_pose.pose.position.y = 0.135437235236#goal.heap_center_pose.pose.position.y
-        pre_pose.pose.position.z = 0.511809170246#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.15
+        pre_pose.pose.position.z = 0.481809170246#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.15
         pre_pose.pose.orientation.x = -0.0416706353426
         pre_pose.pose.orientation.y = 0.999013662338
         pre_pose.pose.orientation.z = -0.0152916312218
@@ -91,7 +91,7 @@ class BlindGraspServer(object):
         self._group.set_pose_target(pre_pose)
         plan = self._group.plan()
 
-        if self.is_empty(plan):
+        if self._is_empty(plan):
             rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
         else:
             self._group.go(wait=True)
@@ -99,6 +99,7 @@ class BlindGraspServer(object):
             self._group.set_start_state_to_current_state()
             grasp_pose.header.stamp = rospy.Time.now()
             self._group.set_pose_target(grasp_pose)
+            plan = self._group.plan()
             
             if self._is_empty(plan):
                 rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
@@ -112,14 +113,14 @@ class BlindGraspServer(object):
                 self._group.set_pose_target(pre_pose)
                 plan = self._group.plan()
 
-                if self.is_empty(plan):
+                if self._is_empty(plan):
                     rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
                 else:
                     self._group.go(wait=True)
                     rospy.loginfo('BlindGrasp: succeeded')
             
 
-    def is_empty(self, plan):
+    def _is_empty(self, plan):
         if len(plan.joint_trajectory.points) == 0 and \
             len(plan.multi_dof_joint_trajectory.points) == 0:
             return True
