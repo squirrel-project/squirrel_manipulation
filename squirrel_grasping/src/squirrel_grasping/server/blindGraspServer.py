@@ -114,9 +114,9 @@ class BlindGraspServer(object):
 
                 if self.is_empty(plan):
                     rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
-            else:
-                self._group.go(wait=True)
-                rospy.loginfo('BlindGrasp: succeeded')
+                else:
+                    self._group.go(wait=True)
+                    rospy.loginfo('BlindGrasp: succeeded')
             
 
     def is_empty(self, plan):
