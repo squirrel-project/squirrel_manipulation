@@ -1,7 +1,7 @@
 import rospy
 import actionlib
 import sys
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped
 
 from tf.transformations import quaternion_from_euler
 
@@ -55,6 +55,7 @@ class BlindGraspServer(object):
 
         d = goal.heap_bounding_cylinder.height/2.0
 
+        '''
         pre_pose = PoseStamped()
         pre_pose.header.stamp = rospy.Time.now()
         pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id
@@ -63,9 +64,18 @@ class BlindGraspServer(object):
         pre_pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.2
         pre_pose.pose.orientation.x, pre_pose.pose.orientation.y, pre_pose.pose.orientation.z, pre_pose.pose.orientation.w = \
           quaternion_from_euler( 3.142, 0.050, 2.094 )
+        '''
+
+        pre_pose = Pose()
+        pre_pose.position.x = goal.heap_center_pose.pose.position.x
+        pre_pose.position.y = goal.heap_center_pose.pose.position.y
+        pre_pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.2
+        pre_pose.orientation.x, pre_pose.orientation.y, pre_pose.orientation.z, pre_pose.pose.orientation.w = \
+          quaternion_from_euler 3.104, -0.116, 1.916)
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed pre gripper pose:\n{}'.format(pre_pose))
 
+        '''
         grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
         grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id
@@ -74,6 +84,14 @@ class BlindGraspServer(object):
         grasp_pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         grasp_pose.pose.orientation.x, grasp_pose.pose.orientation.y, grasp_pose.pose.orientation.z, grasp_pose.pose.orientation.w = \
           quaternion_from_euler( 3.142, 0.050, 2.094 )
+        '''
+        
+        grasp_pose = Pose()
+        grasp_pose.position.x = goal.heap_center_pose.pose.position.x
+        grasp_pose.position.y = goal.heap_center_pose.pose.position.y
+        grasp_pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
+        grasp_pose.orientation.x, grasp_pose.orientation.y, grasp_pose.orientation.z, grasp_pose.orientation.w = \
+          quaternion_from_euler 3.104, -0.116, 1.916)
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed grasp gripper pose:\n{}'.format(grasp_pose))
 
