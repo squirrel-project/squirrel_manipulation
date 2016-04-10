@@ -66,12 +66,13 @@ class HAFGraspServer(object):
         pre_pose.pose.orientation.x, pre_pose.pose.orientation.y, pre_pose.pose.orientation.z, pre_pose.pose.orientation.w = \
           quaternion_from_euler(3.142, 0.050, 2.094)
 
+        #correct order of frames?
         listener.waitForTransform(goal.frame_id, '/odom', rospy.Time(), rospy.Duration(5.0))
         pre_pose_tfed = self._transformer.transformPose('/odom', pre_pose)
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed pre gripper pose:\n{}'.format(pre_pose))
 
-        grasp_pose_orig = PoseStamped()
+        grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
         grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id
         grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x
