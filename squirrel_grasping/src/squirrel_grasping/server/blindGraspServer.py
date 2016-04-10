@@ -1,4 +1,4 @@
-B1;2802;0cimport rospy
+import rospy
 import actionlib
 import sys
 from geometry_msgs.msg import Pose, PoseStamped
