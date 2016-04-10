@@ -91,7 +91,7 @@ class BlindGraspServer(object):
         grasp_pose.position.y = goal.heap_center_pose.pose.position.y
         grasp_pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         grasp_pose.orientation.x, grasp_pose.orientation.y, grasp_pose.orientation.z, grasp_pose.orientation.w = \
-          quaternion_from_euler 3.104, -0.116, 1.916)
+          quaternion_from_euler(3.104, -0.116, 1.916)
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed grasp gripper pose:\n{}'.format(grasp_pose))
 
