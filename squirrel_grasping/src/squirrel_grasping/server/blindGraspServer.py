@@ -81,7 +81,7 @@ class BlindGraspServer(object):
 
         self._group.set_planner_id('RRTConnectkConfigDefault')
         self._group.set_num_planning_attempts(1)
-        self._group.set_planning_time(25.0)        
+        self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
         self._group.set_pose_target(grasp_pose)
