@@ -52,7 +52,6 @@ class BlindGraspServer(object):
         self._feedback.current_status = 'BlindGrasp: preparing action execution'
         self._feedback.percent_completed = 0.2
         self._server.publish_feedback(self._feedback)
-        rospy.loginfo(rospy.get_caller_id() + ': Computed grasp pose:\n{}'.format(grasp_pose))
 
         '''
         grasp_pose = PoseStamped()
@@ -74,10 +73,11 @@ class BlindGraspServer(object):
         grasp_pose.orientation.x, grasp_pose.orientation.y, grasp_pose.orientation.z, grasp_pose.orientation.w = \
           quaternion_from_euler(3.104, -0.116, 1.916)
 
-        self._feedback.current_phase = 'BlindGrasp: moving gripper'
+        self._feedback.current_phase = 'BlindGrasp: moving gripper to pose\n{}'.format(grasp_pose)
         self._feedback.current_status = 'BlindGrasp: executing action'
         self._feedback.percent_completed = 0.4
         self._server.publish_feedback(self._feedback)
+        rospy.loginfo(rospy.get_caller_id() + ': Computed grasp pose:\n{}'.format(grasp_pose))
 
         self._group.set_planner_id('RRTConnectkConfigDefault')
         self._group.set_num_planning_attempts(1)
