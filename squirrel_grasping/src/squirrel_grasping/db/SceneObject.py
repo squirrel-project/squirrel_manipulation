@@ -29,15 +29,15 @@ if __name__ == '__main__':
             pose.header.seq = 1
             pose.header.stamp = rospy.Time().now()
             pose.header.frame_id = '/map'
-            pose.pose.position.x = 0.53
-            pose.pose.position.y = 0
-            pose.pose.position.z = 0.125
+            pose.pose.position.x = 0.196
+            pose.pose.position.y = -0.343
+            pose.pose.position.z = 0.12
             pose.pose.orientation.x = 0
             pose.pose.orientation.y = 0
-            pose.pose.orientation.z = 1
-            pose.pose.orientation.w = 0
+            pose.pose.orientation.z = 0
+            pose.pose.orientation.w = 1
             cylinder = BCylinder()
-            cylinder.height = 0.25
+            cylinder.height = 0.24
             cylinder.diameter = 0.13
             store_grasp( ('o'+str(g)), pose, cylinder)    
     except rospy.ROSException, e:
