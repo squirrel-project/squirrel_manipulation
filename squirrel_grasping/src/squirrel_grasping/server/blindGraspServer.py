@@ -28,7 +28,7 @@ class BlindGraspServer(object):
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
-        self._dist_2_hand = .30
+        self._dist_2_hand = .2
         self._server.start()
 
     
