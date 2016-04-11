@@ -20,9 +20,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     node_name_ = ros::this_node::getName();
 
     private_nh.param("pose_topic", pose_topic_,std::string("/squirrel_localizer_pose"));
-//    private_nh.param("costmap_topic", costmap_topic_,std::string("/update_costmap"));
-    private_nh.param("costmap_topic", costmap_topic_,std::string("/squirrel_3d_mapping/update"));
-
+    private_nh.param("octomap_topic", octomap_topic_,std::string("/squirrel_3d_mapping/update"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.00);
@@ -35,8 +33,9 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
-    private_nh.param("navigation_", nav_, true);
+    private_nh.param("navigation_", nav_, false);
     private_nh.param("artag_", artag_, false);
+    private_nh.param("artag_", sim_, true);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
 
@@ -56,7 +55,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     pushServer.registerPreemptCallback(boost::bind(&PushAction::preemptCB, this));
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
-    costmap_pub_ = nh.advertise<std_msgs::Bool>(costmap_topic_, 100);
+    octomap_pub_ = nh.advertise<std_msgs::Bool>(octomap_topic_, 100);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
@@ -108,37 +107,38 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     push_goal_.pose = goal->pose;
     object_id_ = goal->object_id;
 
+    if(!artag_ && !sim_ ){
+        //get the object diameter
 
-    //get the object diameter
+        mongodb_store::MessageStoreProxy message_store(nh);
 
-    mongodb_store::MessageStoreProxy message_store(nh);
+        //get the object diameter
 
-    //get the object diameter
-
-    // fetch position of object from message store
-    std::vector< boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
+        // fetch position of object from message store
+        std::vector< boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
 
 
-    if(message_store.queryNamed<squirrel_object_perception_msgs::SceneObject>(object_id_, results)) {
-               cout << "matching objects to '" << object_id_ << "'\n";
-                for(size_t i = 0; i < results.size(); i++)
-                    cout << "  " << results[i]->bounding_cylinder.diameter << "\n";
-                if(results.size()<1) {
-                    ROS_ERROR(" no matching obID %s", object_id_.c_str());
-                    return;
-                }
-                if(results.size()>1)
-                   ROS_ERROR("(Push)  multiple objects share the same wpID");
-            } else {
-                ROS_ERROR("(Push) could not query message store to fetch object size");
+        if(message_store.queryNamed<squirrel_object_perception_msgs::SceneObject>(object_id_, results)) {
+            cout << "matching objects to '" << object_id_ << "'\n";
+            for(size_t i = 0; i < results.size(); i++)
+                cout << "  " << results[i]->bounding_cylinder.diameter << "\n";
+            if(results.size()<1) {
+                ROS_ERROR(" no matching obID %s", object_id_.c_str());
                 return;
             }
+            if(results.size()>1)
+                ROS_ERROR("(Push)  multiple objects share the same wpID");
+        } else {
+            ROS_ERROR("(Push) could not query message store to fetch object size");
+            return;
+        }
 
-    object_diameter_ = results[0]->bounding_cylinder.diameter;
-    if (object_diameter_ < 0.05) object_diameter_ = 0.20;
-    if (object_diameter_ > 1.00) {
-        ROS_ERROR("(Push) Invalid value for the object size \n");
-        abortPush();
+        object_diameter_ = results[0]->bounding_cylinder.diameter;
+        if (object_diameter_ < 0.05) object_diameter_ = 0.20;
+        if (object_diameter_ > 1.00) {
+            ROS_ERROR("(Push) Invalid value for the object size \n");
+            abortPush();
+        }
     }
 
 
@@ -151,13 +151,13 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
 
     ros::spinOnce();
 
-    //turn off costmap
-    std_msgs::Bool costmap_msg_;
-    costmap_msg_.data = false;
-    costmap_pub_.publish(costmap_msg_);
+    //turn off octomap
+    std_msgs::Bool octomap_msg_;
+    octomap_msg_.data = false;
+    octomap_pub_.publish(octomap_msg_);
     ros::spinOnce();
 
-    ROS_INFO("(Push) Costmaps off \n");
+    ROS_INFO("(Push) Octomaps off \n");
     sleep (0.5);
 
     // start object tracking
@@ -332,9 +332,9 @@ void PushAction::objectTrackingThread(){
                 pose_object_.pose.orientation = t_artag.transform.rotation;
                 tag_t_prev = t_artag.header.stamp.nsec;
             }
-//            else{
-//                cout<<"object lost"<<endl;
-//            }
+            //            else{
+            //                cout<<"object lost"<<endl;
+            //            }
 
         }
         object_pose_mutex_.unlock();
@@ -504,12 +504,12 @@ void PushAction::finishPush(){
     ros::spinOnce();
     ROS_INFO("(Push) Camera in the pose for navigation \n");
 
-    //turn on costmap
-    std_msgs::Bool costmap_msg_;
-    costmap_msg_.data = true;
-    costmap_pub_.publish(costmap_msg_);
+    //turn on octomap
+    std_msgs::Bool octomap_msg_;
+    octomap_msg_.data = true;
+    octomap_pub_.publish(octomap_msg_);
     ros::spinOnce();
-    ROS_INFO("(Push) Costmaps on \n");
+    ROS_INFO("(Push) Octomaps on \n");
 
 }
 void PushAction::finishSuccess(){
