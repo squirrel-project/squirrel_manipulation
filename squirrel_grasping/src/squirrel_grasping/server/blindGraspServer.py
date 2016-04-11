@@ -25,7 +25,7 @@ class BlindGraspServer(object):
         self._prepareGrasp = rospy.ServiceProxy('hand_controller/prepareGrasp', graspPreparation)
         self._closeFinger = rospy.ServiceProxy('hand_controller/closeFinger', graspCurrent)
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
-        self._rotatory_manager = rospy.Publisher('/twist_mux/locks/pause_rotatory', Bool, queue_size=10)
+        self._rotatory_lock = rospy.Publisher('/twist_mux/locks/pause_rotatory', Bool, queue_size=10)
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
@@ -39,7 +39,7 @@ class BlindGraspServer(object):
         rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called with goal\n{}'.format(goal))
         
         # unlock the base
-        self._rotatory_manager.pub(False)
+        self._rotatory_locak.publish(False)
 
         if self._server.is_preempt_requested():
             rospy.loginfo('BlindGrasp: preempted')
@@ -80,33 +80,33 @@ class BlindGraspServer(object):
         self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
+        self._group.set_pose_reference_frame("odom")
         pre_pose.header.stamp = rospy.Time.now()
         self._group.set_pose_target(pre_pose)
         plan = self._group.plan()
 
         if self._is_empty(plan):
             rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
-            # lock the base
-            self._rotatory_manager.pub(True)
-
+            self._rotatory_lock.publish(True)            
         else:
             self._group.go(wait=True)
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
+            self._group.set_pose_reference_frame("odom")
             grasp_pose.header.stamp = rospy.Time.now()
             self._group.set_pose_target(grasp_pose)
             plan = self._group.plan()
             
             if self._is_empty(plan):
                 rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
-                # lock the base
-                self._rotatory_manager.pub(True)
+                self._result.result_status = 'BlindGrasp: failed - no motion plan found' 
             else:
                 self._prepareGrasp()
                 self._group.go(wait=True)
                 self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
+                self._group.set_pose_reference_frame("odom")
                 pre_pose.header.stamp = rospy.Time.now()
                 self._group.set_pose_target(pre_pose)
                 plan = self._group.plan()
@@ -116,6 +116,9 @@ class BlindGraspServer(object):
                 else:
                     self._group.go(wait=True)
                     rospy.loginfo('BlindGrasp: succeeded')
+                    self._result.result_status = 'BlindGrasp: succeeded' 
+                    self._server.set_succeeded(self._result) 
+                    self._rotatory_locak.publish(True)                    
             
 
     def _is_empty(self, plan):
