@@ -389,7 +389,6 @@ bool PushAction::getPushPath(){
         p3.x = start_m.pose.position.x - object_diameter_; p3.y = start_m.pose.position.y - object_diameter_;
         p4.x = start_m.pose.position.x - object_diameter_; p4.y = start_m.pose.position.y + object_diameter_;
 
-
         // Make request
 
         srvPlan.request.object.points.push_back(p1);
@@ -497,6 +496,7 @@ void PushAction::finishPush(){
     trackingStart_ = false;
     runPushPlan_ = false;
     pushing_path_.poses.clear();
+    if(nav_) push_planner_->deleteMarkers();
 
 
     //moving tilt for navigation configuration

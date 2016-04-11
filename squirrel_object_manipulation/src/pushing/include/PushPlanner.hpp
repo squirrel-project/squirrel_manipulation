@@ -149,6 +149,7 @@ public:
     void publishPoint(geometry_msgs::PoseStamped t_pose);
     void publishPoint(arma::vec t);
     void publishCorridor();
+    void deleteMarkers();
 
     void saveData(string path);
     virtual void saveDataChild(string path) = 0;
