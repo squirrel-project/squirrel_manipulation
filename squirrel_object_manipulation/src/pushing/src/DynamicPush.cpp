@@ -7,11 +7,11 @@ using namespace arma;
 DynamicPush::DynamicPush():
     PushPlanner()
 {
-    private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.8);
-    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.2);
+    private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.6);
+    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.15);
     private_nh.param("push/velocity_linear_min", vel_lin_min_ , 0.05);
 
-    private_nh.param("push/proportional_theta", p_theta_, 1.6);
+    private_nh.param("push/proportional_theta", p_theta_, 0.6);
     private_nh.param("push/derivative_theta", d_theta_, 0.4);
     private_nh.param("push/integral_theta", i_theta_, 0.0);
     private_nh.param("push/integral_theta_max", i_theta_max_, 0.8);
@@ -160,10 +160,10 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     double vy_compensate =  - psi_push_ * cos(alpha) * (mean(alpha_vec) - alpha);
 
 
-//    if (sqrt (vx_compensate * vx_compensate + vy_compensate * vy_compensate) > 0.6){
-//        vx_compensate = 0;
-//        vy_compensate = 0;
-//    }
+    if (sqrt (vx_compensate * vx_compensate + vy_compensate * vy_compensate) > 0.6){
+        vx_compensate = 0;
+        vy_compensate = 0;
+    }
 
     double vx =  vx_push + vx_relocate + vx_compensate;
     double vy =  vy_push + vy_relocate + vy_compensate;
@@ -183,7 +183,7 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     cmd.linear.y = V * v(1) / getNorm(v);
 
     double orient_error = rotationDifference(aR2O,pose_robot_.theta);
-    if(orient_error>0.3){
+    if(orient_error > 0.5){
             cmd.linear.x = 0;
             cmd.linear.y = 0;
 

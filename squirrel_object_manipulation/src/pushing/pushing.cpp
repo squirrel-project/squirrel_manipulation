@@ -34,8 +34,8 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
     private_nh.param("navigation_", nav_, false);
-    private_nh.param("artag_", artag_, false);
-    private_nh.param("artag_", sim_, true);
+    private_nh.param("artag_", artag_, true);
+    private_nh.param("artag_", sim_, false);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
 
@@ -442,7 +442,7 @@ bool PushAction::getPushPath(){
     else{
         pushing_path_.header.frame_id = global_frame_;
         int size = 100;
-        double x_max = 3.14;
+        double x_max = 2.5;
         vec a;
         for (unsigned int i=0; i<size; ++i) {
 
@@ -454,7 +454,7 @@ bool PushAction::getPushPath(){
             x = x_max/size * i;
             //p.pose.position.x = x;
             //p.pose.position.y = 0.0; //line
-            y = 0.8 * sin(2 * x ); //sin
+            y = 0.8 * sin(6.28 / 2.5* x ); //sin
             a = rotate2DVector(x, y, -M_PI /4);
             //cout<<" x "<<x<<" y"<<y<<" a "<<a<<endl;
             p.pose.position.x = a(0);
