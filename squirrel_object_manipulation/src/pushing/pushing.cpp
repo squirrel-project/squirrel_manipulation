@@ -109,6 +109,12 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     push_goal_.pose = goal->pose;
     object_id_ = goal->object_id;
 
+    //for the standalone demo
+    demo_path = goal->path.data;
+    object_diameter_ = goal->object_diameter.data;
+    corridor_width_ = goal->corridor_width.data;
+
+
     if(!artag_ && !sim_ ){
         //get the object diameter
 
