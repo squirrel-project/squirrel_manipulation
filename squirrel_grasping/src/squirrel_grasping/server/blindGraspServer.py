@@ -2,6 +2,7 @@ import rospy
 import actionlib
 import sys
 from geometry_msgs.msg import Pose, PoseStamped
+from std_msgs.msg import Bool
 
 from tf.transformations import quaternion_from_euler
 
@@ -24,6 +25,7 @@ class BlindGraspServer(object):
         self._prepareGrasp = rospy.ServiceProxy('hand_controller/prepareGrasp', graspPreparation)
         self._closeFinger = rospy.ServiceProxy('hand_controller/closeFinger', graspCurrent)
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
+        self._rotatory_manager = rospy.Publisher('/twist_mux/locks/pause_rotatory', Bool, queue_size=10)
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
@@ -33,25 +35,16 @@ class BlindGraspServer(object):
 
     
     def execute_grasp(self, goal):
-        self._feedback.current_phase = 'BlindGrasp: parsing action goal\n{}'.format(goal)
-        self._feedback.current_status = 'BlindGrasp: preparing action execution'
-        self._feedback.percent_completed = 0.0
-
-        self._server.publish_feedback(self._feedback)
         
-        rospy.loginfo(rospy.get_caller_id() + ': Requested blind grasp of object {} at pose\n{}'.format(goal.object_id, goal.heap_center_pose))
+        rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called with goal\n{}'.format(goal))
+        
+        # unlock the base
+        self._rotatory_manager.pub(False)
 
-        # check that preempt has not been requested by the client
-        # this needs refinement for the next iteration after Y2 review
         if self._server.is_preempt_requested():
             rospy.loginfo('BlindGrasp: preempted')
             self._server.set_preempted()
             return
-
-        self._feedback.current_phase = 'BlindGrasp: computing gripper pose'
-        self._feedback.current_status = 'BlindGrasp: preparing action execution'
-        self._feedback.percent_completed = 0.2
-        self._server.publish_feedback(self._feedback)
 
         pre_pose = PoseStamped()
         pre_pose.header.stamp = rospy.Time.now()
@@ -93,6 +86,9 @@ class BlindGraspServer(object):
 
         if self._is_empty(plan):
             rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
+            # lock the base
+            self._rotatory_manager.pub(True)
+
         else:
             self._group.go(wait=True)
             self._group.clear_pose_targets()
@@ -103,6 +99,8 @@ class BlindGraspServer(object):
             
             if self._is_empty(plan):
                 rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
+                # lock the base
+                self._rotatory_manager.pub(True)
             else:
                 self._prepareGrasp()
                 self._group.go(wait=True)
