@@ -108,6 +108,9 @@ private:
     void finishPush();
     void finishSuccess();
 
+    //demo
+    int demo_path;
+
 
 protected:
 

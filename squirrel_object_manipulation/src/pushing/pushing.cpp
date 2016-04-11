@@ -37,7 +37,9 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("artag_", artag_, true);
     private_nh.param("artag_", sim_, false);
     private_nh.param("save_data", save_data_, false);
-    private_nh.param("tracker_tf", tracker_tf_,std::string("/tf1"));
+    private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
+    private_nh.param("demo_path", demo_path, 4);
+
 
 
     //private_nh.param("push_planner", push_planner_, new PushPlanner());
@@ -441,25 +443,100 @@ bool PushAction::getPushPath(){
     else{
         pushing_path_.header.frame_id = global_frame_;
         int size = 100;
-        double x_max = 2.5;
-        vec a;
         for (unsigned int i=0; i<size; ++i) {
 
             geometry_msgs::PoseStamped p;
-
             p.header.frame_id = global_frame_;
-            double x, y;
-            //p.pose.position.x = x_max/size * i;
-            x = x_max/size * i;
-            //p.pose.position.x = x;
-            //p.pose.position.y = 0.0; //line
-            y = 0.8 * sin(6.28 / 2.5* x ); //sin
-            a = rotate2DVector(x, y, -M_PI /4);
-            //cout<<" x "<<x<<" y"<<y<<" a "<<a<<endl;
-            p.pose.position.x = a(0);
-            p.pose.position.y = a(1);
-            //p.pose.position.x = x;
-            //p.pose.position.y = y;
+
+            switch(demo_path){
+            case 0:
+            {
+                double x_max = 2.5;
+                p.pose.position.x = x_max/size * i;
+                p.pose.position.y = 0.0;
+            }
+                break;
+
+            case 1:
+            {
+
+                if (i < 35){
+                    double x_max = 1.2;
+                    p.pose.position.x = x_max / 35 * i;
+                    p.pose.position.y = 0.0;
+
+                }
+                else if(i < 70){
+                    double y_max = 1.2;
+                    p.pose.position.x = 1.50;
+                    p.pose.position.y = y_max / 35 * (i - 35);
+                }
+                else{
+                    double x_max = 1.0;
+                    double y_max = 1.0;
+                    p.pose.position.x = 1.2 + x_max / 30 * (i - 70);
+                    p.pose.position.y = 1.2 + y_max / 30 * (i - 70);
+
+                }
+
+            }
+                break;
+
+            case 2:
+            {
+                double x, y;
+                double x_max = 2.5;
+                vec a;
+                x = x_max/size * i;
+                y = 0.8 * sin(6.28 / 2.5 * x );
+                a = rotate2DVector(x, y, -M_PI /4);
+                p.pose.position.x = a(0);
+                p.pose.position.y = a(1);
+
+            }
+                break;
+
+            case 3:
+            {
+                double x, y;
+                double x_max = 3.14;
+                vec a;
+                x = x_max/size * i;
+                y = 0.8 * sin(2 * x );
+                a = rotate2DVector(x, y, -M_PI /4);
+                p.pose.position.x = a(0);
+                p.pose.position.y = a(1);
+
+            }
+                break;
+
+            case 4:
+            {
+
+                if (i < 35){
+                    double x_max = 1.2;
+                    p.pose.position.x = x_max / 35 * i;
+                    p.pose.position.y = 0.0;
+
+                }
+                else if(i < 70){
+                    double y_max = 1.2;
+                    p.pose.position.x = 1.50;
+                    p.pose.position.y = y_max / 35 * (i - 35);
+                }
+                else{
+                    double x_max = 1.0;
+                    double y_max = 1.0;
+                    p.pose.position.x = 1.2 - x_max / 30 * (i - 70);
+                    p.pose.position.y = 1.2 + y_max / 30 * (i - 70);
+
+                }
+
+            }
+                break;
+
+
+            }
 
             pushing_path_.poses.push_back(p);
 

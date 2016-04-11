@@ -9,7 +9,7 @@ DynamicPush::DynamicPush():
 {
     private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.6);
     private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.15);
-    private_nh.param("push/velocity_linear_min", vel_lin_min_ , 0.05);
+    private_nh.param("push/velocity_linear_min", vel_lin_min_ , 0.08);
 
     private_nh.param("push/proportional_theta", p_theta_, 0.6);
     private_nh.param("push/derivative_theta", d_theta_, 0.4);
