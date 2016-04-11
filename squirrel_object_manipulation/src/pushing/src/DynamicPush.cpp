@@ -183,7 +183,7 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     cmd.linear.y = V * v(1) / getNorm(v);
 
     double orient_error = rotationDifference(aR2O,pose_robot_.theta);
-    if(orient_error > 0.5){
+    if(orient_error > 0.3){
             cmd.linear.x = 0;
             cmd.linear.y = 0;
 
