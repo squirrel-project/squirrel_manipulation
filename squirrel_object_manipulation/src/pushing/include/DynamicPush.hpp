@@ -10,7 +10,16 @@ class DynamicPush : public PushPlanner {
 
 private:
 
+    bool pub_values_;
+
     ros::Publisher velocity_pub_;
+    ros::Publisher psi_push_pub_;
+    ros::Publisher psi_rel_pub_;
+    ros::Publisher compensate_pub_;
+    ros::Publisher push_pub_;
+    ros::Publisher rel_pub_;
+    ros::Publisher sigma_theta_pub_;
+    ros::Publisher mi_theta_pub_;
 
     control_toolbox::Pid pid_theta_;
     geometry_msgs::Twist cmd;

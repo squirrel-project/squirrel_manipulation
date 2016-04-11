@@ -16,9 +16,17 @@ DynamicPush::DynamicPush():
     private_nh.param("push/integral_theta", i_theta_, 0.0);
     private_nh.param("push/integral_theta_max", i_theta_max_, 0.8);
     private_nh.param("push/integral_theta_min", i_theta_min_, -0.8);
+    private_nh.param("push/publish_values", pub_values_, true);
 
-    velocity_pub_ = nh.advertise<std_msgs::Float64>("/push_action/velocity", 1000);
-
+    velocity_pub_ = nh.advertise<std_msgs::Float64>("/push_action/velocity", 100);
+    psi_push_pub_ = nh.advertise<std_msgs::Float64>("/push_action/psi_push", 100);
+    psi_rel_pub_ = nh.advertise<std_msgs::Float64>("/push_action/psi_relocate", 100);
+    sigma_theta_pub_ = nh.advertise<std_msgs::Float64>("/push_action/sigma_alpha", 100);
+    mi_theta_pub_ = nh.advertise<std_msgs::Float64>("/push_action/mi_alpha", 100);
+    compensate_pub_ = nh.advertise<geometry_msgs::Pose2D>("/push_action/compensate_direction", 100);
+    push_pub_ = nh.advertise<geometry_msgs::Pose2D>("/push_action/push_direction", 100);
+    rel_pub_ = nh.advertise<geometry_msgs::Pose2D>("/push_action/relocate_direction", 100);
+    compensate_pub_ = nh.advertise<geometry_msgs::Pose2D>("/push_action/compensate_direction", 100);
 }
 
 void DynamicPush::initChild() {
@@ -105,9 +113,9 @@ void DynamicPush::updateChild() {
     psi_push_ = getGaussianVal(aPOR, sigma_theta, mi_theta);
     psi_rel_ = 1 - psi_push_;
     //cout<<" psi_push "<<psi_push_<<"psi relocate "<<psi_rel_<<endl;
-    if(abs(aPOR - M_PI) > 0.4){
-            psi_push_  = 0;
-        }
+    if(abs(aPOR - M_PI) > 0.6){
+        psi_push_  = 0;
+    }
 
 
     //matrix update
@@ -174,20 +182,48 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     double V = vel_lin_max_ / (1 +  abs(mi_alpha));
     if(V < vel_lin_min_) V = vel_lin_min_;
 
+    if(pub_values_){
 
-    std_msgs::Float64 vel_;
-    vel_.data = V;
-    velocity_pub_.publish(vel_);
+        geometry_msgs::Pose2D pub_values;
+        pub_values.x = vx_compensate;
+        pub_values.y = vy_compensate;
+        compensate_pub_.publish(pub_values);
+
+        pub_values.x = vx_push;
+        pub_values.y = vy_push;
+        push_pub_.publish(pub_values);
+
+        pub_values.x = vx_relocate;
+        pub_values.y = vy_relocate;
+        rel_pub_.publish(pub_values);
+
+        std_msgs::Float64 vel_;
+        vel_.data = V;
+        velocity_pub_.publish(vel_);
+
+        vel_.data = psi_push_;
+        psi_push_pub_.publish(vel_);
+
+        vel_.data = psi_rel_;
+        psi_rel_pub_.publish(vel_);
+
+        vel_.data = sigma_theta;
+        sigma_theta_pub_.publish(vel_);
+
+        vel_.data = mi_theta;
+        mi_theta_pub_.publish(vel_);
+
+    }
 
     cmd.linear.x = V * v(0) / getNorm(v);
     cmd.linear.y = V * v(1) / getNorm(v);
 
     double orient_error = rotationDifference(aR2O,pose_robot_.theta);
     if(orient_error > 0.3){
-            cmd.linear.x = 0;
-            cmd.linear.y = 0;
+        cmd.linear.x = 0;
+        cmd.linear.y = 0;
 
-        }
+    }
     cmd.angular.z = pid_theta_.computeCommand(orient_error, ros::Duration(time_step_));
 
 

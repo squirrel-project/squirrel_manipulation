@@ -449,6 +449,7 @@ bool PushAction::getPushPath(){
             p.header.frame_id = global_frame_;
 
             switch(demo_path){
+
             case 0:
             {
                 double x_max = 2.5;
@@ -468,7 +469,7 @@ bool PushAction::getPushPath(){
                 }
                 else if(i < 70){
                     double y_max = 1.2;
-                    p.pose.position.x = 1.50;
+                    p.pose.position.x = 1.20;
                     p.pose.position.y = y_max / 35 * (i - 35);
                 }
                 else{
@@ -521,7 +522,7 @@ bool PushAction::getPushPath(){
                 }
                 else if(i < 70){
                     double y_max = 1.2;
-                    p.pose.position.x = 1.50;
+                    p.pose.position.x = 1.20;
                     p.pose.position.y = y_max / 35 * (i - 35);
                 }
                 else{
