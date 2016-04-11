@@ -134,7 +134,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
         
         if (visualise_)publishPoint(relocate_target_);
         
-        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.1) && (rotationDifference(relocate_target_(2), pose_robot_.theta) < 0.1) && (dR2O < 2 * object_diameter_)){
+        if ((distancePoints(pose_robot_.x, pose_robot_.y, relocate_target_ (0), relocate_target_ (1)) < 0.1) && (rotationDifference(aR2O, pose_robot_.theta) < 0.05) ){
             push_state_ = PUSH;
             ROS_INFO("(Push) State: PUSH");
             cout << endl;
@@ -358,7 +358,7 @@ geometry_msgs::Twist PushPlanner::relocateVelocities(){
     double attraction_coefficient = 0.6;
     double repulsion_coefficient = 0.6;
     double repulsion_threshold = 2.5 * object_diameter_;
-    double rotation_coefficient = 0.3;
+    double rotation_coefficient = 0.8;
     
     // Attraction
     double G_attr_x = -attraction_coefficient*(pose_robot_.x - relocate_target_(0));

@@ -33,9 +33,9 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
-    private_nh.param("navigation_", nav_, false);
-    private_nh.param("artag_", artag_, true);
-    private_nh.param("artag_", sim_, false);
+    private_nh.param("navigation_", nav_, true);
+    private_nh.param("artag_", artag_, false);
+    private_nh.param("sim_", sim_, false);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
     private_nh.param("demo_path", demo_path, 4);
@@ -110,9 +110,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     object_id_ = goal->object_id;
 
     //for the standalone demo
-    demo_path = goal->path.data;
-    object_diameter_ = goal->object_diameter.data;
-    corridor_width_ = goal->corridor_width.data;
+//    demo_path = goal->path.data;
+//    object_diameter_ = goal->object_diameter.data;
+//    corridor_width_ = goal->corridor_width.data;
 
 
     if(!artag_ && !sim_ ){
