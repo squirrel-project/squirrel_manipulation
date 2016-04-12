@@ -97,7 +97,7 @@ class BlindGraspServer(object):
         self._group.set_start_state_to_current_state()
         self._group.set_pose_reference_frame('odom')
         pre_pose.header.stamp = rospy.Time.now()
-        pre_pose_tfed = tf.transformPose('odom', pre_pose)
+        pre_pose_tfed = self._transformer.transformPose('odom', pre_pose)
         self._group.set_pose_target(pre_pose_tfed)
         plan = self._group.plan()
 
@@ -110,7 +110,7 @@ class BlindGraspServer(object):
             self._group.set_start_state_to_current_state()
             self._group.set_pose_reference_frame('odom')
             grasp_pose.header.stamp = rospy.Time.now()
-            grasp_pose_tfed = tf.transformPose('odom', grasp_pose)
+            grasp_pose_tfed = self._transformer.transformPose('odom', grasp_pose)
             self._group.set_pose_target(grasp_pose_tfed)
             plan = self._group.plan()
             
