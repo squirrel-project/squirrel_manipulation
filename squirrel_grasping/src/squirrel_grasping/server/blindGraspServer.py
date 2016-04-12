@@ -5,6 +5,7 @@ from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Bool
 
 from tf.transformations import quaternion_from_euler
+from tf import TransformListener
 
 from squirrel_manipulation_msgs.msg import BlindGraspAction
 from squirrel_manipulation_msgs.msg import BlindGraspResult
@@ -21,20 +22,35 @@ class BlindGraspServer(object):
     def __init__(self):
         while rospy.get_time() == 0.0: pass
         rospy.loginfo(rospy.get_caller_id() + ': starting BlindGraspServer')
-        self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspAction, execute_cb=self.execute_grasp, auto_start=False)
+
+        self._server = actionlib.SimpleActionServer('blindGrasp', BlindGraspAction, execute_cb=self._execute_grasp, auto_start=False)
         self._prepareGrasp = rospy.ServiceProxy('hand_controller/prepareGrasp', graspPreparation)
         self._closeFinger = rospy.ServiceProxy('hand_controller/closeFinger', graspCurrent)
         self._openFinger = rospy.ServiceProxy('hand_controller/openFinger', graspPreparation)
         self._rotatory_lock = rospy.Publisher('/twist_mux/locks/pause_rotatory', Bool, queue_size=10)
+        self._transformer = TransformListener()
+
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
         self._dist_2_hand = .2
+
+        self._retract_pose = PoseStamped()
+        self._retract_pose.header.frame_id = 'base_link'
+        self._retract_pose.header.stamp = rospy.Time.now()
+        self._retract_pose.pose.position.x = 0.114
+        self._retract_pose.pose.position.y = -0.205
+        self._retract_pose.pose.position.z = 0.653
+        self._retract_pose.pose.orientation.x = 0.912
+        self._retract_pose.pose.orientation.y = 0.292
+        self._retract_pose.pose.orientation.z = 0.028
+        self._retract_pose.pose.orientation.w = 0.287
+
         self._server.start()
 
     
-    def execute_grasp(self, goal):
+    def _execute_grasp(self, goal):
         
         rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called with goal\n{}'.format(goal))
         
@@ -106,8 +122,9 @@ class BlindGraspServer(object):
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
                 self._group.set_pose_reference_frame("odom")
-                pre_pose.header.stamp = rospy.Time.now()
-                self._group.set_pose_target(pre_pose)
+                self._retract_pose.header.stamp = rospy.Time.now()
+                retract_pose = self._transformer.transformPose('/odom', self._retract_pose)
+                self._group.set_pose_target(retract_pose)
                 plan = self._group.plan()
 
                 if self._is_empty(plan):
