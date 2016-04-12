@@ -112,6 +112,7 @@ class BlindGraspServer(object):
 
                 if self._is_empty(plan):
                     rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
+                    self._rotatory_locak.publish(True)                    
                 else:
                     self._group.go(wait=True)
                     rospy.loginfo('BlindGrasp: succeeded')

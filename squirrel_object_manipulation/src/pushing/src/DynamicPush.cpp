@@ -8,9 +8,8 @@ DynamicPush::DynamicPush():
     PushPlanner()
 {
     private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.6);
-    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.2);
-    private_nh.param("push/velocity_linear_max", vel_lin_min_ , 0.07);
-
+    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.12);
+    private_nh.param("push/velocity_linear_min", vel_lin_min_ , 0.05);
 
     private_nh.param("push/proportional_theta", p_theta_, 0.4);
     private_nh.param("push/derivative_theta", d_theta_, 0.2);
@@ -31,8 +30,8 @@ void DynamicPush::initChild() {
     sigma_alpha = 0;
 
     mi_theta = M_PI;
-    sigma_theta= M_PI / 3;
-    count_dr = 100;
+    sigma_theta = M_PI / 3;
+    count_dr = 50;
 
     aPORp = aPOR;
     count_all = 1;
@@ -83,15 +82,20 @@ void DynamicPush::updateChild() {
             double tempT = mi_theta;
             mi_theta = mi_theta + (aPORp - mi_theta) / count_dr;
             sigma_theta = ((count_dr - 1) * sigma_theta + (aPORp - tempT)*(aPORp - mi_theta)) / count_dr;
-
-            //cout<<"update"<<endl;
+            if (sigma_theta < M_PI / 6) {
+                sigma_theta = M_PI / 3;
+                //cout<<"update sigma_theta"<<endl;
+            }
+            if ((abs(mi_theta) < M_PI / 2) || (abs(mi_theta) > 3 * M_PI / 2)){
+                mi_theta = M_PI;
+                //cout<<"update mi_theta"<<endl;
+            }
             //cout<<" sigma_theta "<<sigma_theta<<" mi_theta "<<mi_theta<<endl;
         }
         alpha_vec.resize(alpha_vec.n_elem  + 1);
         alpha_vec(alpha_vec.n_elem - 1) = alpha;
 
         alpha_old = alpha;
-
 
     }
     aPORp = aPOR;
@@ -150,13 +154,11 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     //double vy_compensate =  - psi_push_ * abs(sin(alpha)) * (mean(alpha_vec) - alpha);
     double vy_compensate =  - psi_push_ * cos(alpha) * (mean(alpha_vec) - alpha);
 
-    //if(fabs(vx_compensate) > 0.3) vx_compensate = (vx_compensate > 0 ? 0.3 : -0.3);
-    //if(fabs(vy_compensate) > 0.3) vy_compensate = (vy_compensate > 0 ? 0.3 : -0.3);
 
-    //vx_compensate = 0;
-    //vy_compensate = 0;
-    //cout<<"vx compensate "<<vx_compensate<<endl;
-    //cout<<"vy compensate "<<vy_compensate<<endl;
+    if (sqrt (vx_compensate * vx_compensate + vy_compensate * vy_compensate) > 0.6){
+        vx_compensate = 0;
+        vy_compensate = 0;
+    }
 
     double vx =  vx_push + vx_relocate + vx_compensate;
     double vy =  vy_push + vy_relocate + vy_compensate;
@@ -164,7 +166,7 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     // transform to robot frame
     vec v = rotate2DVector(vx, vy, rotationDifference(aO2P, pose_robot_.theta));
 
-    double V = vel_lin_max_ / (1 +  abs(mi_alpha) );
+    double V = vel_lin_max_ / (1 +  abs(mi_alpha));
     if(V < vel_lin_min_) V = vel_lin_min_;
 
 
@@ -177,18 +179,6 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
 
     double orient_error = rotationDifference(aR2O,pose_robot_.theta);
     cmd.angular.z = pid_theta_.computeCommand(orient_error, ros::Duration(time_step_));
-
-    cout<<"angl vel "<< cmd.angular.z<<endl;
-
-    if(abs(rotationDifference(aR2O,pose_robot_.theta)) > 0.6) {
-        //rotate2Object = true;
-        //if (rotate2Object){
-        cout<<"rot "<< aR2O<<" "<<pose_robot_.theta<<" "<< orient_error<<endl;
-        cmd.linear.x = 0;
-        cmd.linear.y = 0;
-        cmd.angular.z = 0.6 * rotationDifference(aR2O,pose_robot_.theta);
-        // if(rotationDifference(aR2O,pose_robot_.theta) < 0.1 )rotate2Object = false;
-    }
 
 
     return cmd;

@@ -116,11 +116,13 @@
     <disable_collisions link1="hand_left_crank" link2="wheel1_link" reason="Never" />
     <disable_collisions link1="hand_left_finger_lower_link" link2="hand_left_finger_upper_link" reason="Adjacent" />
     <disable_collisions link1="hand_left_finger_lower_link" link2="hand_middle_finger_lower_link" reason="Default" />
+    <disable_collisions link1="hand_left_finger_lower_link" link2="hand_middle_finger_upper_link" reason="Never" />
     <disable_collisions link1="hand_left_finger_lower_link" link2="link3" reason="Never" />
     <disable_collisions link1="hand_left_finger_lower_link" link2="link4" reason="Never" />
     <disable_collisions link1="hand_left_finger_lower_link" link2="wheel1_link" reason="Never" />
     <disable_collisions link1="hand_left_finger_upper_link" link2="hand_middle_finger_lower_link" reason="Default" />
     <disable_collisions link1="hand_left_finger_upper_link" link2="wheel1_link" reason="Never" />
+    <disable_collisions link1="hand_left_finger_upper_link" link2="hand_middle_finger_upper_link" reason="Never" />
     <disable_collisions link1="hand_middle_finger_lower_link" link2="hand_middle_finger_upper_link" reason="Adjacent" />
     <disable_collisions link1="hand_middle_finger_lower_link" link2="hand_right_coupler" reason="Default" />
     <disable_collisions link1="hand_middle_finger_lower_link" link2="hand_right_crank" reason="Default" />
@@ -132,6 +134,8 @@
     <disable_collisions link1="hand_middle_finger_upper_link" link2="link3" reason="Never" />
     <disable_collisions link1="hand_middle_finger_upper_link" link2="link4" reason="Never" />
     <disable_collisions link1="hand_middle_finger_upper_link" link2="wheel2_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_right_finger_upper_link" reason="Never" />
+    <disable_collisions link1="hand_middle_finger_upper_link" link2="hand_right_finger_lower_link" reason="Never" />
     <disable_collisions link1="hand_right_coupler" link2="hand_right_crank" reason="Adjacent" />
     <disable_collisions link1="hand_right_coupler" link2="hand_right_finger_lower_link" reason="Adjacent" />
     <disable_collisions link1="hand_right_coupler" link2="hand_wrist_link" reason="Never" />
