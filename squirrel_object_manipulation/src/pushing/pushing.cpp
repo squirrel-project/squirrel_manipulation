@@ -36,7 +36,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
     private_nh.param("navigation_", nav_, true);
-    private_nh.param("artag_", artag_, fals<se);
+    private_nh.param("artag_", artag_, false);
     private_nh.param("sim_", sim_, false);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
