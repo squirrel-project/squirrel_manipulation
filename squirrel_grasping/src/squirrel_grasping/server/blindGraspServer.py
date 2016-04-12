@@ -34,7 +34,7 @@ class BlindGraspServer(object):
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
-        self._dist_2_hand = .2
+        self._dist_2_hand = .25
 
         self._retract_pose = PoseStamped()
         self._retract_pose.header.frame_id = 'base_link'
@@ -66,26 +66,24 @@ class BlindGraspServer(object):
         pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id
         pre_pose.pose.position.x = goal.heap_center_pose.pose.position.x
         pre_pose.pose.position.y = goal.heap_center_pose.pose.position.y
-        pre_pose.pose.position.z = 0.481809170246#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.15
+        pre_pose.pose.position.z = 0.481809170246
         pre_pose.pose.orientation.x = -0.0416706353426
         pre_pose.pose.orientation.y = 0.999013662338
         pre_pose.pose.orientation.z = -0.0152916312218
         pre_pose.pose.orientation.w = -0.00118487002328
-        #grasp_pose.pose.orientation.x, grasp_pose.pose.orientation.y, grasp_pose.pose.orientation.z, grasp_pose.pose.orientation.w = \
-        #  quaternion_from_euler( 3.142, 0.050, 2.094 )
+
+        d = goal.heap_bouding_cylinder.height/2.0
 
         grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
         grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id
         grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x
         grasp_pose.pose.position.y = goal.heap_center_pose.pose.position.y
-        grasp_pose.pose.position.z = 0.411426967382#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
+        grasp_pose.pose.position.z = goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         grasp_pose.pose.orientation.x = -0.0458614192903
         grasp_pose.pose.orientation.y = 0.998826861382
         grasp_pose.pose.orientation.z = -0.0154969207942
         grasp_pose.pose.orientation.w = -0.00127845082898        
-        #grasp_pose.pose.orientation.x, grasp_pose.pose.orientation.y, grasp_pose.pose.orientation.z, grasp_pose.pose.orientation.w = \
-        #  quaternion_from_euler( 3.142, 0.050, 2.094 )
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed pre grasp pose:\n{}'.format(pre_pose))
         rospy.loginfo(rospy.get_caller_id() + ': Computed grasp pose:\n{}'.format(grasp_pose))
@@ -137,7 +135,7 @@ class BlindGraspServer(object):
                     rospy.loginfo('BlindGrasp: succeeded')
                     self._result.result_status = 'BlindGrasp: succeeded' 
                     self._server.set_succeeded(self._result) 
-                    self._rotatory_locak.publish(True)                    
+                    self._rotatory_lock.publish(True)                    
             
 
     def _is_empty(self, plan):
