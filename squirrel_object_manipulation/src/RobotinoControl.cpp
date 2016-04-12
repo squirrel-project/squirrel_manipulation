@@ -342,7 +342,7 @@ void RobotinoControl::moveTilt(double val){
 void RobotinoControl::movePan(double val){
     std_msgs::Float64 pan_msg;
     pan_msg.data = val;
-    panPub.publish(tilt_msg);
+    panPub.publish(pan_msg);
     ros::spinOnce();
 }
 void RobotinoControl::moveBaseThread(){

@@ -75,7 +75,9 @@ private:
     nav_msgs::Path pushing_path_;
     bool getPushPath();
     std::string octomap_topic_;
+    std::string costmap_topic_;
     ros::Publisher octomap_pub_;
+    ros::Publisher costmap_pub_;
 
     //robot pose update
     std::string pose_topic_;

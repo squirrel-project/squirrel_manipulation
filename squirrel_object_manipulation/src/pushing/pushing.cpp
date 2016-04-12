@@ -21,6 +21,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
 
     private_nh.param("pose_topic", pose_topic_,std::string("/squirrel_localizer_pose"));
     private_nh.param("octomap_topic", octomap_topic_,std::string("/squirrel_3d_mapping/update"));
+    private_nh.param("octomap_topic", costmap_topic_,std::string("/costmap/update"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.00);
@@ -59,6 +60,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
 
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     octomap_pub_ = nh.advertise<std_msgs::Bool>(octomap_topic_, 100);
+    costmap_pub_ = nh.advertise<std_msgs::Bool>(costmap_topic_, 100);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
@@ -111,9 +113,9 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     object_id_ = goal->object_id;
 
     //for the standalone demo
-//    demo_path = goal->path.data;
-//    object_diameter_ = goal->object_diameter.data;
-//    corridor_width_ = goal->corridor_width.data;
+    //    demo_path = goal->path.data;
+    //    object_diameter_ = goal->object_diameter.data;
+    //    corridor_width_ = goal->corridor_width.data;
 
 
     if(!artag_ && !sim_ ){
@@ -170,9 +172,18 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     sleep (0.5);
 
     // start object tracking
+    //turn of costmaps
+    std_msgs::Bool costmap_msg_;
+    costmap_msg_.data = false;
+    costmap_pub_.publish(costmap_msg_);
     // move camera for vision
     robotino->moveTilt(tilt_perception_);
+    robotino->movePan(pan_perception_);
     sleep (0.5);
+    //tur on costmaps
+    costmap_msg_.data = true;
+    costmap_pub_.publish(costmap_msg_);
+
     if(startTracking()){
         ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
         trackingStart_ = true;
@@ -583,11 +594,18 @@ void PushAction::finishPush(){
     pushing_path_.poses.clear();
     if(nav_) push_planner_->deleteMarkers();
 
-
+    //turn off costmap
+    std_msgs::Bool costmap_msg_;
+    costmap_msg_.data = false;
+    costmap_pub_.publish(costmap_msg_);
     //moving tilt for navigation configuration
     robotino->moveTilt(tilt_nav_);
     ros::spinOnce();
     ROS_INFO("(Push) Camera in the pose for navigation \n");
+
+    //turn on costmap
+    costmap_msg_.data = true;
+    costmap_pub_.publish(costmap_msg_);
 
     //turn on octomap
     std_msgs::Bool octomap_msg_;
