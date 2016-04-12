@@ -30,6 +30,7 @@
 #define ROBOTINO_IMAGERAW_TOPIC "/webcam/image_raw"
 #define ROBOTINO_IMAGECOMPRESSED_TOPIC "/webcam/image_raw/compressed"
 #define TILT_TOPIC "/tilt_controller/command"
+#define PAN_TOPIC "/pan_controller/command"
 
 class RobotinoControl {
 
@@ -64,6 +65,7 @@ private:
 
     ros::Publisher pubMove;
     ros::Publisher tiltPub;
+    ros::Publisher panPub;
 
     ros::Publisher pubDigitalValues;
 
@@ -132,6 +134,7 @@ public:
     void setBaseVelocity(geometry_msgs::Twist twist);
 
     void moveTilt(double val);
+    void movePan(double val);
 
 };
 

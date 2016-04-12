@@ -25,7 +25,8 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("global_frame", global_frame_, std::string("/map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.00);
     private_nh.param("tilt_nav", tilt_nav_, 0.75);
-    private_nh.param("tilt_perception", tilt_perception_, 1.15);
+    private_nh.param("tilt_perception", tilt_perception_, 1.3);
+    private_nh.param("pan_perception", pan_perception_, 0.0);
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.15);
     private_nh.param("state_machine", state_machine_, false);

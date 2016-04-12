@@ -16,6 +16,7 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
     tiltPub = node.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
+    panPub = node.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
 
     move_base_thread_ = new boost::thread(boost::bind(&RobotinoControl::moveBaseThread, this));
 
@@ -338,6 +339,12 @@ void RobotinoControl::moveTilt(double val){
     ros::spinOnce();
 }
 
+void RobotinoControl::movePan(double val){
+    std_msgs::Float64 pan_msg;
+    pan_msg.data = val;
+    panPub.publish(tilt_msg);
+    ros::spinOnce();
+}
 void RobotinoControl::moveBaseThread(){
 
     stop_move_base_= true;
