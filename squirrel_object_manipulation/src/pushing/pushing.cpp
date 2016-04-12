@@ -23,6 +23,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("octomap_topic", octomap_topic_,std::string("/squirrel_3d_mapping/update"));
     private_nh.param("octomap_topic", costmap_topic_,std::string("/costmap/update"));
     private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
+    private_nh.param("push_action_active", action_active_topic_, std::string("/pushing_action"));
     private_nh.param("global_frame", global_frame_, std::string("/map"));
     private_nh.param("controller_frequency", controller_frequency_, 20.00);
     private_nh.param("tilt_nav", tilt_nav_, 0.75);
@@ -41,7 +42,6 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
     private_nh.param("demo_path", demo_path, 4);
-
 
 
     //private_nh.param("push_planner", push_planner_, new PushPlanner());
@@ -183,6 +183,12 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
     sleep (0.5);
+
+    //activatio for navigation
+
+    std_msgs::Bool active_msg_;
+    active_msg_.data = true;
+    active_pub_.publish(active_msg_);
 
     if(startTracking()){
         ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
@@ -456,6 +462,10 @@ bool PushAction::getPushPath(){
         if(clearance_nav_){ corridor_width_ = srvPlan.response.clearance;
             cout <<"from nav clearance"<< corridor_width_<<endl;
         }
+
+        std_msgs::Bool active_msg_;
+        active_msg_.data = false;
+        active_pub_.publish(active_msg_);
 
     }
     else{
