@@ -1,8 +1,6 @@
 #include "../include/SimplePathFollowing.hpp"
 
-
 using namespace std;
-
 
 SimplePathFollowing::SimplePathFollowing():
     PushPlanner()
@@ -39,8 +37,6 @@ void SimplePathFollowing::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, g
 
     }
 
-
-
 }
 
 geometry_msgs::Twist SimplePathFollowing::getVelocities(){
@@ -65,7 +61,6 @@ geometry_msgs::Twist SimplePathFollowing::getVelocities(){
         cmd.linear.x = vel_lin_max_;
     else
         cmd.linear.x = 0.0;
-
 
     return cmd;
 

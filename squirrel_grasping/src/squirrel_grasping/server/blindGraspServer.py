@@ -47,9 +47,9 @@ class BlindGraspServer(object):
 
         pre_pose = PoseStamped()
         pre_pose.header.stamp = rospy.Time.now()
-        pre_pose.header.frame_id = 'odom'#goal.heap_center_pose.header.frame_id
-        pre_pose.pose.position.x = 0.392694652081#goal.heap_center_pose.pose.position.x
-        pre_pose.pose.position.y = 0.135437235236#goal.heap_center_pose.pose.position.y
+        pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id#'odom'
+        pre_pose.pose.position.x = goal.heap_center_pose.pose.position.x#0.392694652081#
+        pre_pose.pose.position.y = goal.heap_center_pose.pose.position.y#0.135437235236#
         pre_pose.pose.position.z = 0.481809170246#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.15
         pre_pose.pose.orientation.x = -0.0416706353426
         pre_pose.pose.orientation.y = 0.999013662338
@@ -60,9 +60,9 @@ class BlindGraspServer(object):
 
         grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
-        grasp_pose.header.frame_id = 'odom'#goal.heap_center_pose.header.frame_id
-        grasp_pose.pose.position.x = 0.394616365433#goal.heap_center_pose.pose.position.x
-        grasp_pose.pose.position.y = 0.124969959259#goal.heap_center_pose.pose.position.y
+        grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id#'odom'
+        grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x#0.394616365433
+        grasp_pose.pose.position.y = goal.heap_center_pose.pose.position.y#0.124969959259
         grasp_pose.pose.position.z = 0.411426967382#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         grasp_pose.pose.orientation.x = -0.0458614192903
         grasp_pose.pose.orientation.y = 0.998826861382
@@ -112,6 +112,7 @@ class BlindGraspServer(object):
 
                 if self._is_empty(plan):
                     rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
+                    self._rotatory_locak.publish(True)                    
                 else:
                     self._group.go(wait=True)
                     rospy.loginfo('BlindGrasp: succeeded')
