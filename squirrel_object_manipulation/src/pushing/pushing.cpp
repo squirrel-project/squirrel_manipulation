@@ -31,7 +31,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("pan_perception", pan_perception_, 0.0);
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.15);
-    private_nh.param("state_machine", state_machine_, true);
+    private_nh.param("state_machine", state_machine_, false);
     private_nh.param("object_diameter", object_diameter_, 0.20);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
@@ -175,6 +175,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     std_msgs::Bool costmap_msg_;
     costmap_msg_.data = false;
     costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
     sleep (0.5);
     // move camera for vision
     robotino->moveTilt(tilt_perception_);
@@ -182,6 +183,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
         //tur on costmaps
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
     sleep (0.5);
 
     //activatio for navigation
@@ -189,6 +191,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     std_msgs::Bool active_msg_;
     active_msg_.data = true;
     active_pub_.publish(active_msg_);
+    ros::spinOnce();
+    cout << "push sent true"<< endl;
+    sleep(10);
+
 
     if(startTracking()){
         ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
