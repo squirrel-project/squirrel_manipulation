@@ -108,7 +108,8 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
     
     //distance robot object
     dR2O = distancePoints(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y);
-    
+
+
     //distance robot to the line object-target
     dRlOT = distance2Line(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
     
@@ -169,7 +170,7 @@ void PushPlanner::updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_
             push_state_ = INACTIVE;
         }
 
-        if (((dR2O < robot_diameter_ / 2) || (dR2O > 2 * robot_diameter_)) && state_machine_){
+        if (((dR2O < robot_diameter_ / 2) || (dR2O > 2 * object_diameter_)) && state_machine_){
             cout<<"dR2O "<< dR2O<<endl;
             push_state_ = RELOCATE;
             cout<<"push state: RELOCATE"<<endl;
@@ -270,7 +271,7 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
             }
 
             double penalty_tail =  corridor_width_ / 2 - zeta * (d_min + robot_diameter_ / 2);
-            double penalty_curve = corridor_width_ / 2 - zeta * (d_max + robot_diameter_);
+            double penalty_curve = corridor_width_ / 2 - zeta * (d_max + robot_diameter_ / 2);
 
             double cost_curr = 1 / d + zeta * d_max;
             if ((penalty_curve <= 0)||((penalty_tail <= 0))) cost_curr = std::numeric_limits<double>::infinity();
@@ -284,6 +285,8 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
     }
     
     if (p_lookahead == p_min_ind + 1) return current_target_;
+
+    if (p_lookahead < 5) return getLookaheadPoint(pose_object_);
     
     return pushing_path_.poses[p_lookahead];
 }

@@ -30,13 +30,13 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("pan_perception", pan_perception_, 0.0);
     private_nh.param("lookahead", lookahead_, 0.30);
     private_nh.param("goal_tolerance", goal_toll_, 0.15);
-    private_nh.param("state_machine", state_machine_, false);
+    private_nh.param("state_machine", state_machine_, true);
     private_nh.param("object_diameter", object_diameter_, 0.20);
     private_nh.param("robot_diameter", robot_diameter_, 0.42);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
     private_nh.param("clearance_nav", clearance_nav_, false);
     private_nh.param("navigation_", nav_, true);
-    private_nh.param("artag_", artag_, false);
+    private_nh.param("artag_", artag_, fals<se);
     private_nh.param("sim_", sim_, false);
     private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
@@ -81,7 +81,6 @@ PushAction::~PushAction() {
 }
 
 void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal) {
-
 
 
     if(!nav_){
@@ -405,10 +404,10 @@ bool PushAction::getPushPath(){
         // Set object polygon
         geometry_msgs::Point32 p1, p2, p3, p4;
 
-        p1.x = start_m.pose.position.x + object_diameter_; p1.y = start_m.pose.position.y - object_diameter_;
-        p2.x = start_m.pose.position.x + object_diameter_; p2.y = start_m.pose.position.y + object_diameter_;
-        p3.x = start_m.pose.position.x - object_diameter_; p3.y = start_m.pose.position.y - object_diameter_;
-        p4.x = start_m.pose.position.x - object_diameter_; p4.y = start_m.pose.position.y + object_diameter_;
+        p1.x = start_m.pose.position.x + object_diameter_ / 2; p1.y = start_m.pose.position.y - object_diameter_ / 2;
+        p2.x = start_m.pose.position.x + object_diameter_ / 2; p2.y = start_m.pose.position.y + object_diameter_ / 2;
+        p3.x = start_m.pose.position.x - object_diameter_ / 2; p3.y = start_m.pose.position.y - object_diameter_ / 2;
+        p4.x = start_m.pose.position.x - object_diameter_ / 2; p4.y = start_m.pose.position.y + object_diameter_ / 2;
 
         // Make request
 
@@ -610,7 +609,6 @@ void PushAction::finishPush(){
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
     ros::spinOnce();
-    sleep (0.5);
 
     //turn on octomap
     std_msgs::Bool octomap_msg_;
