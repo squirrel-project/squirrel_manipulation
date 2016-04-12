@@ -61,6 +61,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     pose_sub_ = nh.subscribe(pose_topic_, 2, &PushAction::updatePose, this);
     octomap_pub_ = nh.advertise<std_msgs::Bool>(octomap_topic_, 100);
     costmap_pub_ = nh.advertise<std_msgs::Bool>(costmap_topic_, 100);
+    active_pub_ = nh.advertise<std_msgs::Bool>(action_active_topic_, 100);
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
