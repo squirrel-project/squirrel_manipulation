@@ -38,8 +38,7 @@ class BlindGraspServer(object):
         
         rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called with goal\n{}'.format(goal))
         
-        # unlock the base
-        self._rotatory_locak.publish(False)
+        self._rotatory_lock.publish(False)
 
         if self._server.is_preempt_requested():
             rospy.loginfo('BlindGrasp: preempted')
@@ -99,7 +98,7 @@ class BlindGraspServer(object):
             
             if self._is_empty(plan):
                 rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
-                self._result.result_status = 'BlindGrasp: failed - no motion plan found' 
+                self._rotatory_lock.publish(True) 
             else:
                 self._prepareGrasp()
                 self._group.go(wait=True)
