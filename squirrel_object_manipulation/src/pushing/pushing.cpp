@@ -176,13 +176,14 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     std_msgs::Bool costmap_msg_;
     costmap_msg_.data = false;
     costmap_pub_.publish(costmap_msg_);
+    sleep (0.5);
     // move camera for vision
     robotino->moveTilt(tilt_perception_);
     robotino->movePan(pan_perception_);
-    sleep (0.5);
-    //tur on costmaps
+        //tur on costmaps
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
+    sleep (0.5);
 
     if(startTracking()){
         ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
@@ -598,6 +599,8 @@ void PushAction::finishPush(){
     std_msgs::Bool costmap_msg_;
     costmap_msg_.data = false;
     costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
+    sleep (0.5);
     //moving tilt for navigation configuration
     robotino->moveTilt(tilt_nav_);
     ros::spinOnce();
@@ -606,6 +609,8 @@ void PushAction::finishPush(){
     //turn on costmap
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
+    ros::spinOnce();
+    sleep (0.5);
 
     //turn on octomap
     std_msgs::Bool octomap_msg_;
