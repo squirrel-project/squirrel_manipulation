@@ -63,9 +63,9 @@ class BlindGraspServer(object):
 
         pre_pose = PoseStamped()
         pre_pose.header.stamp = rospy.Time.now()
-        pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id#'odom'
-        pre_pose.pose.position.x = goal.heap_center_pose.pose.position.x#0.392694652081#
-        pre_pose.pose.position.y = goal.heap_center_pose.pose.position.y#0.135437235236#
+        pre_pose.header.frame_id = goal.heap_center_pose.header.frame_id
+        pre_pose.pose.position.x = goal.heap_center_pose.pose.position.x
+        pre_pose.pose.position.y = goal.heap_center_pose.pose.position.y
         pre_pose.pose.position.z = 0.481809170246#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand + 0.15
         pre_pose.pose.orientation.x = -0.0416706353426
         pre_pose.pose.orientation.y = 0.999013662338
@@ -76,9 +76,9 @@ class BlindGraspServer(object):
 
         grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
-        grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id#'odom'
-        grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x#0.394616365433
-        grasp_pose.pose.position.y = goal.heap_center_pose.pose.position.y#0.124969959259
+        grasp_pose.header.frame_id = goal.heap_center_pose.header.frame_id
+        grasp_pose.pose.position.x = goal.heap_center_pose.pose.position.x
+        grasp_pose.pose.position.y = goal.heap_center_pose.pose.position.y
         grasp_pose.pose.position.z = 0.411426967382#goal.heap_center_pose.pose.position.z + d + self._dist_2_hand
         grasp_pose.pose.orientation.x = -0.0458614192903
         grasp_pose.pose.orientation.y = 0.998826861382
@@ -95,9 +95,10 @@ class BlindGraspServer(object):
         self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
-        self._group.set_pose_reference_frame("odom")
+        self._group.set_pose_reference_frame('odom')
         pre_pose.header.stamp = rospy.Time.now()
-        self._group.set_pose_target(pre_pose)
+        pre_pose_tfed = tf.transformPose('odom', pre_pose)
+        self._group.set_pose_target(pre_pose_tfed)
         plan = self._group.plan()
 
         if self._is_empty(plan):
@@ -107,9 +108,10 @@ class BlindGraspServer(object):
             self._group.go(wait=True)
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
-            self._group.set_pose_reference_frame("odom")
+            self._group.set_pose_reference_frame('odom')
             grasp_pose.header.stamp = rospy.Time.now()
-            self._group.set_pose_target(grasp_pose)
+            grasp_pose_tfed = tf.transformPose('odom', grasp_pose)
+            self._group.set_pose_target(grasp_pose_tfed)
             plan = self._group.plan()
             
             if self._is_empty(plan):
@@ -121,10 +123,10 @@ class BlindGraspServer(object):
                 self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
-                self._group.set_pose_reference_frame("odom")
+                self._group.set_pose_reference_frame('odom')
                 self._retract_pose.header.stamp = rospy.Time.now()
-                retract_pose = self._transformer.transformPose('/odom', self._retract_pose)
-                self._group.set_pose_target(retract_pose)
+                retract_pose_tfed = self._transformer.transformPose('odom', self._retract_pose)
+                self._group.set_pose_target(retract_pose_tfed)
                 plan = self._group.plan()
 
                 if self._is_empty(plan):
