@@ -284,9 +284,9 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
         }
     }
     
-    if (p_lookahead == p_min_ind + 1) return current_target_;
+    if ((p_lookahead < 5)&& (p_min_ind < 3)) return getLookaheadPoint(pose_object_);
 
-    if (p_lookahead < 5) return getLookaheadPoint(pose_object_);
+    if (p_lookahead == p_min_ind + 1) return current_target_;
     
     return pushing_path_.poses[p_lookahead];
 }

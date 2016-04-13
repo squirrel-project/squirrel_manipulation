@@ -33,9 +33,10 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("goal_tolerance", goal_toll_, 0.15);
     private_nh.param("state_machine", state_machine_, false);
     private_nh.param("object_diameter", object_diameter_, 0.20);
-    private_nh.param("robot_diameter", robot_diameter_, 0.42);
+    private_nh.param("robot_diameter", robot_diameter_, 0.46);
     private_nh.param("corridor_width", corridor_width_ , 1.4);
-    private_nh.param("clearance_nav", clearance_nav_, false);
+    private_nh.param("clearance_nav", clearance_nav_, true);
+    private_nh.param("check_collisions", check_collisions_, true);
     private_nh.param("navigation_", nav_, true);
     private_nh.param("artag_", artag_, false);
     private_nh.param("sim_", sim_, false);
@@ -65,6 +66,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     robotino = boost::shared_ptr<RobotinoControl>(new RobotinoControl(nh));
 
     object_tracking_thread_ = new boost::thread(boost::bind(&PushAction::objectTrackingThread, this));
+    irsensors_thread_ = new boost::thread(boost::bind(&PushAction::checkCollisionsThread, this));
     marker_sub_ = nh.subscribe(tracker_tf_, 1000,  &PushAction::arCallback, this);
 
     pushServer.start();
@@ -104,6 +106,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     runPushPlan_ = true;
     trackingStart_ = false;
     objectLost_ = false;
+    obstacles_ = false;
 
     //set controller rate
     ros::Rate lRate(controller_frequency_);
@@ -193,9 +196,6 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     active_msg_.data = true;
     active_pub_.publish(active_msg_);
     ros::spinOnce();
-    cout << "push sent true"<< endl;
-    sleep(10);
-
 
     if(startTracking()){
         ROS_INFO("(Push) Waiting for the tracker of the %s to start \n", goal->object_id.c_str());
@@ -209,10 +209,10 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     cout << endl;
 
     if(getFirstObjectPose()){
-        ROS_INFO("(Push) Tracking started. \n",  goal->object_id.c_str());
+        ROS_INFO("(Push) Tracking started. \n");
     }
     else{
-        ROS_ERROR("(Push) Getting first pose failed \n" ,  goal->object_id.c_str());
+        ROS_ERROR("(Push) Getting first pose failed \n");
         abortPush();
         return;
     }
@@ -253,6 +253,11 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     }
     push_planner_->setExperimentName(object_id_ + "sim");
     if (save_data_) push_planner_->saveData("/home/c7031098/squirrel_ws_new/data/");
+
+    if(obstacles_){
+        ROS_INFO("(Push) Obstacle detected");
+        cout << endl;
+    }
 
     if (push_planner_->goal_reached_){
         ROS_INFO("Goal reached sucessfully \n");
@@ -300,6 +305,24 @@ bool PushAction::getFirstObjectPose(){
         return first_pose_;
     }
     else return true;
+
+}
+
+void PushAction::checkCollisionsThread(){
+
+    ros::Rate lRate(controller_frequency_);
+    ros::NodeHandle n;
+
+    while (n.ok() && check_collisions_){
+
+        if(robotino->checkDistancesPush(0.05)){
+
+            push_planner_->push_active_ = false;
+            obstacles_ = true;
+
+        }
+        lRate.sleep();
+    }
 
 }
 
@@ -607,6 +630,7 @@ void PushAction::finishPush(){
     }
 
     trackingStart_ = false;
+    obstacles_ = false;
     runPushPlan_ = false;
     pushing_path_.poses.clear();
     if(nav_) push_planner_->deleteMarkers();

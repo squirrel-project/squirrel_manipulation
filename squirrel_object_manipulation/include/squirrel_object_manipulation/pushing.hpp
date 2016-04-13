@@ -60,7 +60,7 @@ private:
 
     std::string robot_base_frame_, global_frame_;
 
-    bool state_machine_, clearance_nav_;
+    bool state_machine_, clearance_nav_, check_collisions_, obstacles_;
     bool nav_, artag_, firstSet, save_data_, sim_;
     double artag_offsetX, artag_offsetY, tag_t_prev;
 
@@ -102,11 +102,13 @@ private:
     bool objectLost_;
     bool first_pose_;
     boost::thread* object_tracking_thread_;
+    boost::thread* irsensors_thread_;
     boost::mutex object_pose_mutex_;
     bool startTracking();
     bool stopTracking();
     bool getFirstObjectPose();
     void objectTrackingThread();
+    void checkCollisionsThread();
 
     void abortPush();
     void finishPush();
