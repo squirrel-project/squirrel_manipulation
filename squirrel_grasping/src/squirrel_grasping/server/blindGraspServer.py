@@ -99,7 +99,7 @@ class BlindGraspServer(object):
         plan = self._group.plan()
 
         if self._is_empty(plan):
-            rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
+            rospy.logerr('BlindGrasp: failed - no motion plan found for pre grasp pose')
             self._rotatory_lock.publish(True)            
         else:
             self._group.go(wait=True)
@@ -112,7 +112,7 @@ class BlindGraspServer(object):
             plan = self._group.plan()
             
             if self._is_empty(plan):
-                rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
+                rospy.logerr('BlindGrasp: failed - no motion plan found for grasp pose')
                 self._rotatory_lock.publish(True) 
             else:
                 self._prepareGrasp()
@@ -127,7 +127,7 @@ class BlindGraspServer(object):
                 plan = self._group.plan()
 
                 if self._is_empty(plan):
-                    rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
+                    rospy.logerr('BlindGrasp: retraction failed - no motion plan found')
                     self._rotatory_locak.publish(True)                    
                 else:
                     self._group.go(wait=True)
