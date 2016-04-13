@@ -60,8 +60,6 @@ class BlindGraspServer(object):
         
         rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called')
         
-        self._rotatory_lock.publish(False)
-
         if self._server.is_preempt_requested():
             rospy.loginfo('BlindGrasp: preempted')
             self._server.set_preempted()
@@ -100,6 +98,7 @@ class BlindGraspServer(object):
         self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
+        self._rotatory_lock.publish(False)
         self._group.set_pose_reference_frame('odom')
         pre_pose.header.stamp = self._transformer.getLatestCommonTime('odom', pre_pose.header.frame_id)
         pre_pose_tfed = self._transformer.transformPose('odom', pre_pose)
@@ -107,7 +106,7 @@ class BlindGraspServer(object):
         plan = self._group.plan()
 
         if self._is_empty(plan):
-            rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
+            rospy.logerr('BlindGrasp: failed - no motion plan found for pre grasp pose')
             self._rotatory_lock.publish(True)            
         else:
             rospy.loginfo('BlindGrasp: preparing arm')
@@ -121,7 +120,7 @@ class BlindGraspServer(object):
             plan = self._group.plan()
             
             if self._is_empty(plan):
-                rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
+                rospy.logerr('BlindGrasp: failed - no motion plan found for grasp pose')
                 self._rotatory_lock.publish(True) 
             else:
                 rospy.loginfo('BlindGrasp: preparing to grasp')
@@ -138,7 +137,7 @@ class BlindGraspServer(object):
                 plan = self._group.plan()
 
                 if self._is_empty(plan):
-                    rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
+                    rospy.logerr('BlindGrasp: retraction failed - no motion plan found')
                     self._rotatory_locak.publish(True)                    
                 else:
                     rospy.loginfo('BlindGrasp: retracting arm')
