@@ -48,9 +48,6 @@ private:
     double lookahead_;
     double goal_toll_;
 
-
-
-    bool state_machine_;
     bool rel_;
 
     ros::Publisher vis_corridor_;
@@ -64,6 +61,8 @@ private:
 
 
 protected:
+
+    bool state_machine_;
 
     PushState push_state_;
     ros::NodeHandle  private_nh;

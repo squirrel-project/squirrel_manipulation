@@ -25,7 +25,7 @@ private:
     geometry_msgs::Twist cmd;
     double p_theta_, d_theta_, i_theta_, i_theta_min_, i_theta_max_;
 
-
+    double filt_com;
     double aPOR, mi_theta, sigma_theta, aPORp;
     double alpha, alpha_old, mi_alpha, sigma_alpha;
     double beta, beta_old, mi_beta, sigma_beta;

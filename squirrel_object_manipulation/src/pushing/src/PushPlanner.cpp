@@ -269,6 +269,7 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
                 double d = distancePoints(pushing_path_.poses[l].pose.position.x, pushing_path_.poses[l].pose.position.y, ideal_start(0), ideal_start(1));
                 if (d < d_min) d_min = d;
             }
+            if (visualise_)publishPoint(ideal_start);
 
             double penalty_tail =  corridor_width_ / 2 - zeta * (d_min + robot_diameter_ / 2);
             double penalty_curve = corridor_width_ / 2 - zeta * (d_max + robot_diameter_ / 2);
@@ -283,8 +284,9 @@ geometry_msgs::PoseStamped PushPlanner::getLookaheadPointDynamic(geometry_msgs::
 
         }
     }
-    
-    if ((p_lookahead < 5)&& (p_min_ind < 3)) return getLookaheadPoint(pose_object_);
+
+
+    if ((p_lookahead < 3)&& (p_min_ind < 3)) return getLookaheadPoint(pose_object_);
 
     if (p_lookahead == p_min_ind + 1) return current_target_;
     

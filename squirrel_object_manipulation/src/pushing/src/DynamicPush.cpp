@@ -112,8 +112,14 @@ void DynamicPush::updateChild() {
     //cout<<"aPOR "<<aPOR<<" sigma_theta "<<sigma_theta<<" mi_theta "<<mi_theta<<endl;
     psi_push_ = getGaussianVal(aPOR, sigma_theta, mi_theta);
     psi_rel_ = 1 - psi_push_;
+    filt_com = 1.0;
     //cout<<" psi_push "<<psi_push_<<"psi relocate "<<psi_rel_<<endl;
-    if(abs(aPOR - M_PI) > 0.6){
+    if(dR2O >robot_diameter_ + object_diameter_){
+        psi_rel_ = 0;
+        filt_com = 0;
+        cout<<"here"<<endl;
+    }
+    else if(abs(aPOR - M_PI) > 0.6){
         psi_push_  = 0;
     }
 
@@ -168,13 +174,13 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     double vy_compensate =  - psi_push_ * cos(alpha) * (mean(alpha_vec) - alpha);
 
 
-    if (sqrt (vx_compensate * vx_compensate + vy_compensate * vy_compensate) > 0.6){
+    if ((sqrt (vx_compensate * vx_compensate + vy_compensate * vy_compensate) > 0.6) || (psi_rel_ = 0)){
         vx_compensate = 0;
         vy_compensate = 0;
     }
 
-    double vx =  vx_push + vx_relocate + vx_compensate;
-    double vy =  vy_push + vy_relocate + vy_compensate;
+    double vx =  vx_push + vx_relocate + filt_com  * vx_compensate;
+    double vy =  vy_push + vy_relocate + filt_com  * vy_compensate;
 
     // transform to robot frame
     vec v = rotate2DVector(vx, vy, rotationDifference(aO2P, pose_robot_.theta));

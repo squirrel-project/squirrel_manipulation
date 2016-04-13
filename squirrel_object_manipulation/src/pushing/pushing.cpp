@@ -34,7 +34,7 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("state_machine", state_machine_, false);
     private_nh.param("object_diameter", object_diameter_, 0.20);
     private_nh.param("robot_diameter", robot_diameter_, 0.46);
-    private_nh.param("corridor_width", corridor_width_ , 1.4);
+    private_nh.param("corridor_width", corridor_width_ , 1.6);
     private_nh.param("clearance_nav", clearance_nav_, true);
     private_nh.param("check_collisions", check_collisions_, true);
     private_nh.param("navigation_", nav_, true);
@@ -183,7 +183,7 @@ void PushAction::executePush(const squirrel_manipulation_msgs::PushGoalConstPtr 
     sleep (0.5);
     // move camera for vision
     robotino->moveTilt(tilt_perception_);
-    robotino->movePan(pan_perception_);
+    //robotino->movePan(pan_perception_);
         //tur on costmaps
     costmap_msg_.data = true;
     costmap_pub_.publish(costmap_msg_);
