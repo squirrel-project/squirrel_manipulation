@@ -41,13 +41,13 @@ if __name__ == '__main__':
             pose.header.frame_id = '/odom'
             pose.pose.position.x = a[g]
             pose.pose.position.y = b[g]
-            pose.pose.position.z = 0.12
+            pose.pose.position.z = 0.05 + 2*g
             pose.pose.orientation.x = 0
             pose.pose.orientation.y = 0
             pose.pose.orientation.z = 0
             pose.pose.orientation.w = 1
             cylinder = BCylinder()
-            cylinder.height = 0.24
+            cylinder.height = 0.10 + 4*g
             cylinder.diameter = 0.13
             store_grasp( ('obj'+str(g)), pose, cylinder)
 
