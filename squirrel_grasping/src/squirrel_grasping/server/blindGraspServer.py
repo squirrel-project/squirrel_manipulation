@@ -3,6 +3,7 @@ import actionlib
 import sys
 from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Bool
+from dynamic_reconfigure import Reconfigure
 
 from tf.transformations import quaternion_from_euler
 from tf import TransformListener
@@ -12,6 +13,8 @@ from squirrel_manipulation_msgs.msg import BlindGraspResult
 from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
 from kclhand_control.srv import graspCurrent, graspPreparation
+
+
 
 from moveit_commander import roscpp_initialize, roscpp_shutdown, MoveGroupCommander, PlanningSceneInterface
 
@@ -32,6 +35,7 @@ class BlindGraspServer(object):
 
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
+        self._set_up_moveit()
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
         self._dist_2_hand = .25
@@ -150,3 +154,9 @@ class BlindGraspServer(object):
             len(plan.multi_dof_joint_trajectory.points) == 0:
             return True
         return False
+
+
+    def _set_up_moveit():
+        moveit_paramterization = rospy.ServiceProxy('/move_group/trajectory_execution/set_parameters', Reconfigure)
+        moveit_paramterization({'execution_duration_monitoring':False})
+        
