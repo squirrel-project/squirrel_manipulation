@@ -41,6 +41,14 @@ class BlindGraspServer(object):
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
 
+        self._hand_ops = { 'open' : self._openFinger(),
+                           'close' : self._closeFinger(1.0),
+                           'prepare' : self._prepareGrasp()
+                         }
+        
+        self._hand_coroutine = self._hand_routine()
+        next(self._hand_coroutine)
+
         self._dist_2_hand = .25
         if rospy.get_param('robot') == 'tuw-robotino2':
             self._dist_2_hand = .2
@@ -132,12 +140,16 @@ class BlindGraspServer(object):
             else:
                 rospy.loginfo('BlindGrasp: preparing to grasp')
                 rospy.loginfo(rospy.get_caller_id() + ': preparing grasp')
+#                self._hand_coroutine.send('prepare')
+#               wiating_for_the_result_blocks = self._hand_coroutine.send('close')
                 self._prepareGrasp()
                 rospy.loginfo(rospy.get_caller_id() + ': moving to grasp pose')
                 self._group.go(wait=True)
                 rospy.loginfo('BlindGrasp: grasping')
                 rospy.loginfo(rospy.get_caller_id() + ': movement done')
                 rospy.loginfo(rospy.get_caller_id() + ': closing fingers')
+#                self._hand_coroutine.send('close')
+#               wiating_for_the_result_blocks = self._hand_coroutine.send('close')
                 self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
@@ -183,3 +195,8 @@ class BlindGraspServer(object):
         req.config = config
         moveit_paramterization(req)
         
+        
+    @asyncio.coroutine
+    def _hand_routine(self):
+        cmd = yield
+        self._hand_ops[cmd]        
