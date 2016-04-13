@@ -52,7 +52,7 @@ class BlindGraspServer(object):
     
     def _execute_grasp(self, goal):
         
-        rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called with goal\n{}'.format(goal))
+        rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called')
         
         self._rotatory_lock.publish(False)
 
@@ -72,7 +72,7 @@ class BlindGraspServer(object):
         pre_pose.pose.orientation.z = -0.0152916312218
         pre_pose.pose.orientation.w = -0.00118487002328
 
-        d = goal.heap_bouding_cylinder.height/2.0
+        d = goal.heap_bounding_cylinder.height/2.0
 
         grasp_pose = PoseStamped()
         grasp_pose.header.stamp = rospy.Time.now()
