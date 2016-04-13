@@ -3,7 +3,8 @@ import actionlib
 import sys
 from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Bool
-from dynamic_reconfigure import Reconfigure
+from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
+from dynamic_reconfigure.msg import Config, BoolParameter, DoubleParameter
 
 from tf.transformations import quaternion_from_euler
 from tf import TransformListener
@@ -14,8 +15,6 @@ from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
 from kclhand_control.srv import graspCurrent, graspPreparation
 
-
-
 from moveit_commander import roscpp_initialize, roscpp_shutdown, MoveGroupCommander, PlanningSceneInterface
 
 
@@ -24,7 +23,7 @@ class BlindGraspServer(object):
 
     def __init__(self):
         while rospy.get_time() == 0.0: pass
-        rospy.loginfo(rospy.get_caller_id() + ': starting')
+        rospy.loginfo(rospy.get_caller_id() + ': starting up')
 
         rospy.wait_for_service("/get_planning_scene")
         rospy.sleep(5.0)
@@ -38,7 +37,7 @@ class BlindGraspServer(object):
 
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
-        self._set_up_moveit()
+        self._enable_infinte_trajectories()
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
 
@@ -58,6 +57,8 @@ class BlindGraspServer(object):
         self._retract_pose.pose.orientation.w = 0.287
 
         self._server.start()
+
+        rospy.loginfo(rospy.get_caller_id() + ': started')
 
     
     def _execute_grasp(self, goal):
@@ -167,7 +168,18 @@ class BlindGraspServer(object):
         return False
 
 
-    def _set_up_moveit():
+    def _enable_infinte_trajectories(self):
         moveit_paramterization = rospy.ServiceProxy('/move_group/trajectory_execution/set_parameters', Reconfigure)
-        moveit_paramterization({'execution_duration_monitoring':False})
+        e_d_m = BoolParameter()
+        e_d_m.name = 'execution_duration_monitoring'
+        e_d_m.value = False
+        a_e_d_s = DoubleParameter()
+        a_e_d_s.name = 'allowed_execution_duration_scaling'
+        a_e_d_s.value = 10.0
+        config = Config()
+        config.bools = [e_d_m]
+        config.doubles = [a_e_d_s]
+        req = ReconfigureRequest()
+        req.config = config
+        moveit_paramterization(req)
         
