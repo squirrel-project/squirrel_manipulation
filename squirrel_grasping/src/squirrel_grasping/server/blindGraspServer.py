@@ -54,8 +54,6 @@ class BlindGraspServer(object):
         
         rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called')
         
-        self._rotatory_lock.publish(False)
-
         if self._server.is_preempt_requested():
             rospy.loginfo('BlindGrasp: preempted')
             self._server.set_preempted()
@@ -93,6 +91,7 @@ class BlindGraspServer(object):
         self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
+        self._rotatory_lock.publish(False)
         self._group.set_pose_reference_frame('odom')
         pre_pose.header.stamp = self._transformer.getLatestCommonTime('odom', pre_pose.header.frame_id)
         pre_pose_tfed = self._transformer.transformPose('odom', pre_pose)
