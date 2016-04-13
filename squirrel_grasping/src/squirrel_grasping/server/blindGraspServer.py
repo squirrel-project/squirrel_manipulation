@@ -37,7 +37,10 @@ class BlindGraspServer(object):
         self._group = MoveGroupCommander('arm')
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
+
         self._dist_2_hand = .25
+        if rospy.get_param('robot') == 'tuw-robotino2':
+            self._dist_2_hand = .2
 
         self._retract_pose = PoseStamped()
         self._retract_pose.header.frame_id = 'base_link'
@@ -90,9 +93,10 @@ class BlindGraspServer(object):
 
         rospy.loginfo(rospy.get_caller_id() + ': Computed pre grasp pose:\n{}'.format(pre_pose))
         rospy.loginfo(rospy.get_caller_id() + ': Computed grasp pose:\n{}'.format(grasp_pose))
+        rospy.loginfo(rospy.get_caller_id() + ': Computed retract pose:\n{}'.format(self._retract_pose))
 
         self._group.set_planner_id('RRTConnectkConfigDefault')
-        self._group.set_num_planning_attempts(1)
+        self._group.set_num_planning_attempts(3)
         self._group.set_planning_time(5.0)        
         self._group.clear_pose_targets()
         self._group.set_start_state_to_current_state()
@@ -106,6 +110,7 @@ class BlindGraspServer(object):
             rospy.logerror('BlindGrasp: failed - no motion plan found for pre grasp pose')
             self._rotatory_lock.publish(True)            
         else:
+            rospy.loginfo('BlindGrasp: preparing arm')
             self._group.go(wait=True)
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
@@ -119,8 +124,10 @@ class BlindGraspServer(object):
                 rospy.logerror('BlindGrasp: failed - no motion plan found for grasp pose')
                 self._rotatory_lock.publish(True) 
             else:
+                rospy.loginfo('BlindGrasp: preparing to grasp')
                 self._prepareGrasp()
                 self._group.go(wait=True)
+                rospy.loginfo('BlindGrasp: grasping')
                 self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
@@ -134,6 +141,7 @@ class BlindGraspServer(object):
                     rospy.logerror('BlindGrasp: retraction failed - no motion plan found')
                     self._rotatory_locak.publish(True)                    
                 else:
+                    rospy.loginfo('BlindGrasp: retracting arm')
                     self._group.go(wait=True)
                     rospy.loginfo('BlindGrasp: succeeded')
                     self._result.result_status = 'BlindGrasp: succeeded' 
