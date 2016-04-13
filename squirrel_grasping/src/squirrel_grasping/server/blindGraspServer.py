@@ -21,7 +21,7 @@ class BlindGraspServer(object):
 
     def __init__(self):
         while rospy.get_time() == 0.0: pass
-        rospy.loginfo(rospy.get_caller_id() + ': starting BlindGraspServer')
+        rospy.loginfo(rospy.get_caller_id() + ': starting')
 
         rospy.wait_for_service("/get_planning_scene")
         rospy.sleep(5.0)
@@ -58,10 +58,10 @@ class BlindGraspServer(object):
     
     def _execute_grasp(self, goal):
         
-        rospy.loginfo(rospy.get_caller_id() + ': BlindGrasp called')
+        rospy.loginfo(rospy.get_caller_id() + ': called')
         
         if self._server.is_preempt_requested():
-            rospy.loginfo('BlindGrasp: preempted')
+            rospy.loginfo(rospy.get_caller_id() + ': preempted')
             self._server.set_preempted()
             return
 
@@ -106,11 +106,13 @@ class BlindGraspServer(object):
         plan = self._group.plan()
 
         if self._is_empty(plan):
-            rospy.logerr('BlindGrasp: failed - no motion plan found for pre grasp pose')
+            rospy.logerr(rospy.get_caller_id() + ': failed - no motion plan found for pre grasp pose')
             self._rotatory_lock.publish(True)            
         else:
             rospy.loginfo('BlindGrasp: preparing arm')
+            rospy.loginfo(rospy.get_caller_id() + ': moving to pre pose')
             self._group.go(wait=True)
+            rospy.loginfo(rospy.get_caller_id() + ': movement done')
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
             self._group.set_pose_reference_frame('odom')
@@ -120,13 +122,17 @@ class BlindGraspServer(object):
             plan = self._group.plan()
             
             if self._is_empty(plan):
-                rospy.logerr('BlindGrasp: failed - no motion plan found for grasp pose')
+                rospy.logerr(rospy.get_caller_id() + ': failed - no motion plan found for grasp pose')
                 self._rotatory_lock.publish(True) 
             else:
                 rospy.loginfo('BlindGrasp: preparing to grasp')
+                rospy.loginfo(rospy.get_caller_id() + ': preparing grasp')
                 self._prepareGrasp()
+                rospy.loginfo(rospy.get_caller_id() + ': moving to grasp pose')
                 self._group.go(wait=True)
                 rospy.loginfo('BlindGrasp: grasping')
+                rospy.loginfo(rospy.get_caller_id() + ': movement done')
+                rospy.loginfo(rospy.get_caller_id() + ': closing fingers')
                 self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
@@ -137,13 +143,15 @@ class BlindGraspServer(object):
                 plan = self._group.plan()
 
                 if self._is_empty(plan):
-                    rospy.logerr('BlindGrasp: retraction failed - no motion plan found')
+                    rospy.logerr(rospy.get_caller_id() + ': retraction failed - no motion plan found')
                     self._rotatory_locak.publish(True)                    
                 else:
                     rospy.loginfo('BlindGrasp: retracting arm')
+                    rospy.loginfo(rospy.get_caller_id() + ': moving to retract pose')
                     self._group.go(wait=True)
-                    rospy.loginfo('BlindGrasp: succeeded')
-                    self._result.result_status = 'BlindGrasp: succeeded' 
+                    rospy.loginfo(rospy.get_caller_id() + ': movement done')
+                    rospy.loginfo(rospy.get_caller_id() + ': succeeded')
+                    self._result.result_status = rospy.get_caller_id() + ': succeeded' 
                     self._server.set_succeeded(self._result) 
                     self._rotatory_lock.publish(True)                    
             
