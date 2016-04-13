@@ -1,6 +1,7 @@
 import rospy
 import actionlib
 import sys
+#import asyncio
 from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Bool
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
@@ -41,13 +42,13 @@ class BlindGraspServer(object):
         self._result = BlindGraspResult()
         self._feedback = BlindGraspFeedback()
 
-        self._hand_ops = { 'open' : self._openFinger(),
-                           'close' : self._closeFinger(1.0),
-                           'prepare' : self._prepareGrasp()
-                         }
+#        self._hand_ops = { 'open' : self._openFinger(),
+#                           'close' : self._closeFinger(1.0),
+#                           'prepare' : self._prepareGrasp()
+#                         }
         
-        self._hand_coroutine = self._hand_routine()
-        next(self._hand_coroutine)
+#        self._hand_coroutine = self._hand_routine()
+#        next(self._hand_coroutine)
 
         self._dist_2_hand = .25
         if rospy.get_param('robot') == 'tuw-robotino2':
@@ -196,7 +197,7 @@ class BlindGraspServer(object):
         moveit_paramterization(req)
         
         
-    @asyncio.coroutine
-    def _hand_routine(self):
-        cmd = yield
-        self._hand_ops[cmd]        
+#    @asyncio.coroutine
+#    def _hand_routine(self):
+#        cmd = yield
+#        self._hand_ops[cmd]        
