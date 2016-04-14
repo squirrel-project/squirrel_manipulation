@@ -1,7 +1,7 @@
 import rospy
 import actionlib
 import sys
-#import asyncio
+import threading
 from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Bool
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
@@ -19,8 +19,22 @@ from kclhand_control.srv import graspCurrent, graspPreparation
 from moveit_commander import roscpp_initialize, roscpp_shutdown, MoveGroupCommander, PlanningSceneInterface
 
 
-class BlindGraspServer(object):
+class HandThread(threading.Thread):
+    
+    def __init__(self, cmd):
+        self._hand_ops = { 'open' : self._openFinger(),
+                           'close' : self._closeFinger(1.0),
+                           'prepare' : self._prepareGrasp()
+                         }       
+        self._cmd = cmd
 
+       
+    def run(self):
+        rospy.loginfo(rospy.get_caller_id() + ': Dispatching hand routine')
+        self._hand_ops[cmd]        
+
+
+class BlindGraspServer(object):
 
     def __init__(self):
         while rospy.get_time() == 0.0: pass
@@ -38,18 +52,6 @@ class BlindGraspServer(object):
 
         roscpp_initialize(sys.argv)
         self._group = MoveGroupCommander('arm')
-        self._enable_infinte_trajectories()
-        self._result = BlindGraspResult()
-        self._feedback = BlindGraspFeedback()
-
-#        self._hand_ops = { 'open' : self._openFinger(),
-#                           'close' : self._closeFinger(1.0),
-#                           'prepare' : self._prepareGrasp()
-#                         }
-        
-#        self._hand_coroutine = self._hand_routine()
-#        next(self._hand_coroutine)
-
         self._dist_2_hand = .25
         if rospy.get_param('robot') == 'tuw-robotino2':
             self._dist_2_hand = .2
@@ -65,6 +67,9 @@ class BlindGraspServer(object):
         self._retract_pose.pose.orientation.z = 0.028
         self._retract_pose.pose.orientation.w = 0.287
 
+        self._enable_infinte_trajectories()
+        self._result = BlindGraspResult()
+        self._feedback = BlindGraspFeedback()
         self._server.start()
 
         rospy.loginfo(rospy.get_caller_id() + ': started')
@@ -141,17 +146,15 @@ class BlindGraspServer(object):
             else:
                 rospy.loginfo('BlindGrasp: preparing to grasp')
                 rospy.loginfo(rospy.get_caller_id() + ': preparing grasp')
-#                self._hand_coroutine.send('prepare')
-#               wiating_for_the_result_blocks = self._hand_coroutine.send('close')
                 self._prepareGrasp()
                 rospy.loginfo(rospy.get_caller_id() + ': moving to grasp pose')
                 self._group.go(wait=True)
                 rospy.loginfo('BlindGrasp: grasping')
                 rospy.loginfo(rospy.get_caller_id() + ': movement done')
                 rospy.loginfo(rospy.get_caller_id() + ': closing fingers')
-#                self._hand_coroutine.send('close')
-#               wiating_for_the_result_blocks = self._hand_coroutine.send('close')
-                self._closeFinger(1.0)
+                close = HandThread('close')
+                close.start()
+#                self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
                 self._group.set_pose_reference_frame('odom')
@@ -160,11 +163,16 @@ class BlindGraspServer(object):
                 self._group.set_pose_target(retract_pose_tfed)
                 plan = self._group.plan()
 
+                rospy.loginfo(rospy.get_caller_id() + ': wiating for hand to close'))
+                close.join(5.)
+                if close.isAlive():
+                    rospy.logwarn(rospy.get_caller_id() + ': hand not yet closed'))
+
                 if self._is_empty(plan):
                     rospy.logerr(rospy.get_caller_id() + ': retraction failed - no motion plan found')
                     self._rotatory_locak.publish(True)                    
                 else:
-                    rospy.loginfo('BlindGrasp: retracting arm')
+                    rospy.loginfo(rospy.get_caller_id() + ': retracting arm')
                     rospy.loginfo(rospy.get_caller_id() + ': moving to retract pose')
                     self._group.go(wait=True)
                     rospy.loginfo(rospy.get_caller_id() + ': movement done')
@@ -195,9 +203,5 @@ class BlindGraspServer(object):
         req = ReconfigureRequest()
         req.config = config
         moveit_paramterization(req)
-        
-        
-#    @asyncio.coroutine
-#    def _hand_routine(self):
-#        cmd = yield
-#        self._hand_ops[cmd]        
+
+
