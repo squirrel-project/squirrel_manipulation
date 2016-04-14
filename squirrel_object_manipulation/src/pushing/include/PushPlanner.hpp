@@ -48,9 +48,6 @@ private:
     double lookahead_;
     double goal_toll_;
 
-
-
-    bool state_machine_;
     bool rel_;
 
     ros::Publisher vis_corridor_;
@@ -64,6 +61,8 @@ private:
 
 
 protected:
+
+    bool state_machine_;
 
     PushState push_state_;
     ros::NodeHandle  private_nh;
@@ -149,6 +148,7 @@ public:
     void publishPoint(geometry_msgs::PoseStamped t_pose);
     void publishPoint(arma::vec t);
     void publishCorridor();
+    void deleteMarkers();
 
     void saveData(string path);
     virtual void saveDataChild(string path) = 0;

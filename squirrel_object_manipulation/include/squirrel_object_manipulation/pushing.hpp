@@ -56,12 +56,12 @@ private:
     tf::TransformListener tfl_;
     std::string node_name_;
 
-    double controller_frequency_, tilt_nav_, tilt_perception_, lookahead_, goal_toll_, object_diameter_, robot_diameter_, corridor_width_ ;
+    double controller_frequency_, tilt_nav_, tilt_perception_, pan_perception_, lookahead_, goal_toll_, object_diameter_, robot_diameter_, corridor_width_ ;
 
     std::string robot_base_frame_, global_frame_;
 
-    bool state_machine_, clearance_nav_;
-    bool nav_, artag_, firstSet, save_data_;
+    bool state_machine_, clearance_nav_, check_collisions_, obstacles_;
+    bool nav_, artag_, firstSet, save_data_, sim_;
     double artag_offsetX, artag_offsetY, tag_t_prev;
 
     geometry_msgs::PoseStamped push_goal_;
@@ -74,8 +74,12 @@ private:
     //navigation path
     nav_msgs::Path pushing_path_;
     bool getPushPath();
+    std::string octomap_topic_;
     std::string costmap_topic_;
+    std::string action_active_topic_;
+    ros::Publisher octomap_pub_;
     ros::Publisher costmap_pub_;
+    ros::Publisher active_pub_;
 
     //robot pose update
     std::string pose_topic_;
@@ -98,15 +102,20 @@ private:
     bool objectLost_;
     bool first_pose_;
     boost::thread* object_tracking_thread_;
+    boost::thread* irsensors_thread_;
     boost::mutex object_pose_mutex_;
     bool startTracking();
     bool stopTracking();
     bool getFirstObjectPose();
     void objectTrackingThread();
+    void checkCollisionsThread();
 
     void abortPush();
     void finishPush();
     void finishSuccess();
+
+    //demo
+    int demo_path;
 
 
 protected:

@@ -66,7 +66,7 @@ void PushPlanner::publishMarkerRobotCurrent(geometry_msgs::Pose2D t_pose) {
     marker.header.frame_id = global_frame_;
     marker.header.stamp = ros::Time();
     marker.ns = "push_action";
-    marker.id = 1;
+    marker.id = 2;
     marker.type = visualization_msgs::Marker::CYLINDER;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.position.x = t_pose.x;
@@ -88,7 +88,7 @@ void PushPlanner::publishPoint(geometry_msgs::PoseStamped t_pose) {
     marker.header.frame_id = t_pose.header.frame_id;
     marker.header.stamp = ros::Time();
     marker.ns = "push_action";
-    marker.id = 2;
+    marker.id = 3;
     marker.type = visualization_msgs::Marker::SPHERE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose = t_pose.pose;
@@ -131,5 +131,37 @@ void PushPlanner::publishCorridor(){
         marker_array.markers.push_back(marker);
     }
     vis_corridor_.publish( marker_array );
+}
+
+void PushPlanner::deleteMarkers(){
+    visualization_msgs::Marker marker;
+    marker.action = 2;
+    marker.ns = "push_action";
+    marker.id = 0;
+    marker_target_c_.publish(marker);
+
+    marker.ns = "push_action";
+    marker.id = 1;
+    marker_object_c_.publish(marker);
+
+    marker.ns = "push_action";
+    marker.id = 2;
+    marker_robot_c_.publish(marker);
+
+    marker.ns = "push_action";
+    marker.id = 3;
+    marker_point_.publish(marker);
+
+    visualization_msgs::MarkerArray marker_array;
+    for(size_t i = 0; i < pushing_path_.poses.size(); i++) {
+        marker.ns = "push_corridor";
+        marker.id = i;
+        marker_array.markers.push_back(marker);
+    }
+    vis_corridor_.publish( marker_array );
+
+    pushing_path_.poses.clear();
+    pushing_plan_pub_.publish(pushing_path_);
+
 }
 
