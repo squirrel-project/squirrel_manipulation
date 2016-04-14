@@ -163,7 +163,7 @@ class BlindGraspServer(object):
                 self._group.set_pose_target(retract_pose_tfed)
                 plan = self._group.plan()
 
-                rospy.loginfo(rospy.get_caller_id() + ': wiating for hand to close'))
+                rospy.loginfo(rospy.get_caller_id() + ': waiting for hand to close'))
                 close.join(5.)
                 if close.isAlive():
                     rospy.logwarn(rospy.get_caller_id() + ': hand not yet closed'))
