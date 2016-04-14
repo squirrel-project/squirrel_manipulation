@@ -29,7 +29,7 @@ if __name__ == '__main__':
   pose.pose.position.y = 0
     # offset such that the box is 0.1 mm below ground (to prevent collision with the robot itself)
   pose.pose.position.z = 0
-  pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w = transformations.quaternion_from_euler( 0,0,-0.3 )
+  pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w = transformations.quaternion_from_euler( 0,0,-1 )
   #pose.pose.orientation.x = 0
   #pose.pose.orientation.y = 0
   #pose.pose.orientation.z = 0
