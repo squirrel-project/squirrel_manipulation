@@ -37,7 +37,8 @@ class HandThread(threading.Thread):
 class BlindGraspServer(object):
 
     def __init__(self):
-        while rospy.get_time() == 0.0: pass
+        while rospy.get_time() == 0.0:
+            pass
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
 
         rospy.wait_for_service("/get_planning_scene")
@@ -154,7 +155,6 @@ class BlindGraspServer(object):
                 rospy.loginfo(rospy.get_caller_id() + ': closing fingers')
                 close = HandThread('close')
                 close.start()
-#                self._closeFinger(1.0)
                 self._group.clear_pose_targets()
                 self._group.set_start_state_to_current_state()
                 self._group.set_pose_reference_frame('odom')
