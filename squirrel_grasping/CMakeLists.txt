@@ -10,6 +10,7 @@ find_package(catkin REQUIRED
   tf
   kclhand_control
   geometry_msgs
+  dynamic_reconfigure
 )
 
 catkin_python_setup()
