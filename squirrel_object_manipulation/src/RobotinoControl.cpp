@@ -212,6 +212,57 @@ void RobotinoControl::rotateAngle(double rot) {
 
 }
 
+void RobotinoControl::move2Pose(geometry_msgs::Pose2D target) {
+    ros::Rate spinRate(spinRateVal);
+    ros::spinOnce();
+    geometry_msgs::Pose2D pose_robot_;
+
+    nav_msgs::Odometry Odometry = this->getOdom();
+    //robotino position in /odom world
+    pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+
+    double desired_theta_ = pose_robot_.theta + target.theta;
+    double desired_x_ = pose_robot_.x + target.x;
+    double desired_y_ = pose_robot_.y + target.y;
+
+    double vel_theta;
+    geometry_msgs::Twist cmd;
+    bool reached_rot = false;
+    bool reached_x = false;
+    bool reached_y = false;
+
+    while(!(reached_rot && reached_x && reached_y)){
+        Odometry = this->getOdom();
+        pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+        cmd = getNullTwist();
+
+        if(abs(rotationDifference(desired_theta_, pose_robot_.theta)) > 0.02){
+            vel_theta = 2.4 * rotationDifference(desired_theta_, pose_robot_.theta);
+            if(abs(vel_theta) > 0.6) vel_theta = sign(vel_theta) * 0.6;
+            cmd.angular.z = vel_theta;
+            reached_rot = false;
+        }
+        else reached_rot = true;
+
+        if(abs(desired_x_ -  pose_robot_.x) > 0.02){
+            cmd.angular.x = 0.6 * (desired_x_ -  pose_robot_.x);
+            reached_x = false;
+        }
+        else reached_x = true;
+
+        if(abs(desired_y_ -  pose_robot_.y) > 0.02){
+            cmd.angular.y = 0.6 * (desired_y_ -  pose_robot_.y);
+            reached_y = false;
+        }
+        else reached_y = true;
+
+        singleMove(cmd);
+        spinRate.sleep();
+
+    }
+
+}
+
 
 void  RobotinoControl::moveFwd(double speed){
 
@@ -294,10 +345,10 @@ bool RobotinoControl::checkDistancesPush(double maxDist) {
 
         geometry_msgs::Point32  currentFrontDistance;
 
-//        currentFrontDistance = distances.points.at(2);
+        //        currentFrontDistance = distances.points.at(2);
 
-//        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-//            return false;
+        //        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+        //            return false;
 
 
         currentFrontDistance = distances.points.at(3);
