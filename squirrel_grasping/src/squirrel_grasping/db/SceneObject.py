@@ -1,5 +1,7 @@
 import rospy
-from numpy import fromstring
+import numpy as np
+from std_msgs.msg import Bool
+from  numpy import fromstring
 from mongodb_store.message_store import MessageStoreProxy
 from squirrel_object_perception_msgs.msg import SceneObject, BCylinder
 from squirrel_manipulation_msgs.srv import GraspImportResponse
@@ -23,22 +25,33 @@ def store_grasp(object_id, learned_object_pose, object_cylinder):
 
 if __name__ == '__main__':
     rospy.init_node('scene_object_importer')
+    rotatory_lock = rospy.Publisher('/twist_mux/locks/pause_rotatory', Bool, queue_size=10)
+    rotatory_lock.publish(False)
     try:
-        for g in range(1,2):
+
+        theta = np.linspace(0, 2*np.pi, 6)
+        a, b = 0.44 * np.cos(theta), 0.44 * np.sin(theta)
+        for g in range(6):
+
+            
+
             pose = PoseStamped()
             pose.header.seq = 1
             pose.header.stamp = rospy.Time().now()
-            pose.header.frame_id = '/map'
-            pose.pose.position.x = 0.53
-            pose.pose.position.y = 0
-            pose.pose.position.z = 0.125
+            pose.header.frame_id = '/odom'
+            pose.pose.position.x = a[g]
+            pose.pose.position.y = b[g]
+            pose.pose.position.z = 0.05 + 2*g
             pose.pose.orientation.x = 0
             pose.pose.orientation.y = 0
-            pose.pose.orientation.z = 1
-            pose.pose.orientation.w = 0
+            pose.pose.orientation.z = 0
+            pose.pose.orientation.w = 1
             cylinder = BCylinder()
-            cylinder.height = 0.25
+            cylinder.height = 0.10 + 4*g
             cylinder.diameter = 0.13
-            store_grasp( ('o'+str(g)), pose, cylinder)    
+            store_grasp( ('obj'+str(g)), pose, cylinder)
+
+        rotatory_lock.publish(True)
     except rospy.ROSException, e:
         rospy.logerr('Grasp import failed: %s' % e)
+        rotatory_lock.publish(True)
