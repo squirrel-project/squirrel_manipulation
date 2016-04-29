@@ -131,7 +131,7 @@ class BlindGraspServer(object):
         else:
             rospy.loginfo('BlindGrasp: preparing arm')
             rospy.loginfo(rospy.get_caller_id() + ': moving to pre pose')
-            self._group.go(wait=True)
+            #self._group.go(wait=True)
             rospy.loginfo(rospy.get_caller_id() + ': movement done')
             self._group.clear_pose_targets()
             self._group.set_start_state_to_current_state()
@@ -149,7 +149,7 @@ class BlindGraspServer(object):
                 rospy.loginfo(rospy.get_caller_id() + ': preparing grasp')
                 self._prepareGrasp()
                 rospy.loginfo(rospy.get_caller_id() + ': moving to grasp pose')
-                self._group.go(wait=True)
+                #self._group.go(wait=True)
                 rospy.loginfo('BlindGrasp: grasping')
                 rospy.loginfo(rospy.get_caller_id() + ': movement done')
                 rospy.loginfo(rospy.get_caller_id() + ': closing fingers')
@@ -163,10 +163,10 @@ class BlindGraspServer(object):
                 self._group.set_pose_target(retract_pose_tfed)
                 plan = self._group.plan()
 
-                rospy.loginfo(rospy.get_caller_id() + ': waiting for hand to close'))
+                rospy.loginfo(rospy.get_caller_id() + ': waiting for hand to close')
                 close.join(5.)
                 if close.isAlive():
-                    rospy.logwarn(rospy.get_caller_id() + ': hand not yet closed'))
+                    rospy.logwarn(rospy.get_caller_id() + ': hand not yet closed')
 
                 if self._is_empty(plan):
                     rospy.logerr(rospy.get_caller_id() + ': retraction failed - no motion plan found')
@@ -174,7 +174,7 @@ class BlindGraspServer(object):
                 else:
                     rospy.loginfo(rospy.get_caller_id() + ': retracting arm')
                     rospy.loginfo(rospy.get_caller_id() + ': moving to retract pose')
-                    self._group.go(wait=True)
+                    #self._group.go(wait=True)
                     rospy.loginfo(rospy.get_caller_id() + ': movement done')
                     rospy.loginfo(rospy.get_caller_id() + ': succeeded')
                     self._result.result_status = rospy.get_caller_id() + ': succeeded' 

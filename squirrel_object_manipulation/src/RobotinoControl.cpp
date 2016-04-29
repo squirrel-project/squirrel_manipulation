@@ -16,6 +16,7 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
     tiltPub = node.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
+    panPub = node.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
 
     move_base_thread_ = new boost::thread(boost::bind(&RobotinoControl::moveBaseThread, this));
 
@@ -291,37 +292,37 @@ bool RobotinoControl::checkDistancesPush(double maxDist) {
     if(distances.points.size() > 0){
 
 
+        geometry_msgs::Point32  currentFrontDistance;
 
-        geometry_msgs::Point32 currentFrontDistance = distances.points.at(2);
+//        currentFrontDistance = distances.points.at(2);
 
-        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+//        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+//            return false;
 
 
         currentFrontDistance = distances.points.at(3);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(4);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(5);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(6);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(7);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
-
+            return true;
 
     }
 
-    return true;
+    return false;
 
 }
 nav_msgs::Odometry RobotinoControl::getOdom(){
@@ -338,6 +339,12 @@ void RobotinoControl::moveTilt(double val){
     ros::spinOnce();
 }
 
+void RobotinoControl::movePan(double val){
+    std_msgs::Float64 pan_msg;
+    pan_msg.data = val;
+    panPub.publish(pan_msg);
+    ros::spinOnce();
+}
 void RobotinoControl::moveBaseThread(){
 
     stop_move_base_= true;
