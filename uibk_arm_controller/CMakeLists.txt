@@ -17,7 +17,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES uibk_arm_controller
   CATKIN_DEPENDS geometry_msgs roscpp std_msgs
-  DEPENDS dxl rt
+  DEPENDS dynamixel_lib rt
 )
 
 include_directories(
@@ -25,25 +25,36 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(dynamixel_lib
+		   src/dynamixel_sdk/GroupBulkRead.cpp
+           src/dynamixel_sdk/GroupBulkWrite.cpp
+           src/dynamixel_sdk/GroupSyncRead.cpp 
+           src/dynamixel_sdk/GroupSyncWrite.cpp
+           src/dynamixel_sdk/PacketHandler.cpp 
+           src/dynamixel_sdk/PortHandler.cpp 
+           src/dynamixel_sdk/Protocol1PacketHandler.cpp 
+           src/dynamixel_sdk/Protocol2PacketHandler.cpp 
+           src/dynamixel_sdk/PortHandlerLinux.cpp)
+
 add_library(uibk_arm_controller
    src/arm_controller.cpp
 )
 
 add_executable(uibk_arm_demo src/uibk_arm_demo.cpp)
 
-add_dependencies(uibk_arm_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(uibk_arm_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} uibk_arm_controller)
+add_dependencies(uibk_arm_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} dynamixel_lib)
+add_dependencies(uibk_arm_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} uibk_arm_controller dynamixel_lib)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(uibk_arm_controller
   ${catkin_LIBRARIES}
-  dxl
+  dynamixel_lib
   rt
 )
 
 target_link_libraries(uibk_arm_demo
   ${catkin_LIBRARIES}
   uibk_arm_controller
-  dxl
+  dynamixel_lib
   rt
 )

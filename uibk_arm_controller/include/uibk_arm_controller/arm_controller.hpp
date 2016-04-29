@@ -11,7 +11,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "DynamixelSDK.h" 
+#include <dynamixel_sdk/DynamixelSDK.h>
 
 // Control table address
 #define ADDR_PRO_TORQUE_ENABLE          562                 // Control table address is different in Dynamixel model
