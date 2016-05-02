@@ -72,8 +72,10 @@ int main(int argc, char** args) {
         statePublisher.publish(jointStateMsg);
 
         commandMutex.lock();
+        if(newCommandStateSet) {
             robotinoArm->move(commandState);
             newCommandStateSet = false;
+        }
         commandMutex.unlock();
 
         prevPos = jointStateMsg.position;
