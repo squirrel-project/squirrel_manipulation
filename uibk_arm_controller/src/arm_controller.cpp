@@ -9,27 +9,48 @@ namespace uibk_arm_controller {
 	const char* MotorException::what() const throw() {
 	 return msg;
 	}
-	void Motor::sendNextCommand(int pos) {
+
+    void Motor::submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, int value) {
+
+        UINT8_T dxl_error = 0;
+        int dxl_comm_result = COMM_TX_FAIL;
+
+        for(int i = 0; i < 3; ++i) {
+
+            dxl_comm_result = packetHandler->Write4ByteTxRx(portHandler, motorId, address, value, &dxl_error);
+            if(dxl_comm_result == COMM_SUCCESS)
+                return;
+
+        }
+
+        // if not worked in once in these 3 times --> throw exception
+        throw MotorException("failed to commicate with motor");
+
+    }
+
+    void Motor::submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, UINT8_T value) {
+
+        UINT8_T dxl_error = 0;
+        int dxl_comm_result = COMM_TX_FAIL;
+
+        for(int i = 0; i < 3; ++i) {
+
+            dxl_comm_result = packetHandler->Write1ByteTxRx(portHandler, motorId, address, value, &dxl_error);
+            if(dxl_comm_result == COMM_SUCCESS)
+                return;
+
+        }
+
+        // if not worked in once in these 3 times --> throw exception
+        throw MotorException("failed to commicate with motor");
+
+    }
+
+    void Motor::sendNextCommand(int pos) {
 		
-		if(pos < upperLimit && pos > lowerLimit) {
-		
-			UINT8_T dxl_error = 0;
-			int dxl_comm_result = COMM_TX_FAIL;
-			
-			dxl_comm_result = packetHandler->Write4ByteTxRx(portHandler, motorId, ADDR_PRO_GOAL_POSITION, pos, &dxl_error);
-			if(dxl_comm_result != COMM_SUCCESS) {
-				std::stringstream s;
-				s << "communication error";
-				packetHandler->PrintTxRxResult(dxl_comm_result);
-				throw MotorException(s.str().c_str());
-			} else if(dxl_error != 0) {
-				std::stringstream s;
-				s << "error";
-				packetHandler->PrintRxPacketError(dxl_error);
-				throw MotorException(s.str().c_str());
-			}
-			
-		} else
+        if(pos < upperLimit && pos > lowerLimit)
+            submitPacket(portHandler, motorId, ADDR_PRO_GOAL_POSITION, pos);
+        else
 			std::cerr << "commanded position out of security limits (com: " << pos << ", lim: " << lowerLimit << ", " << upperLimit << ")" << std::endl;
 				
 	}
@@ -80,28 +101,12 @@ namespace uibk_arm_controller {
 			
 	void Motor::setTorqueMode(bool mode) {
 		
-		UINT8_T dxl_error = 0;
-		int dxl_comm_result = COMM_TX_FAIL;
-		
 		// Enable Dynamixel#1 Torque
 		int torqueMode = 0;
 		if(mode)
 			torqueMode = 1;
-			
-		dxl_comm_result = packetHandler->Write1ByteTxRx(portHandler, motorId, ADDR_PRO_TORQUE_ENABLE, torqueMode, &dxl_error);
-		if(dxl_comm_result != COMM_SUCCESS) {
-			std::stringstream s;
-			s << "communication error";
-			packetHandler->PrintTxRxResult(dxl_comm_result);
-			throw MotorException(s.str().c_str());
-		} else if(dxl_error != 0) {
-			std::stringstream s;
-			s << "error";
-			packetHandler->PrintRxPacketError(dxl_error);
-			throw MotorException(s.str().c_str());
-		} else {
-			std::cout << "connected to motor id " << motorId << std::endl;
-		}
+
+        submitPacket(portHandler, motorId, ADDR_PRO_TORQUE_ENABLE, torqueMode);
 		
 	}
 
@@ -119,27 +124,11 @@ namespace uibk_arm_controller {
 
 	void Motor::setBrakes(bool brakesOpen) {
 		
-		UINT8_T dxl_error = 0;
-		int dxl_comm_result = COMM_TX_FAIL;
-		
 		int brakeVal = 0;
 		if(brakesOpen)
 			brakeVal = 4095;
-		
-		dxl_comm_result = packetHandler->Write4ByteTxRx(portHandler, motorId, 626, brakeVal, &dxl_error);
-		if(dxl_comm_result != COMM_SUCCESS) {
-			std::stringstream s;
-			s << "communication error";
-			packetHandler->PrintTxRxResult(dxl_comm_result);
-			throw MotorException(s.str().c_str());
-		} else if(dxl_error != 0) {
-			std::stringstream s;
-			s << "error";
-			packetHandler->PrintRxPacketError(dxl_error);
-			throw MotorException(s.str().c_str());
-		} else {
-			std::cout << "released brakes for motor id " << motorId << std::endl;
-		}
+
+        submitPacket(portHandler, motorId, 626, brakeVal);
 		
 	}
 
@@ -208,18 +197,8 @@ namespace uibk_arm_controller {
 		
 			if(nextCommandSet) {
 				
-				bool worked = false;
-				for(int i = 0; i < 3 && !worked; ++i) {
-					try {
-						sendNextCommand(nextCommand);
-						nextCommandSet = false;
-						worked = true;
-					} catch(MotorException &ex) {
-					
-					}
-				}
-				if(!worked)
-					throw MotorException("transmission problem (check your connection)");
+                nextCommandSet = false;
+                sendNextCommand(nextCommand);
 					
 			}
 			

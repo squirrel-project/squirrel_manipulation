@@ -41,11 +41,12 @@ add_library(uibk_arm_controller
 )
 
 add_executable(uibk_arm_demo src/uibk_arm_demo.cpp)
+add_executable(uibk_arm_node src/arm_node.cpp)
 
 add_dependencies(uibk_arm_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} dynamixel_lib)
 add_dependencies(uibk_arm_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} uibk_arm_controller dynamixel_lib)
+add_dependencies(uibk_arm_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} uibk_arm_controller dynamixel_lib)
 
-## Specify libraries to link a library or executable target against
 target_link_libraries(uibk_arm_controller
   ${catkin_LIBRARIES}
   dynamixel_lib
@@ -53,6 +54,13 @@ target_link_libraries(uibk_arm_controller
 )
 
 target_link_libraries(uibk_arm_demo
+  ${catkin_LIBRARIES}
+  uibk_arm_controller
+  dynamixel_lib
+  rt
+)
+
+target_link_libraries(uibk_arm_node
   ${catkin_LIBRARIES}
   uibk_arm_controller
   dynamixel_lib
