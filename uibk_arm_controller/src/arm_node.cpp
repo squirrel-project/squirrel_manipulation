@@ -36,11 +36,11 @@ int main(int argc, char** args) {
 
     struct sigaction sigIntHandler;
 
-   sigIntHandler.sa_handler = stopHandler;
-   sigemptyset(&sigIntHandler.sa_mask);
-   sigIntHandler.sa_flags = 0;
+    sigIntHandler.sa_handler = stopHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
 
-   sigaction(SIGINT, &sigIntHandler, NULL);
+    sigaction(SIGINT, &sigIntHandler, NULL);
 
     robotinoArm = std::shared_ptr<Arm>(new Arm({1, 2, 3, 4, 5}, "/dev/ttyArm",
         {std::make_pair<int, int>(-125000, 130000),

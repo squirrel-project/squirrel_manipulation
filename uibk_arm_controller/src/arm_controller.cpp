@@ -254,6 +254,10 @@ namespace uibk_arm_controller {
 		
 	}
 
+    int Motor::getMaxVelLimit() {
+        return STD_MAX_VEL_LIMIT;
+    }
+
 	void Arm::armLoop() {
 		
 		auto frequ = motors.front()->getFrequency();
@@ -317,10 +321,22 @@ namespace uibk_arm_controller {
 		if(nextJointPos.size() != motors.size())
 			throw MotorException("number of joints doesn't fit the number of motors");
 			
-		for(unsigned int i = 0; i < nextJointPos.size(); ++i)
-			motors.at(i)->setNextState(nextJointPos.at(i));
+        auto js = getCurrentJointState();
+        if(checkDistance(js, nextJointPos)) {
+            for(unsigned int i = 0; i < nextJointPos.size(); ++i)
+                motors.at(i)->setNextState(nextJointPos.at(i));
+        } else {
+            std::cerr << "velocity limit exceeded" << std::endl;
+        }
 			
 	}
+
+    bool Arm::checkDistance(std::vector<int>& current, std::vector<int>& target) {
+        for(int i = 0; i < current.size(); ++i)
+            if(abs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
+                return false;
+        return true;
+    }
 
 	std::shared_ptr<std::thread> Arm::runArm() {
 		

@@ -69,6 +69,8 @@ class Motor {
 	
 		static auto constexpr STD_STEP_SIZE = 20;
 		static auto constexpr STD_FREQUENCY = 80.0;
+
+        static auto constexpr STD_MAX_VEL_LIMIT = 100;
 	
 		Motor(std::string deviceName, int motorId, float protocolVersion, int lowerLimit, int upperLimit, int baudRate);
 		
@@ -104,6 +106,8 @@ class Motor {
 		int getCurrentState();
 		
 		void setNextState(int state);
+
+        int getMaxVelLimit();
 	
 };
 
@@ -122,6 +126,8 @@ class Arm {
 		std::shared_ptr<std::thread> runnerThread;
 		
 		void armLoop();
+
+        bool checkDistance(std::vector<int>& current, std::vector<int>& target);
 		
 	public:
 	
