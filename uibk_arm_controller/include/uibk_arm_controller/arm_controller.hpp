@@ -62,6 +62,8 @@ class Motor {
 
         void submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, int value);
         void submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, UINT8_T value);
+
+        int receivePacket(ROBOTIS::PortHandler* portHandler, int motorId, int address);
 		
 	public:
 	

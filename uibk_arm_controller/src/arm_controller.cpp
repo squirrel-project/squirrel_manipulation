@@ -46,6 +46,24 @@ namespace uibk_arm_controller {
 
     }
 
+    int Motor::receivePacket(ROBOTIS::PortHandler* portHandler, int motorId, int address) {
+
+        UINT8_T dxl_error = 0;
+        int dxl_comm_result = COMM_TX_FAIL;
+        int dxl_present_position = 0;
+
+        for(int i = 0; i < 3; ++i) {
+
+            dxl_comm_result = packetHandler->Read4ByteTxRx(portHandler, motorId, address, (UINT32_T*)&dxl_present_position, &dxl_error);
+            if(dxl_comm_result == COMM_SUCCESS)
+                return dxl_present_position;
+
+        }
+
+        return dxl_present_position;
+
+    }
+
     void Motor::sendNextCommand(int pos) {
 		
         if(pos < upperLimit && pos > lowerLimit)
@@ -153,25 +171,9 @@ namespace uibk_arm_controller {
 	}
 
 	int Motor::receiveState() {
-		
-		UINT8_T dxl_error = 0;
-		int dxl_comm_result = COMM_TX_FAIL;
-		INT32_T dxl_present_position = 0;
-		
-		// Read Dynamixel#1 present position
-		dxl_comm_result = packetHandler->Read4ByteTxRx(portHandler, motorId, ADDR_PRO_PRESENT_POSITION, (UINT32_T*)&dxl_present_position, &dxl_error);
-		if(dxl_comm_result != COMM_SUCCESS) {
-			std::stringstream s;
-			s << "communication error";
-			packetHandler->PrintTxRxResult(dxl_comm_result);
-			throw MotorException(s.str().c_str());
-		} else if(dxl_error != 0) {
-			std::stringstream s;
-			s << "error";
-			packetHandler->PrintRxPacketError(dxl_error);
-			throw MotorException(s.str().c_str());
-		}
-		
+
+        // Read Dynamixel#1 present position
+        auto dxl_present_position = receivePacket(portHandler, motorId, ADDR_PRO_PRESENT_POSITION);
 		return dxl_present_position;
 			
 	}
