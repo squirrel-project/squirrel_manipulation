@@ -19,6 +19,7 @@ bool runController = true;
 std::shared_ptr<Arm> robotinoArm;
 std::shared_ptr<std::thread> armThread;
 
+bool newCommandStateSet = false;
 std::vector<int> commandState;
 std::mutex commandMutex;
 
@@ -72,6 +73,7 @@ int main(int argc, char** args) {
 
         commandMutex.lock();
             robotinoArm->move(commandState);
+            newCommandStateSet = false;
         commandMutex.unlock();
 
         prevPos = jointStateMsg.position;
@@ -127,6 +129,7 @@ void commandStateHandler(std_msgs::Float64MultiArray arr) {
     commandMutex.lock();
     if(arr.data.size() == robotinoArm->getDegOfFreedom()) {
         commandState = transformVector(arr.data);
+        newCommandStateSet = true;
     } else {
         cerr << "your joint data has wrong dimension" << endl;
     }
