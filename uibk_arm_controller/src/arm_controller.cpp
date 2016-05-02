@@ -381,6 +381,7 @@ namespace uibk_arm_controller {
 	}
 
 	int Arm::getStepSize() { return motors.front()->getStepSize(); }
+    int Arm::getDegOfFreedom() { return motors.size(); }
 	double Arm::getFrequency() { return motors.front()->getFrequency(); }
 
 }

@@ -140,6 +140,8 @@ class Arm {
 		void moveHome();
 	
 		int getStepSize();
+        int getDegOfFreedom();
+
 		double getFrequency();
 
 };
