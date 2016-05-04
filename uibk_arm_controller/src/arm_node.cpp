@@ -20,7 +20,7 @@ std::shared_ptr<Arm> robotinoArm;
 std::shared_ptr<std::thread> armThread;
 
 bool newCommandStateSet = false;
-std::vector<int> commandState;
+std::vector<double> commandState;
 std::mutex commandMutex;
 
 void stopHandler(int s);
@@ -44,11 +44,11 @@ int main(int argc, char** args) {
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     robotinoArm = std::shared_ptr<Arm>(new Arm({1, 2, 3, 4, 5}, "/dev/ttyArm",
-        {std::make_pair<int, int>(-125000, 130000),
-        std::make_pair<int, int>(-140000, 185000),
-        std::make_pair<int, int>(-150000, 150000),
-        std::make_pair<int, int>(-100000, 100000),
-        std::make_pair<int, int>(-140000, 140000)}, 2.0, 3000000));
+        {std::make_pair<double, double>(-125000.0 / Motor::TICKS_FOR_180_DEG * M_PI, 130000 / Motor::TICKS_FOR_180_DEG * M_PI),
+        std::make_pair<double, double>(-140000 / Motor::TICKS_FOR_180_DEG * M_PI, 185000 / Motor::TICKS_FOR_180_DEG * M_PI),
+        std::make_pair<double, double>(-150000 / Motor::TICKS_FOR_180_DEG * M_PI, 150000 / Motor::TICKS_FOR_180_DEG * M_PI),
+        std::make_pair<double, double>(-100000 / Motor::TICKS_FOR_180_DEG * M_PI, 100000 / Motor::TICKS_FOR_180_DEG * M_PI),
+        std::make_pair<double, double>(-140000 / Motor::TICKS_FOR_180_DEG * M_PI, 140000 / Motor::TICKS_FOR_180_DEG * M_PI)}, 2.0, 3000000));
 
     robotinoArm->initialize();
     armThread = robotinoArm->runArm();
@@ -59,13 +59,13 @@ int main(int argc, char** args) {
     ros::Subscriber commandSubscriber = node.subscribe("/real/robotino_arm/joint_control/move", 2, commandStateHandler);
 
     sensor_msgs::JointState jointStateMsg;
-    auto prevPos = transformVector(robotinoArm->getCurrentJointState());
+    auto prevPos = robotinoArm->getCurrentJointState();
     vector<double> prevVel; for(int i = 0; i < robotinoArm->getDegOfFreedom(); ++i) prevVel.push_back(0.0);
     ros::Rate r(robotinoArm->getFrequency());
     double stepTime = 1.0 / robotinoArm->getFrequency();
     while(runController) {
 
-        jointStateMsg.position = transformVector(robotinoArm->getCurrentJointState());
+        jointStateMsg.position = robotinoArm->getCurrentJointState();
         jointStateMsg.velocity = computeDerivative(jointStateMsg.position, prevPos, stepTime);
         jointStateMsg.effort = computeDerivative(jointStateMsg.velocity, prevVel, stepTime);
 
@@ -132,7 +132,7 @@ void commandStateHandler(std_msgs::Float64MultiArray arr) {
 
     commandMutex.lock();
     if(arr.data.size() == robotinoArm->getDegOfFreedom()) {
-        commandState = transformVector(arr.data);
+        commandState = arr.data;
         newCommandStateSet = true;
     } else {
         cerr << "your joint data has wrong dimension" << endl;

@@ -1,4 +1,5 @@
 #include <uibk_arm_controller/arm_controller.hpp>
+#include <math.h>
 
 using namespace ROBOTIS;                                    // Uses functions defined in ROBOTIS namespace
 
@@ -64,16 +65,16 @@ namespace uibk_arm_controller {
 
     }
 
-    void Motor::sendNextCommand(int pos) {
+    void Motor::sendNextCommand(double pos) {
 		
         if(pos < upperLimit && pos > lowerLimit)
-            submitPacket(portHandler, motorId, ADDR_PRO_GOAL_POSITION, pos);
+            submitPacket(portHandler, motorId, ADDR_PRO_GOAL_POSITION, (int) (pos / M_PI * TICKS_FOR_180_DEG));
         else
 			std::cerr << "commanded position out of security limits (com: " << pos << ", lim: " << lowerLimit << ", " << upperLimit << ")" << std::endl;
 				
 	}
 		
-	Motor::Motor(std::string deviceName, int motorId, float protocolVersion, int lowerLimit, int upperLimit, int baudRate) {
+    Motor::Motor(std::string deviceName, int motorId, float protocolVersion, double lowerLimit, double upperLimit, int baudRate) {
 		this->deviceName = deviceName;
 		this->motorId = motorId;
 		this->protocolVersion = protocolVersion;
@@ -83,7 +84,7 @@ namespace uibk_arm_controller {
 		nextCommandSet = false;
 	}
 			
-	int Motor::getStepSize() { return STD_STEP_SIZE; }
+    double Motor::getStepSize() { return STD_STEP_SIZE; }
 	double Motor::getFrequency() { return STD_FREQUENCY; }
 
 	void Motor::initialize() {
@@ -170,7 +171,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-	int Motor::receiveState() {
+    int Motor::receiveState() {
 
         // Read Dynamixel#1 present position
         auto dxl_present_position = receivePacket(portHandler, motorId, ADDR_PRO_PRESENT_POSITION);
@@ -184,7 +185,7 @@ namespace uibk_arm_controller {
 			bool worked = false;
 			for(int i = 0; i < 3 && !worked; ++i) {
 				try {
-					currentState = receiveState();
+                    currentState = (double) receiveState() / TICKS_FOR_180_DEG * M_PI;
 					worked = true;
 				} catch(MotorException &ex) {
 					
@@ -235,7 +236,7 @@ namespace uibk_arm_controller {
 		simplePtp(0);
 	}
 
-	int Motor::getCurrentState() {
+    double Motor::getCurrentState() {
 		
 		int stateBackup;
 		stateMutex.lock();
@@ -245,7 +246,7 @@ namespace uibk_arm_controller {
 			
 	}
 
-	void Motor::setNextState(int state) {
+    void Motor::setNextState(double state) {
 		
 		commandMutex.lock();
 			nextCommandSet = true;
@@ -284,7 +285,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-	Arm::Arm(std::vector<int> ids, std::string portName, std::vector< std::pair<int, int> > jointLimits, double protocolVersion, int baudRate) {
+    Arm::Arm(std::vector<int> ids, std::string portName, std::vector<std::pair<double, double> > jointLimits, double protocolVersion, int baudRate) {
 		
 		firstJointStateRetrieved = false;
 		for(unsigned int i = 0; i < ids.size(); ++i) {
@@ -297,8 +298,8 @@ namespace uibk_arm_controller {
 		
 	}
 
-	std::vector<int> Arm::getCurrentJointState() {
-		std::vector<int> jointStateBkp;
+    std::vector<double> Arm::getCurrentJointState() {
+        std::vector<double> jointStateBkp;
 		jointStateMutex.lock();
 			jointStateBkp = currentJointState;
 		jointStateMutex.unlock();
@@ -316,7 +317,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-	void Arm::move(std::vector<int> nextJointPos) {
+    void Arm::move(std::vector<double> nextJointPos) {
 		
 		if(nextJointPos.size() != motors.size())
 			throw MotorException("number of joints doesn't fit the number of motors");
@@ -331,7 +332,7 @@ namespace uibk_arm_controller {
 			
 	}
 
-    bool Arm::checkDistance(std::vector<int>& current, std::vector<int>& target) {
+    bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target) {
         for(int i = 0; i < current.size(); ++i)
             if(abs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
                 return false;
@@ -360,7 +361,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-	void Arm::jointPtp(std::vector<int> targetPos) {
+    void Arm::jointPtp(std::vector<double> targetPos) {
 		
 		auto jointState = getCurrentJointState();
 		auto runnerState = jointState;
@@ -390,15 +391,15 @@ namespace uibk_arm_controller {
 
 	void Arm::moveHome() {
 		
-		std::vector<int> homeJoints;
+        std::vector<double> homeJoints;
 		for(unsigned int i = 0; i < motors.size(); ++i)
-			homeJoints.push_back(0);
+            homeJoints.push_back(0.0);
 			
 		jointPtp(homeJoints);
 		
 	}
 
-	int Arm::getStepSize() { return motors.front()->getStepSize(); }
+    double Arm::getStepSize() { return motors.front()->getStepSize(); }
     int Arm::getDegOfFreedom() { return motors.size(); }
 	double Arm::getFrequency() { return motors.front()->getFrequency(); }
 

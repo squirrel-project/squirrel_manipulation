@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <dynamixel_sdk/DynamixelSDK.h>
 
 // Control table address
@@ -41,12 +42,12 @@ class Motor {
 	
 		bool nextCommandSet;
 	
-		int currentState;
-		int nextCommand;
+        double currentState;
+        double nextCommand;
 	
 		int motorId;
-		int lowerLimit;
-		int upperLimit;
+        double lowerLimit;
+        double upperLimit;
 		int baudRate;
 	
 		std::string deviceName;
@@ -58,23 +59,27 @@ class Motor {
 		std::mutex stateMutex;
 		std::mutex commandMutex;
 		
-		void sendNextCommand(int pos);
+        void sendNextCommand(double pos);
 
         void submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, int value);
         void submitPacket(ROBOTIS::PortHandler* portHandler, int motorId, int address, UINT8_T value);
 
         int receivePacket(ROBOTIS::PortHandler* portHandler, int motorId, int address);
+
+        int receiveState();
 		
 	public:
 	
-		static auto constexpr STD_STEP_SIZE = 20;
 		static auto constexpr STD_FREQUENCY = 80.0;
 
-        static auto constexpr STD_MAX_VEL_LIMIT = 100;
+        static auto constexpr TICKS_FOR_180_DEG = 150000.0;
+
+        static auto constexpr STD_STEP_SIZE = 20.0 / TICKS_FOR_180_DEG * M_PI;
+        static auto constexpr STD_MAX_VEL_LIMIT = 2000.0 / TICKS_FOR_180_DEG * M_PI;
 	
-		Motor(std::string deviceName, int motorId, float protocolVersion, int lowerLimit, int upperLimit, int baudRate);
+        Motor(std::string deviceName, int motorId, float protocolVersion, double lowerLimit, double upperLimit, int baudRate);
 		
-		int getStepSize();
+        double getStepSize();
 		double getFrequency();
 		
 		void initialize();
@@ -93,8 +98,6 @@ class Motor {
 		
 		void shutdown();
 		
-		int receiveState();
-		
 		void spinOnce();
 		
 		void simplePtp(int targetPos);
@@ -103,9 +106,9 @@ class Motor {
 		
 		void goHome();
 		
-		int getCurrentState();
+        double getCurrentState();
 		
-		void setNextState(int state);
+        void setNextState(double state);
 
         int getMaxVelLimit();
 	
@@ -119,7 +122,7 @@ class Arm {
 		bool firstJointStateRetrieved;
 	
 		std::vector<std::shared_ptr<Motor> > motors;
-		std::vector<int> currentJointState;
+        std::vector<double> currentJointState;
 		
 		std::mutex jointStateMutex;
 		
@@ -127,27 +130,27 @@ class Arm {
 		
 		void armLoop();
 
-        bool checkDistance(std::vector<int>& current, std::vector<int>& target);
+        bool checkDistance(std::vector<double> &current, std::vector<double> &target);
 		
 	public:
 	
-		Arm(std::vector<int> ids, std::string portName, std::vector< std::pair<int, int> > jointLimits, double protocolVersion, int baudRate);
+        Arm(std::vector<int> ids, std::string portName, std::vector< std::pair<double, double> > jointLimits, double protocolVersion, int baudRate);
 		
-		std::vector<int> getCurrentJointState();
+        std::vector<double> getCurrentJointState();
 		
 		void initialize();
 		
-		void move(std::vector<int> nextJointPos);
+        void move(std::vector<double> nextJointPos);
 		
 		std::shared_ptr<std::thread> runArm();
 		
 		void shutdown();
 		
-		void jointPtp(std::vector<int> targetPos);
+        void jointPtp(std::vector<double> targetPos);
 		
 		void moveHome();
 	
-		int getStepSize();
+        double getStepSize();
         int getDegOfFreedom();
 
 		double getFrequency();
