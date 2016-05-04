@@ -110,7 +110,7 @@ class Motor {
 		
         void setNextState(double state);
 
-        int getMaxVelLimit();
+        double getMaxVelLimit();
 	
 };
 
