@@ -124,6 +124,8 @@ void stopHandler(int s) {
     robotinoArm->shutdown();
     armThread->join();
 
+    exit(0);
+
 }
 
 void commandStateHandler(std_msgs::Float64MultiArray arr) {
