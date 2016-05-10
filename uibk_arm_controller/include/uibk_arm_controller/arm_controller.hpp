@@ -115,45 +115,47 @@ class Motor {
 };
 
 class Arm {
-	
-	private:
-	
-		bool keepThreadRunning;
-		bool firstJointStateRetrieved;
-	
-		std::vector<std::shared_ptr<Motor> > motors;
+
+    private:
+
+        bool keepThreadRunning;
+        bool firstJointStateRetrieved;
+
+        std::vector<std::shared_ptr<Motor> > motors;
         std::vector<double> currentJointState;
-		
-		std::mutex jointStateMutex;
-		
-		std::shared_ptr<std::thread> runnerThread;
-		
-		void armLoop();
+
+        std::mutex jointStateMutex;
+
+        std::shared_ptr<std::thread> runnerThread;
+
+        void armLoop();
 
         bool checkDistance(std::vector<double> &current, std::vector<double> &target);
-		
-	public:
-	
+
+    public:
+
         Arm(std::vector<int> ids, std::string portName, std::vector< std::pair<double, double> > jointLimits, double protocolVersion, int baudRate);
-		
+
         std::vector<double> getCurrentJointState();
-		
-		void initialize();
-		
+
+        void initialize();
+
         void move(std::vector<double> nextJointPos);
-		
-		std::shared_ptr<std::thread> runArm();
-		
-		void shutdown();
-		
+
+        std::shared_ptr<std::thread> runArm();
+
+        void shutdown();
+
         void jointPtp(std::vector<double> targetPos);
-		
-		void moveHome();
-	
+
+        void moveHome();
+
         double getStepSize();
         int getDegOfFreedom();
 
-		double getFrequency();
+        double getFrequency();
+        double getCycleTime();
+        double getMaxStepPerCycle();
 
 };
 

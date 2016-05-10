@@ -4,7 +4,10 @@
 #include <ros/subscriber.h>
 #include <memory>
 #include <thread>
+#include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
 #include <mutex>
 
@@ -25,11 +28,14 @@ std::mutex commandMutex;
 
 void stopHandler(int s);
 void commandStateHandler(std_msgs::Float64MultiArray arr);
+void switchModeHandler(std_msgs::Int32 mode);
 
 vector<int> transformVector(vector<double> v);
 vector<double> transformVector(vector<int> v);
 vector<double> computeDerivative(vector<int> v1, vector<int> v2, double timeStep);
 vector<double> computeDerivative(vector<double> v1, vector<double> v2, double timeStep);
+
+int currentMode = 0;
 
 int main(int argc, char** args) {
 
@@ -55,8 +61,22 @@ int main(int argc, char** args) {
 
     commandState = robotinoArm->getCurrentJointState();
 
-    ros::Publisher statePublisher = node.advertise<sensor_msgs::JointState>("/real/robotino_arm/joint_control/get_state", 1);
-    ros::Subscriber commandSubscriber = node.subscribe("/real/robotino_arm/joint_control/move", 2, commandStateHandler);
+    auto cycleTime = robotinoArm->getCycleTime();
+    auto maxStepPerCycle = robotinoArm->getMaxStepPerCycle();
+
+    std_msgs::Float64 cycleMsg; cycleMsg.data = cycleTime;
+    std_msgs::Float64 maxStepPerCycleMsg; maxStepPerCycleMsg.data = maxStepPerCycle;
+
+    auto statePublisher = node.advertise<sensor_msgs::JointState>("/real/robotino_arm/joint_control/get_state", 1);
+    auto modePublisher = node.advertise<std_msgs::Float32MultiArray>("/real/robotino_arm/settings/get_command_state", 1);
+    auto cycleTimePublisher = node.advertise<std_msgs::Float64>("/real/robotino_arm/settings/get_clock_cycle", 1);
+    auto maxStepPerCyclePublisher = node.advertise<std_msgs::Float64>("/real/robotino_arm/joint_control/get_max_dist_per_cycle", 1);
+
+    auto commandSubscriber = node.subscribe("/real/robotino_arm/joint_control/move", 2, commandStateHandler);
+    auto switchSubscriber = node.subscribe("/real/robotino_arm/settings/switch_mode", 1, switchModeHandler);
+
+    std_msgs::Float32MultiArray modeArray;
+    modeArray.data.push_back(0.0); modeArray.data.push_back(0.0);
 
     sensor_msgs::JointState jointStateMsg;
     auto prevPos = robotinoArm->getCurrentJointState();
@@ -70,13 +90,22 @@ int main(int argc, char** args) {
         jointStateMsg.effort = computeDerivative(jointStateMsg.velocity, prevVel, stepTime);
 
         statePublisher.publish(jointStateMsg);
+        modeArray.data.at(1) = currentMode;
+        modePublisher.publish(modeArray);
 
-        commandMutex.lock();
-        if(newCommandStateSet) {
-            robotinoArm->move(commandState);
-            newCommandStateSet = false;
+        cycleTimePublisher.publish(cycleMsg);
+        maxStepPerCyclePublisher.publish(maxStepPerCycleMsg);
+
+        if(currentMode == 10) {
+
+            commandMutex.lock();
+            if(newCommandStateSet) {
+                robotinoArm->move(commandState);
+                newCommandStateSet = false;
+            }
+            commandMutex.unlock();
+
         }
-        commandMutex.unlock();
 
         prevPos = jointStateMsg.position;
         prevVel = jointStateMsg.velocity;
@@ -139,4 +168,8 @@ void commandStateHandler(std_msgs::Float64MultiArray arr) {
     }
     commandMutex.unlock();
 
+}
+
+void switchModeHandler(std_msgs::Int32 mode) {
+    currentMode = mode.data;
 }

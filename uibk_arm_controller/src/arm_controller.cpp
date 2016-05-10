@@ -339,6 +339,10 @@ namespace uibk_arm_controller {
         return true;
     }
 
+    double Arm::getMaxStepPerCycle() {
+        return motors.front()->getMaxVelLimit();
+    }
+
 	std::shared_ptr<std::thread> Arm::runArm() {
 		
 		keepThreadRunning = true;
@@ -402,5 +406,6 @@ namespace uibk_arm_controller {
     double Arm::getStepSize() { return motors.front()->getStepSize(); }
     int Arm::getDegOfFreedom() { return motors.size(); }
 	double Arm::getFrequency() { return motors.front()->getFrequency(); }
+    double Arm::getCycleTime() { return 1.0 / getFrequency(); }
 
 }
