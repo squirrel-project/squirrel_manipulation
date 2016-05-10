@@ -18,7 +18,7 @@ int main() {
 	robotinoArm.moveHome();
 	
 	std::cout << "moving to custom position" << std::endl;
-    robotinoArm.jointPtp({25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI, 25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI});
+	robotinoArm.jointPtp({25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI, 25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI, -25000 / Motor::TICKS_FOR_180_DEG * M_PI});
 	
 	std::cout << "moving to home position" << std::endl;
 	robotinoArm.moveHome();

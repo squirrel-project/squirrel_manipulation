@@ -67,9 +67,9 @@ namespace uibk_arm_controller {
 
     void Motor::sendNextCommand(double pos) {
 		
-        if(pos < upperLimit && pos > lowerLimit)
+        if(pos < upperLimit && pos > lowerLimit){
             submitPacket(portHandler, motorId, ADDR_PRO_GOAL_POSITION, (int) (pos / M_PI * TICKS_FOR_180_DEG));
-        else
+        }else
 			std::cerr << "commanded position out of security limits (com: " << pos << ", lim: " << lowerLimit << ", " << upperLimit << ")" << std::endl;
 				
 	}
@@ -185,7 +185,7 @@ namespace uibk_arm_controller {
 			bool worked = false;
 			for(int i = 0; i < 3 && !worked; ++i) {
 				try {
-                    currentState = (double) receiveState() / TICKS_FOR_180_DEG * M_PI;
+                    currentState = (double) (receiveState() / TICKS_FOR_180_DEG * M_PI);
 					worked = true;
 				} catch(MotorException &ex) {
 					
@@ -218,7 +218,7 @@ namespace uibk_arm_controller {
 		
 		auto currState = getCurrentState();
 		int sig = ((targetPos - currState) > 0) ? 1 : -1;
-		for(; abs(currState - targetPos) > 500; currState += sig * STD_STEP_SIZE) {
+		for(; fabs(currState - targetPos) > (500 / TICKS_FOR_180_DEG * M_PI); currState += sig * STD_STEP_SIZE) {
 			setNextState(currState);
 			spinOnce();
 			std::this_thread::sleep_for(std::chrono::milliseconds(stdSleepTime));
@@ -238,7 +238,7 @@ namespace uibk_arm_controller {
 
     double Motor::getCurrentState() {
 		
-		int stateBackup;
+		double stateBackup;
 		stateMutex.lock();
 			stateBackup = currentState;
 		stateMutex.unlock();
@@ -255,7 +255,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-    int Motor::getMaxVelLimit() {
+    double Motor::getMaxVelLimit() {
         return STD_MAX_VEL_LIMIT;
     }
 
@@ -273,6 +273,7 @@ namespace uibk_arm_controller {
 				currentJointState.clear();
 				for(auto motor : motors) {
 					auto currState = motor->getCurrentState();
+					
 					currentJointState.push_back(currState);
 				}
 				
@@ -333,9 +334,11 @@ namespace uibk_arm_controller {
 	}
 
     bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target) {
-        for(int i = 0; i < current.size(); ++i)
-            if(abs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
+        for(int i = 0; i < current.size(); ++i) {
+			
+			if(fabs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
                 return false;
+         }
         return true;
     }
 
@@ -378,7 +381,7 @@ namespace uibk_arm_controller {
 			targetReached = true;
 			for(unsigned int i = 0; i < runnerState.size(); ++i) {
 				auto sig = ((runnerState.at(i) - targetPos.at(i)) > 0) ? -1 : 1;
-				if(abs(runnerState.at(i) - targetPos.at(i)) > (stepSize * 2)) {
+				if(fabs(runnerState.at(i) - targetPos.at(i)) > (stepSize * 2)) {
 					runnerState.at(i) += sig * stepSize;
 					targetReached = false;
 				}
