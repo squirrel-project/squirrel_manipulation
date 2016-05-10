@@ -16,6 +16,7 @@ RobotinoControl::RobotinoControl(ros::NodeHandle& node) {
 
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
     tiltPub = node.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
+    panPub = node.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
 
     move_base_thread_ = new boost::thread(boost::bind(&RobotinoControl::moveBaseThread, this));
 
@@ -211,6 +212,57 @@ void RobotinoControl::rotateAngle(double rot) {
 
 }
 
+void RobotinoControl::move2Pose(geometry_msgs::Pose2D target) {
+    ros::Rate spinRate(spinRateVal);
+    ros::spinOnce();
+    geometry_msgs::Pose2D pose_robot_;
+
+    nav_msgs::Odometry Odometry = this->getOdom();
+    //robotino position in /odom world
+    pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+
+    double desired_theta_ = pose_robot_.theta + target.theta;
+    double desired_x_ = pose_robot_.x + target.x;
+    double desired_y_ = pose_robot_.y + target.y;
+
+    double vel_theta;
+    geometry_msgs::Twist cmd;
+    bool reached_rot = false;
+    bool reached_x = false;
+    bool reached_y = false;
+
+    while(!(reached_rot && reached_x && reached_y)){
+        Odometry = this->getOdom();
+        pose_robot_.theta = tf::getYaw(Odometry.pose.pose.orientation);
+        cmd = getNullTwist();
+
+        if(abs(rotationDifference(desired_theta_, pose_robot_.theta)) > 0.02){
+            vel_theta = 2.4 * rotationDifference(desired_theta_, pose_robot_.theta);
+            if(abs(vel_theta) > 0.6) vel_theta = sign(vel_theta) * 0.6;
+            cmd.angular.z = vel_theta;
+            reached_rot = false;
+        }
+        else reached_rot = true;
+
+        if(abs(desired_x_ -  pose_robot_.x) > 0.02){
+            cmd.angular.x = 0.6 * (desired_x_ -  pose_robot_.x);
+            reached_x = false;
+        }
+        else reached_x = true;
+
+        if(abs(desired_y_ -  pose_robot_.y) > 0.02){
+            cmd.angular.y = 0.6 * (desired_y_ -  pose_robot_.y);
+            reached_y = false;
+        }
+        else reached_y = true;
+
+        singleMove(cmd);
+        spinRate.sleep();
+
+    }
+
+}
+
 
 void  RobotinoControl::moveFwd(double speed){
 
@@ -291,37 +343,37 @@ bool RobotinoControl::checkDistancesPush(double maxDist) {
     if(distances.points.size() > 0){
 
 
+        geometry_msgs::Point32  currentFrontDistance;
 
-        geometry_msgs::Point32 currentFrontDistance = distances.points.at(2);
+        //        currentFrontDistance = distances.points.at(2);
 
-        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+        //        if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
+        //            return false;
 
 
         currentFrontDistance = distances.points.at(3);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(4);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(5);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(6);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
+            return true;
 
         currentFrontDistance = distances.points.at(7);
         if(sqrt(pow(currentFrontDistance.x, 2) + pow(currentFrontDistance.y, 2)) < maxDist+0.23)
-            return false;
-
+            return true;
 
     }
 
-    return true;
+    return false;
 
 }
 nav_msgs::Odometry RobotinoControl::getOdom(){
@@ -338,6 +390,12 @@ void RobotinoControl::moveTilt(double val){
     ros::spinOnce();
 }
 
+void RobotinoControl::movePan(double val){
+    std_msgs::Float64 pan_msg;
+    pan_msg.data = val;
+    panPub.publish(pan_msg);
+    ros::spinOnce();
+}
 void RobotinoControl::moveBaseThread(){
 
     stop_move_base_= true;
