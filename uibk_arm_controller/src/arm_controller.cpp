@@ -271,6 +271,7 @@ namespace uibk_arm_controller {
 			jointStateMutex.lock();
 			
 				currentJointState.clear();
+				currentJointState.push_back(0.0);
 				for(auto motor : motors) {
 					auto currState = motor->getCurrentState();
 					
@@ -320,24 +321,33 @@ namespace uibk_arm_controller {
 
     void Arm::move(std::vector<double> nextJointPos) {
 		
-		if(nextJointPos.size() != motors.size())
+		if(nextJointPos.size() != (motors.size() + 1))
 			throw MotorException("number of joints doesn't fit the number of motors");
-			
+		
+		double velLimit = 0.0;
+		double exceededDist = 0.0;
         auto js = getCurrentJointState();
-        if(checkDistance(js, nextJointPos)) {
+        if(checkDistance(js, nextJointPos, exceededDist, velLimit)) {
+			
             for(unsigned int i = 1; i < nextJointPos.size(); ++i)
-                motors.at(i)->setNextState(nextJointPos.at(i));
+                motors.at(i - 1)->setNextState(nextJointPos.at(i));
+                
         } else {
-            std::cerr << "velocity limit exceeded" << std::endl;
+            std::cerr << "velocity limit exceeded (maxVel: " << velLimit << ", commandedVel: " << exceededDist << ")" << std::endl;
         }
 			
 	}
 
-    bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target) {
-        for(int i = 0; i < current.size(); ++i) {
+    bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target, double& exceededDist, double& maxDist) {
+		
+        for(int i = 1; i < current.size(); ++i) {
 			
-			if(fabs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
+			if(fabs(current.at(i) - target.at(i)) > motors.at(i - 1)->getMaxVelLimit()) {
+				exceededDist = fabs(current.at(i) - target.at(i));
+				maxDist = motors.at(i - 1)->getMaxVelLimit();
                 return false;
+			}
+			
          }
         return true;
     }
@@ -379,7 +389,7 @@ namespace uibk_arm_controller {
 		while(!targetReached) {
 
 			targetReached = true;
-			for(unsigned int i = 0; i < runnerState.size(); ++i) {
+			for(unsigned int i = 1; i < runnerState.size(); ++i) {
 				auto sig = ((runnerState.at(i) - targetPos.at(i)) > 0) ? -1 : 1;
 				if(fabs(runnerState.at(i) - targetPos.at(i)) > (stepSize * 2)) {
 					runnerState.at(i) += sig * stepSize;
@@ -407,7 +417,7 @@ namespace uibk_arm_controller {
 	}
 
     double Arm::getStepSize() { return motors.front()->getStepSize(); }
-    int Arm::getDegOfFreedom() { return motors.size(); }
+    int Arm::getDegOfFreedom() { return motors.size() + 1; }
 	double Arm::getFrequency() { return motors.front()->getFrequency(); }
     double Arm::getCycleTime() { return 1.0 / getFrequency(); }
 

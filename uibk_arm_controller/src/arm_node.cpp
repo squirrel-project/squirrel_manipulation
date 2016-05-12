@@ -164,7 +164,7 @@ void commandStateHandler(std_msgs::Float64MultiArray arr) {
         commandState = arr.data;
         newCommandStateSet = true;
     } else {
-        cerr << "your joint data has wrong dimension" << endl;
+        cerr << "your joint data has wrong dimension (of " << arr.data.size() << ")" << endl;
     }
     commandMutex.unlock();
 
