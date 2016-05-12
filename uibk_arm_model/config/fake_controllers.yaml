@@ -1,0 +1,9 @@
+controller_list:
+  - name: fake_arm_controller
+    joints:
+      - baserot
+      - armjoint1
+      - armjoint2
+      - armjoint3
+      - armjoint4
+      - armjoint5
