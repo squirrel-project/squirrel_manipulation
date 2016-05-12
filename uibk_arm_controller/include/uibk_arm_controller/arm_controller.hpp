@@ -138,21 +138,17 @@ class Arm {
 
         std::vector<double> getCurrentJointState();
 
-        void initialize();
-
-        void move(std::vector<double> nextJointPos);
-
         std::shared_ptr<std::thread> runArm();
 
+        void moveHome();
         void shutdown();
-
+        void initialize();
+        void move(std::vector<double> nextJointPos);
         void jointPtp(std::vector<double> targetPos);
 
-        void moveHome();
-
-        double getStepSize();
         int getDegOfFreedom();
 
+        double getStepSize();
         double getFrequency();
         double getCycleTime();
         double getMaxStepPerCycle();

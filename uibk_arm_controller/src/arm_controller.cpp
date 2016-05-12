@@ -325,7 +325,7 @@ namespace uibk_arm_controller {
 			
         auto js = getCurrentJointState();
         if(checkDistance(js, nextJointPos)) {
-            for(unsigned int i = 0; i < nextJointPos.size(); ++i)
+            for(unsigned int i = 1; i < nextJointPos.size(); ++i)
                 motors.at(i)->setNextState(nextJointPos.at(i));
         } else {
             std::cerr << "velocity limit exceeded" << std::endl;
