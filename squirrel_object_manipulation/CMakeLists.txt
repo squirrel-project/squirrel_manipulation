@@ -43,7 +43,9 @@ target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_L
 
 add_library(robotino
    src/RobotinoControl.cpp
+   src/RobotinoBaseControl.cpp
 )
+
 add_library(pushlib
    src/pushing/src/PushPlanner.cpp
    src/pushing/src/VisualisePushPlanner.cpp
