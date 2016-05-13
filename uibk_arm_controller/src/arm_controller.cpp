@@ -271,10 +271,12 @@ namespace uibk_arm_controller {
 			jointStateMutex.lock();
 			
 				currentJointState.clear();
+                currentJointState.push_back(base->getCurrentState());
 				for(auto motor : motors) {
+
 					auto currState = motor->getCurrentState();
-					
-					currentJointState.push_back(currState);
+                    currentJointState.push_back(currState);
+
 				}
 				
 			jointStateMutex.unlock();
@@ -286,7 +288,7 @@ namespace uibk_arm_controller {
 		
 	}
 
-    Arm::Arm(std::vector<int> ids, std::string portName, std::vector<std::pair<double, double> > jointLimits, double protocolVersion, int baudRate) {
+    Arm::Arm(ros::NodeHandle& node, std::vector<int> ids, std::string portName, std::vector<std::pair<double, double> > jointLimits, double protocolVersion, int baudRate) {
 		
 		firstJointStateRetrieved = false;
 		for(unsigned int i = 0; i < ids.size(); ++i) {
@@ -294,6 +296,8 @@ namespace uibk_arm_controller {
 			auto limit = jointLimits.at(i);
 			motors.push_back(std::make_shared<Motor>(portName, id, protocolVersion, limit.first, limit.second, baudRate));
 		}
+
+        base = std::make_shared<RobotinoBaseControl>(node, motors.front()->getFrequency(), 0.6);
 		
 		keepThreadRunning = false;
 		
@@ -322,6 +326,8 @@ namespace uibk_arm_controller {
 		
 		if(nextJointPos.size() != motors.size())
 			throw MotorException("number of joints doesn't fit the number of motors");
+
+        base->move(nextJointPos.front());
 			
         auto js = getCurrentJointState();
         if(checkDistance(js, nextJointPos)) {
@@ -334,11 +340,14 @@ namespace uibk_arm_controller {
 	}
 
     bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target) {
-        for(int i = 0; i < current.size(); ++i) {
-			
+
+        if(fabs(current.front() - target.front()) > 0.6)
+            return false;
+
+        for(int i = 1; i < current.size(); ++i)
 			if(fabs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
                 return false;
-         }
+
         return true;
     }
 

@@ -49,7 +49,7 @@ int main(int argc, char** args) {
 
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    robotinoArm = std::shared_ptr<Arm>(new Arm({1, 2, 3, 4, 5}, "/dev/ttyArm",
+    robotinoArm = std::shared_ptr<Arm>(new Arm(node, {1, 2, 3, 4, 5}, "/dev/ttyArm",
         {std::make_pair<double, double>(-125000.0 / Motor::TICKS_FOR_180_DEG * M_PI, 130000 / Motor::TICKS_FOR_180_DEG * M_PI),
         std::make_pair<double, double>(-140000 / Motor::TICKS_FOR_180_DEG * M_PI, 185000 / Motor::TICKS_FOR_180_DEG * M_PI),
         std::make_pair<double, double>(-150000 / Motor::TICKS_FOR_180_DEG * M_PI, 150000 / Motor::TICKS_FOR_180_DEG * M_PI),

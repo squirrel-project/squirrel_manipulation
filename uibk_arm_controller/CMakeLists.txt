@@ -11,12 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   std_msgs
+  control_toolbox
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES uibk_arm_controller
-  CATKIN_DEPENDS geometry_msgs roscpp std_msgs
+  CATKIN_DEPENDS geometry_msgs roscpp std_msgs control_toolbox
   DEPENDS dynamixel_lib rt
 )
 
@@ -37,7 +38,8 @@ add_library(dynamixel_lib
            src/dynamixel_sdk/PortHandlerLinux.cpp)
 
 add_library(uibk_arm_controller
-   src/arm_controller.cpp
+    src/base_controller.cpp
+    src/arm_controller.cpp
 )
 
 add_executable(uibk_arm_demo src/uibk_arm_demo.cpp)

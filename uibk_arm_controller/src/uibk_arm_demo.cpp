@@ -1,10 +1,13 @@
+#include <ros/ros.h>
 #include <uibk_arm_controller/arm_controller.hpp>
 
 using namespace uibk_arm_controller;
 
-int main() {
+int main(int argc, char** args) {
 	
-    Arm robotinoArm({1, 2, 3, 4, 5}, "/dev/ttyArm",
+    ros::init(argc, args, "uibk_arm_demo"); ros::NodeHandle node; sleep(1);
+
+    Arm robotinoArm(node, {1, 2, 3, 4, 5}, "/dev/ttyArm",
         {std::make_pair<double, double>(-125000.0 / Motor::TICKS_FOR_180_DEG * M_PI, 130000 / Motor::TICKS_FOR_180_DEG * M_PI),
         std::make_pair<double, double>(-140000 / Motor::TICKS_FOR_180_DEG * M_PI, 185000 / Motor::TICKS_FOR_180_DEG * M_PI),
         std::make_pair<double, double>(-150000 / Motor::TICKS_FOR_180_DEG * M_PI, 150000 / Motor::TICKS_FOR_180_DEG * M_PI),

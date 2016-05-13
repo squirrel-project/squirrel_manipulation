@@ -1,3 +1,6 @@
+#ifndef UIBK_ARM_CONTROLLER
+#define UIBK_ARM_CONTROLLER
+
 #include <string>
 #include <vector>
 #include <exception>
@@ -12,7 +15,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <ros/ros.h>
 #include <dynamixel_sdk/DynamixelSDK.h>
+#include <uibk_arm_controller/base_controller.hpp>
 
 // Control table address
 #define ADDR_PRO_TORQUE_ENABLE          562                 // Control table address is different in Dynamixel model
@@ -121,6 +126,7 @@ class Arm {
         bool keepThreadRunning;
         bool firstJointStateRetrieved;
 
+        std::shared_ptr<RobotinoBaseControl> base;
         std::vector<std::shared_ptr<Motor> > motors;
         std::vector<double> currentJointState;
 
@@ -134,7 +140,7 @@ class Arm {
 
     public:
 
-        Arm(std::vector<int> ids, std::string portName, std::vector< std::pair<double, double> > jointLimits, double protocolVersion, int baudRate);
+        Arm(ros::NodeHandle& node, std::vector<int> ids, std::string portName, std::vector< std::pair<double, double> > jointLimits, double protocolVersion, int baudRate);
 
         std::vector<double> getCurrentJointState();
 
@@ -156,3 +162,5 @@ class Arm {
 };
 
 }
+
+#endif
