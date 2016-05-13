@@ -96,7 +96,11 @@ double RobotinoBaseControl::rotationDifference(double angle, double theta_robot)
 
 double RobotinoBaseControl::getCurrentState(){
 
-    return tf::getYaw(odometry.pose.pose.orientation);
+    robot_pose_mutex_.lock();
+    nav_msgs::Odometry curr_odom = odometry;
+    robot_pose_mutex_.unlock();
+
+    return tf::getYaw(curr_odom.pose.pose.orientation);
 }
 
 

@@ -78,3 +78,6 @@ target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LI
 
 add_executable(smash src/smash.cpp)
 target_link_libraries(smash robotino utils ${catkin_LIBRARIES})
+
+add_executable(test_base src/test_move_base.cpp)
+target_link_libraries(test_base robotino ${catkin_LIBRARIES})
