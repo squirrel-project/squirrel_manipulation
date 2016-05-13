@@ -80,7 +80,7 @@ class Motor {
         static auto constexpr TICKS_FOR_180_DEG = 150000.0;
 
         static auto constexpr STD_STEP_SIZE = 20.0 / TICKS_FOR_180_DEG * M_PI;
-        static auto constexpr STD_MAX_VEL_LIMIT = 2000.0 / TICKS_FOR_180_DEG * M_PI;
+        static auto constexpr STD_MAX_VEL_LIMIT = 5000.0 / TICKS_FOR_180_DEG * M_PI;
 	
         Motor(std::string deviceName, int motorId, float protocolVersion, double lowerLimit, double upperLimit, int baudRate);
 		
@@ -136,7 +136,7 @@ class Arm {
 
         void armLoop();
 
-        bool checkDistance(std::vector<double> &current, std::vector<double> &target);
+        bool checkDistance(std::vector<double> &current, std::vector<double> &target, double& exceededDist, double& maxDist);
 
     public:
 

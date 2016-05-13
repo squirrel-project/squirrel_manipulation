@@ -330,24 +330,34 @@ namespace uibk_arm_controller {
         base->move(nextJointPos.front());
 			
         auto js = getCurrentJointState();
-        if(checkDistance(js, nextJointPos)) {
+        double velLimit = 0.0;
+        double exceededDist = 0.0;
+        if(checkDistance(js, nextJointPos, exceededDist, velLimit)) {
             for(unsigned int i = 1; i < nextJointPos.size(); ++i)
                 motors.at(i)->setNextState(nextJointPos.at(i));
         } else {
-            std::cerr << "velocity limit exceeded" << std::endl;
+            std::cerr << "velocity limit exceeded (maxVel: " << velLimit << ", commandedVel: " << exceededDist << ")" << std::endl;
         }
 			
 	}
 
-    bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target) {
+    bool Arm::checkDistance(std::vector<double>& current, std::vector<double>& target, double& exceededDist, double& maxDist) {
 
-        if(fabs(current.front() - target.front()) > 0.6)
+        if(fabs(current.front() - target.front()) > 0.6) {
+            exceededDist = fabs(current.front() - target.front());
+            maxDist = 0.6;
             return false;
+        }
 
-        for(int i = 1; i < current.size(); ++i)
-			if(fabs(current.at(i) - target.at(i)) > motors.at(i)->getMaxVelLimit())
+        for(int i = 1; i < current.size(); ++i) {
+
+            if(fabs(current.at(i) - target.at(i)) > motors.at(i - 1)->getMaxVelLimit()) {
+                exceededDist = fabs(current.at(i) - target.at(i));
+                maxDist = motors.at(i - 1)->getMaxVelLimit();
                 return false;
+            }
 
+        }
         return true;
     }
 
@@ -388,7 +398,7 @@ namespace uibk_arm_controller {
 		while(!targetReached) {
 
 			targetReached = true;
-			for(unsigned int i = 0; i < runnerState.size(); ++i) {
+			for(unsigned int i = 1; i < runnerState.size(); ++i) {
 				auto sig = ((runnerState.at(i) - targetPos.at(i)) > 0) ? -1 : 1;
 				if(fabs(runnerState.at(i) - targetPos.at(i)) > (stepSize * 2)) {
 					runnerState.at(i) += sig * stepSize;
@@ -416,7 +426,7 @@ namespace uibk_arm_controller {
 	}
 
     double Arm::getStepSize() { return motors.front()->getStepSize(); }
-    int Arm::getDegOfFreedom() { return motors.size(); }
+    int Arm::getDegOfFreedom() { return motors.size() + 1; }
 	double Arm::getFrequency() { return motors.front()->getFrequency(); }
     double Arm::getCycleTime() { return 1.0 / getFrequency(); }
 
