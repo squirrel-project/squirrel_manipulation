@@ -51,6 +51,7 @@ public:
     ~RobotinoBaseControl();
 
     void move(double desired_theta);
+    double getCurrentState();
 
 };
 
