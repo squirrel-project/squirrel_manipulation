@@ -5,4 +5,4 @@ moveit_setup_assistant_config:
   SRDF:
     relative_path: config/robotino.srdf
   CONFIG:
-    generated_timestamp: 1463063619
+    generated_timestamp: 1463499191

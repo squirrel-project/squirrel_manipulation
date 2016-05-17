@@ -1,4 +1,4 @@
-<robot name="robotino">
+<robot name="robotinoarm">
 
 	<link name="linkbase">
 	

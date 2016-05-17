@@ -20,8 +20,6 @@ RobotinoBaseControl::RobotinoBaseControl(ros::NodeHandle& node, double controlle
 
     pid_theta_.initPid(p_theta_, i_theta_, d_theta_, i_theta_max_, i_theta_min_);
 
-    usleep(1e6);
-
 }
 
 RobotinoBaseControl::~RobotinoBaseControl() {
