@@ -1,5 +1,5 @@
 controller_list:
-  - name: fake_arm_controller
+  - name: fake_robotinoarm_controller
     joints:
       - baserot
       - armjoint1
