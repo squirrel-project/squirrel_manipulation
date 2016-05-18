@@ -297,7 +297,7 @@ namespace uibk_arm_controller {
 			motors.push_back(std::make_shared<Motor>(portName, id, protocolVersion, limit.first, limit.second, baudRate));
 		}
 
-        base = std::make_shared<RobotinoBaseControl>(node, motors.front()->getFrequency(), 0.6);
+        base = std::make_shared<RobotinoBaseControl>(node, 20, 0.6);
 		
 		keepThreadRunning = false;
 		
@@ -324,7 +324,7 @@ namespace uibk_arm_controller {
 
     void Arm::move(std::vector<double> nextJointPos) {
 		
-		if(nextJointPos.size() != motors.size())
+        if(nextJointPos.size() != (motors.size() + 1))
 			throw MotorException("number of joints doesn't fit the number of motors");
 
         base->move(nextJointPos.front());
@@ -334,7 +334,7 @@ namespace uibk_arm_controller {
         double exceededDist = 0.0;
         if(checkDistance(js, nextJointPos, exceededDist, velLimit)) {
             for(unsigned int i = 1; i < nextJointPos.size(); ++i)
-                motors.at(i)->setNextState(nextJointPos.at(i));
+                motors.at(i - 1)->setNextState(nextJointPos.at(i));
         } else {
             std::cerr << "velocity limit exceeded (maxVel: " << velLimit << ", commandedVel: " << exceededDist << ")" << std::endl;
         }

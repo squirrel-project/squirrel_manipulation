@@ -9,7 +9,11 @@
     <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
     <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
     <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
-    <group name="robotinoarm">
+    <group name="robotarm">
+        <link name="link2" />
+        <link name="link3" />
+        <link name="link4" />
+        <link name="link5" />
         <joint name="baserot" />
         <joint name="armjoint1" />
         <joint name="armjoint2" />
@@ -18,7 +22,7 @@
         <joint name="armjoint5" />
     </group>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
-    <virtual_joint name="basejoint" type="fixed" parent_frame="world" child_link="linkbase" />
+    <virtual_joint name="virtualbaserot" type="fixed" parent_frame="world" child_link="linkbase" />
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="link1" link2="link2" reason="Adjacent" />
     <disable_collisions link1="link1" link2="linkbasemotor" reason="Adjacent" />

@@ -62,7 +62,7 @@ class Motor {
 		ROBOTIS::PacketHandler* packetHandler;
 		
 		std::mutex stateMutex;
-		std::mutex commandMutex;
+        std::mutex commandMutex;
 		
         void sendNextCommand(double pos);
 

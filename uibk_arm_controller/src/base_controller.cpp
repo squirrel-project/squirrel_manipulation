@@ -1,4 +1,6 @@
 #include <uibk_arm_controller/base_controller.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace ros;
 using namespace std;
@@ -15,6 +17,8 @@ RobotinoBaseControl::RobotinoBaseControl(ros::NodeHandle& node, double controlle
 
     subOdometry = node.subscribe(ROBOTINO_ODOM_TOPIC, 1, &RobotinoBaseControl::callbackOdometry, this);
     pubMove = node.advertise<geometry_msgs::Twist>(ROBOTINO_MOVE_TOPIC, 1);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     move_base_thread_ = new boost::thread(boost::bind(&RobotinoBaseControl::moveBaseThread, this));
 
