@@ -15,10 +15,13 @@ int main(int argc, char** args) {
     RobotinoBaseControl robotino(node, 20.0, 0.6);
     ros::Rate lRate(20.0);
 
+    double target = robotino.getCurrentState();
+
     while (ros::ok){
 
         cout<<"current state "<<robotino.getCurrentState()<<endl;
-        robotino.move(robotino.getCurrentState() + 0.05);
+        target = target - 0.05;
+        robotino.move(target);
         lRate.sleep();
 
 
