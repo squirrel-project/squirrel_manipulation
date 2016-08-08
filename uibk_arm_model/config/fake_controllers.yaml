@@ -1,9 +1,0 @@
-controller_list:
-  - name: fake_robotarm_controller
-    joints:
-      - baserot
-      - armjoint1
-      - armjoint2
-      - armjoint3
-      - armjoint4
-      - armjoint5

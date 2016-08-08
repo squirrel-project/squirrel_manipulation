@@ -1,8 +1,0 @@
-moveit_setup_assistant_config:
-  URDF:
-    package: uibk_arm_controller
-    relative_path: model/robotinoarm.urdf
-  SRDF:
-    relative_path: config/robotinoarm.srdf
-  CONFIG:
-    generated_timestamp: 1463575397
