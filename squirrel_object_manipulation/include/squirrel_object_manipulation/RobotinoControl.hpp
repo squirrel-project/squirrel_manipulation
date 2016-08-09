@@ -116,6 +116,7 @@ public:
     void rotateDistance(double rot);
     void rotateDistanceTime(double rot);
     void rotateAngle(double rot);
+    void move2Pose(geometry_msgs::Pose2D target);
 
     int sign(double d);
 
