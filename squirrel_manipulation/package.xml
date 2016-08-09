@@ -10,14 +10,12 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   
-  <run_depend>robotino_6dof_moveit_config</run_depend>
-  <run_depend>robotino_5dof_moveit_config</run_depend>
-  <run_depend>uibk_robotino2_moveit_config</run_depend>
-  <run_depend>uibk_robotino2_5dof_moveit_config</run_depend>
   <run_depend>squirrel_grasping</run_depend>
   <run_depend>squirrel_manipulation_waypoint</run_depend>
-  <run_depend>squirrel_object_manipulation</run_depend>
   <run_depend>squirrel_moveit_utils</run_depend>
+  <run_depend>squirrel_object_manipulation</run_depend>
+  <run_depend>uibk_moveit_config</run_depend>
+  <run_depend>uibk_planning_test</run_depend>
 
   <export>
     <metapackage/>
