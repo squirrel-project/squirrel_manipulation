@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
   kukadu
   roscpp
   uibk_robot_driver
-  uibk_arm_model
 )
 catkin_package(
 #  INCLUDE_DIRS include
