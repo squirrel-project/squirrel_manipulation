@@ -162,6 +162,7 @@
     <disable_collisions link1="hand_base_link" link2="hand_cableCanal_link" reason="Never" />
     <disable_collisions link1="hand_base_link" link2="hand_left_crank" reason="Adjacent" />
     <disable_collisions link1="hand_base_link" link2="hand_middle_finger_lower_link" reason="Adjacent" />
+    <disable_collisions link1="hand_base_link" link2="hand_right_coupler" reason="User" />
     <disable_collisions link1="hand_base_link" link2="hand_right_crank" reason="Adjacent" />
     <disable_collisions link1="hand_base_link" link2="hand_wrist_link" reason="Adjacent" />
     <disable_collisions link1="hand_cableCanal_link" link2="hand_left_coupler" reason="Never" />

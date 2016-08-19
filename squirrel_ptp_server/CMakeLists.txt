@@ -25,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES squirrel_ptp_server
-  CATKIN_DEPENDS actionlib actionlib_msgs roscpp squirrel_manipulation_msgs uibk_moveit_config uibk_robot_driver kukadu
+  CATKIN_DEPENDS actionlib actionlib_msgs roscpp squirrel_manipulation_msgs kukadu
 #  DEPENDS system_lib
 )
 
