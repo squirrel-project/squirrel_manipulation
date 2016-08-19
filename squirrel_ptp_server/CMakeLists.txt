@@ -19,8 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   roscpp
   squirrel_manipulation_msgs
-  uibk_moveit_config
-  uibk_robot_driver
   kukadu
 )
 
