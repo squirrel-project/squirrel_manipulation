@@ -160,6 +160,7 @@
     <disable_collisions link1="base_pan_link" link2="wheel1_link" reason="Never" />
     <disable_collisions link1="base_pan_link" link2="wheel2_link" reason="Never" />
     <disable_collisions link1="hand_base_link" link2="hand_cableCanal_link" reason="Never" />
+    <disable_collisions link1="hand_base_link" link2="hand_left_coupler" reason="User" />
     <disable_collisions link1="hand_base_link" link2="hand_left_crank" reason="Adjacent" />
     <disable_collisions link1="hand_base_link" link2="hand_middle_finger_lower_link" reason="Adjacent" />
     <disable_collisions link1="hand_base_link" link2="hand_right_coupler" reason="User" />
