@@ -1,9 +1,6 @@
 controller_list:
   - name: fake_robotino_controller
     joints:
-      - base_jointx
-      - base_jointy
-      - base_jointz
       - arm_joint1
       - arm_joint2
       - arm_joint3
