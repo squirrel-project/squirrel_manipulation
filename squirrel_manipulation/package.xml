@@ -17,6 +17,7 @@
   <run_depend>uibk_moveit_config</run_depend>
   <run_depend>uibk_planning_test</run_depend>
   <run_depend>kinesthetic_teaching</run_depend>
+  <run_depend>squirrel_ptp_server</run_depend>
 
   <export>
     <metapackage/>
