@@ -18,7 +18,7 @@ int main(int argc, char** args) {
     
     cout << "creating moveit kinematics instance" << endl;
     vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
-    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "hand_wrist_link");
+    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
     
     robotinoQueue->setKinematics(mvKin);
     robotinoQueue->setPathPlanner(mvKin);
@@ -31,6 +31,11 @@ int main(int argc, char** args) {
         robotinoQueue->stopCurrentMode();
         robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
     }
+
+    cout << "deg of freedom: " << robotinoQueue->getMovementDegreesOfFreedom() << endl;
+    cout << "joint names size: " << robotinoQueue->getJointNames().size() << endl;
+
+    getchar();
 
     auto pose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
     cout << "pose (position) in 0 joint position (x, y, z): " << pose.position.x << " " << pose.position.y << " " << pose.position.z << endl;
