@@ -8,3 +8,4 @@ qtcreator-build
 *.pyc
 *.orig
 *.remote
+MT.log
