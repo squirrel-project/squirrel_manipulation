@@ -26,9 +26,9 @@ int main(int argc, char** args){
 
     vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
     KUKADU_SHARED_PTR<KukieControlQueue> robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>( new KukieControlQueue("real", "robotino", node));
-    KUKADU_SHARED_PTR<Kinematics> mvKin =  KUKADU_SHARED_PTR<Kinematics> (new MoveItKinematics(robotinoQueue, node, "robotino", controlledJoints, "arm_link5"));
+    KUKADU_SHARED_PTR<MoveItKinematics> mvKin =  KUKADU_SHARED_PTR<MoveItKinematics> (new MoveItKinematics(robotinoQueue, node, "robotino", controlledJoints, "arm_link5"));
     robotinoQueue->setKinematics(mvKin);
-    robotinoQueue->setPathPlanner(KUKADU_DYNAMIC_POINTER_CAST<MoveItKinematics>(mvKin));
+    robotinoQueue->setPathPlanner(mvKin);
     KUKADU_SHARED_PTR<kukadu::SensorStorage> store =  KUKADU_SHARED_PTR<kukadu::SensorStorage>(new kukadu::SensorStorage({robotinoQueue}, std::vector<KUKADU_SHARED_PTR<GenericHand> >(), 400));
     KUKADU_SHARED_PTR<AutoCompensatingFilter> myFilter =  KUKADU_SHARED_PTR<AutoCompensatingFilter> (new AutoCompensatingFilter(robotinoQueue,mvKin));
     robotinoQueue->setFrcTrqSensorFilter(myFilter);
