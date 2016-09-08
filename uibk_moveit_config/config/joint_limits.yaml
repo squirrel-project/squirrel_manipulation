@@ -27,18 +27,3 @@ joint_limits:
     max_velocity: 30
     has_acceleration_limits: false
     max_acceleration: 0
-  base_jointx:
-    has_velocity_limits: true
-    max_velocity: 30
-    has_acceleration_limits: false
-    max_acceleration: 0
-  base_jointy:
-    has_velocity_limits: true
-    max_velocity: 30
-    has_acceleration_limits: false
-    max_acceleration: 0
-  base_jointz:
-    has_velocity_limits: true
-    max_velocity: 30
-    has_acceleration_limits: false
-    max_acceleration: 0
