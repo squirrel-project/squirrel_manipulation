@@ -12,6 +12,15 @@ Repository for manipulation related SQUIRREL packages.
 $ roslaunch squirrel_object_manipulation  squirrel_object_manipulation.launch
 ``` 
 
+============planning over the ros interface===========
+1) start up the robotino control stack + moveit
+	a) roslaunch robotino_bringup robot.launch
+	b) roslaunch uibk_moveit_config moveit_planning.launch
+	c) rosrun squirrel_ptp_server squirrel_ptp
+2) there will be now 2 action servers
+	- cartesian_ptp: planning in Cartesian space (currently not working because of an overloaded urdf model)
+	- joint_ptp: planning in 8-dof joint space (x y theta joint1 joint2 joint3 joint4 joint5)
+
 ============installing kukadu=========================
 
 clone this package with

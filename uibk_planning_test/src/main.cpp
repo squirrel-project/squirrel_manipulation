@@ -32,11 +32,17 @@ int main(int argc, char** args) {
         robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
     }
 
-    auto pose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-    cout << "pose in 0 joint position: " << pose.position.x << " " << pose.position.y << " " << pose.position.z << endl;
+    cout << "deg of freedom: " << robotinoQueue->getMovementDegreesOfFreedom() << endl;
+    cout << "joint names size: " << robotinoQueue->getJointNames().size() << endl;
 
+    getchar();
+
+    auto pose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+    cout << "pose (position) in 0 joint position (x, y, z): " << pose.position.x << " " << pose.position.y << " " << pose.position.z << endl;
+    cout << "pose (orientation) in 0 joint position (x, y, z, w): " << pose.orientation.x << " " << pose.orientation.y << " " << pose.orientation.z << " " << pose.orientation.w << endl;
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-    auto end = stdToArmadilloVec({0.0, 0.5, 0.0, -0.5, 0.0, 0.0, 0.0, -0.1});
+    //auto end = stdToArmadilloVec({0.0, 0.0, 0.0, -0.5, 0.0, 0.0, 0.0, -0.1});
+    auto end = stdToArmadilloVec({0.0, 0.0, 0.0, -0.5, 0.8, 1.0, 0.0, 0.0});
     
     auto startJacobian = mvKin->getJacobian(armadilloToStdVec(start));
     auto endJacobian = mvKin->getJacobian(armadilloToStdVec(end));
@@ -47,24 +53,24 @@ int main(int argc, char** args) {
     cout << "compute jacobians:" << endl;
     cout << startJacobian << end << endl << endJacobian << endl;
 
-    //robotinoQueue->jointPtp(start);
-    /*
+    robotinoQueue->jointPtp(start);
     auto firstJoints = robotinoQueue->getCurrentJoints().joints;
     cout << "current start state: " << firstJoints.t() << endl;
     
     cout << "planning in joint space" << endl;
-    auto jointPlan = mvKin->planJointTrajectory({firstJoints, start});
+    auto jointPlan = mvKin->planJointTrajectory({firstJoints, end});
     if(jointPlan.size() > 5) {
 		cout << "from: " << jointPlan.front().t() << "to: " << jointPlan.back().t() << endl;
         cout << "joint planning worked (path of length " << jointPlan.size() << " generated) (press key to execute it)" << endl;
         getchar();
         robotinoQueue->setNextTrajectory(jointPlan);
-        robotinoQueue->synchronizeToControlQueue(1);
+        robotinoQueue->synchronizeToQueue(1);
     }
-    */
+    
+    /*
 
     cout << "planning in joint space" << endl;
-    auto jointPlan = mvKin->planJointTrajectory({start, end});
+    jointPlan = mvKin->planJointTrajectory({start, end});
     cout << "done with planning" << endl;
     if(jointPlan.size() > 5) {
 		cout << "there is something to execute" << endl;
@@ -76,12 +82,6 @@ int main(int argc, char** args) {
         robotinoQueue->synchronizeToQueue(1);
     }
     
-    /* for moving with the queue!!!! */
-    //vector<double> nextJointPositions = {.....}
-    //robotinoQueue->submitNextJointMove(stdToArmadilloVec(nextJointPositions));
-    
-    /*
-    
     cout << "planning in joint space" << endl;
     jointPlan = mvKin->planJointTrajectory({robotinoQueue->getCurrentJoints().joints, start});
     if(jointPlan.size() > 5) {
@@ -91,6 +91,62 @@ int main(int argc, char** args) {
         robotinoQueue->setNextTrajectory(jointPlan);
         robotinoQueue->synchronizeToQueue(1);
     }
+    
+    */
+    
+    cout << "planning in cartesian space" << endl;
+    auto targetPose = mvKin->computeFk({0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2});
+    auto targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose);
+    targetPose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}); cout << targetPose << endl;
+    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
+    targetPose = mvKin->computeFk({-0.2, 0.2, -0.2, 0.2, -0.2, 0.2, -0.2, 0.2}); cout << targetPose << endl;
+    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
+    targetPose = mvKin->computeFk({0.5, 0.2, 1.0, 0.2, -0.8, 0.2, 0.5, 0.2}); cout << targetPose << endl;
+    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
+    targetPose = mvKin->computeFk({0.5, 0.2, -1.0, -0.2, -0.8, 0.2, 0.5, -0.2}); cout << targetPose << endl;
+    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
+    //auto targetPose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+    //auto targetPose = mvKin->computeFk(firstJoints);
+    
+    /*
+    targetPose.position.x = targetPose.position.y = 0.0;
+    targetPose.position.z = 0.8;
+    targetPose.orientation.x = 0.0;
+    targetPose.orientation.y = 0.0;
+    targetPose.orientation.z = -0.5;
+    targetPose.orientation.w = 0.9;
+    */
+    
+    cout << "computing ik: " << endl;
+    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose);
+    if(targetIk.size() > 0)
+		cout << "target ik: " << targetIk.front() << endl;
+	else
+		cout << "no ik solution found" << endl;
+    jointPlan = mvKin->planCartesianTrajectory(jointPlan.back(), {targetPose});
+    auto computedTargetPose = mvKin->computeFk(armadilloToStdVec(jointPlan.back()));
+    
+    cout << "target pose" << endl;
+    cout << "pose (position) in 0 joint position (x, y, z): " << targetPose.position.x << " " << targetPose.position.y << " " << targetPose.position.z << endl;
+    cout << "pose (orientation) in 0 joint position (x, y, z, w): " << targetPose.orientation.x << " " << targetPose.orientation.y << " " << targetPose.orientation.z << " " << targetPose.orientation.w << endl;
+    
+    cout << "computed target pose" << endl;
+    cout << "pose (position) in 0 joint position (x, y, z): " << computedTargetPose.position.x << " " << computedTargetPose.position.y << " " << computedTargetPose.position.z << endl;
+    cout << "pose (orientation) in 0 joint position (x, y, z, w): " << computedTargetPose.orientation.x << " " << computedTargetPose.orientation.y << " " << computedTargetPose.orientation.z << " " << computedTargetPose.orientation.w << endl;
+    
+    if(jointPlan.size() > 5) {
+		cout << "from: " << jointPlan.front().t() << "to: " << jointPlan.back().t() << endl;
+        cout << "cartesian planning worked (path of length " << jointPlan.size() << " generated) (press key to execute it)" << endl;
+        getchar();
+        robotinoQueue->setNextTrajectory(jointPlan);
+        robotinoQueue->synchronizeToQueue(1);
+    }
+    
+    /* for moving with the queue!!!! */
+    //vector<double> nextJointPositions = {.....}
+    //robotinoQueue->submitNextJointMove(stdToArmadilloVec(nextJointPositions));
+    
+    /*
 
     cout << "planning in cartesian space" << endl;
     auto targetPose = mvKin->computeFk({-1.0, -0.5, 0.5, 1.0, -0.5, 0.0});

@@ -8,3 +8,6 @@ qtcreator-build
 *.pyc
 *.orig
 *.remote
+build-kinesthetic_teaching-Desktop-Default
+MT.log
+uibk_moveit_config/launch/MT.log
