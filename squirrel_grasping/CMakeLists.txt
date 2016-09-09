@@ -20,7 +20,7 @@ catkin_package(
 
  install(PROGRAMS
    scripts/squirrel_blind_grasping_node.py
-   scripts/squirrel_hsf_grasping_node.py
+   scripts/squirrel_haf_grasping_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
