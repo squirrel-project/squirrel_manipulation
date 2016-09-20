@@ -11,7 +11,7 @@ bool actuate(squirrel_manipulation_msgs::SoftHandGrasp::Request & req,
              squirrel_manipulation_msgs::SoftHandGrasp::Response & res)
 {
     short int inputs[2];
-    inputs[0] = ceil(req.position*18000.0);
+    inputs[0] = ceil(req.position*17000.0);
     ROS_INFO("Position: %d", inputs[0]);
     inputs[1] = 0;    
     commSetInputs(&comm_settings_t, device_id, inputs);
