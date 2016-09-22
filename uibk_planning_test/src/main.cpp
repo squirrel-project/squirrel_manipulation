@@ -94,6 +94,8 @@ int main(int argc, char** args) {
     
     */
     
+    robotinoQueue->jointPtp(start);
+    
     cout << "planning in cartesian space" << endl;
     auto targetPose = mvKin->computeFk({0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2});
     auto targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose);
@@ -103,8 +105,8 @@ int main(int argc, char** args) {
     targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
     targetPose = mvKin->computeFk({0.5, 0.2, 1.0, 0.2, -0.8, 0.2, 0.5, 0.2}); cout << targetPose << endl;
     targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
-    targetPose = mvKin->computeFk({0.5, 0.2, -1.0, -0.2, -0.8, 0.2, 0.5, -0.2}); cout << targetPose << endl;
-    targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
+    //targetPose = mvKin->computeFk({0.5, 0.2, -1.0, -0.2, -0.8, 0.2, 0.5, -0.2}); cout << targetPose << endl;
+    //targetIk = mvKin->computeIk(armadilloToStdVec(end), targetPose); if(targetIk.size() > 0) cout << targetIk.front() << endl; else cout << "no ik solution found" << endl;
     //auto targetPose = mvKin->computeFk({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
     //auto targetPose = mvKin->computeFk(firstJoints);
     
