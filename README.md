@@ -31,6 +31,10 @@ To install kukadu package:
 ```bash 
 git clone --recursive https://github.com/squirrel-project/kukadu
 ``` 
+- Clone uibk_moveit_tools in your catkin_ws/src  with
+```bash 
+git clone https://github.com/shangl/uibk_moveit_tools
+```
 - set up environment variable (add to .bashrc):
 export KUKADU_HOME=PATH_TO_SQUIRREL_CATKIN/src/kukadu
 
