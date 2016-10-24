@@ -1,0 +1,29 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(squirrel_grasp_learning)
+
+find_package(catkin REQUIRED
+  rospy
+  squirrel_manipulation_msgs
+  actionlib
+  actionlib_msgs
+  mongodb_store
+  tf
+  squirrel_softhand
+  geometry_msgs
+  dynamic_reconfigure
+)
+
+catkin_python_setup()
+
+catkin_package(
+)
+
+install(PROGRAMS
+   scripts/squirrel_grasp_learning_node.py
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+
+install(FILES
+   launch/squirrel_blind_learning_node.launch
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+ )
