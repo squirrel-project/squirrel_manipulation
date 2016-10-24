@@ -19,11 +19,11 @@ catkin_package(
 )
 
 install(PROGRAMS
-   scripts/squirrel_grasp_learning_node.py
+   scripts/squirrel_grasp_learner_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
 install(FILES
-   launch/squirrel_blind_learning_node.launch
+   launch/squirrel_grasp_learner_node.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
  )
