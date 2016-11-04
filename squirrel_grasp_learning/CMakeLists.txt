@@ -4,13 +4,12 @@ project(squirrel_grasp_learning)
 find_package(catkin REQUIRED
   rospy
   squirrel_manipulation_msgs
+  squirrel_ptp_server
   actionlib
   actionlib_msgs
   mongodb_store
   tf
   squirrel_softhand
-  geometry_msgs
-  dynamic_reconfigure
 )
 
 catkin_python_setup()
