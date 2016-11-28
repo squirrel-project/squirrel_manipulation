@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<node name="squirrel_grasp_learner_node" pkg="squirrel_grasp_learning" type="squirrel_grasp_learner_node.py" output="screen"/>
-</launch>

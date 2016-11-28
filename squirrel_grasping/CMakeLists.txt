@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(squirrel_grasp_learning)
+project(squirrel_grasping)
 
 find_package(catkin REQUIRED
   rospy
@@ -10,6 +10,8 @@ find_package(catkin REQUIRED
   mongodb_store
   tf
   squirrel_softhand
+  geometry_msgs
+  pose_estimation_UIBK 
 )
 
 catkin_python_setup()
