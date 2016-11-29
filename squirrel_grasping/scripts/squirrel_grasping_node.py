@@ -12,9 +12,10 @@ if __name__ == '__main__':
         rospy.init_node('squirrel_grasping_node')
         hand = rospy.get_param("hand")
         gripper = None
-        if hand == 'pisa':
+
+        if hand == 'softhand':
             gripper = softhand.SoftHand()
-        elif hand == 'kcl':
+        elif hand == 'kclhand':
             gripper = kcl.KCLHand()
 
         gripper.run()

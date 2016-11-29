@@ -1,6 +1,6 @@
 import rospy
 import actionlib
-from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal, JointPtpAction, JointPtpGoal
+from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal
 from squirrel_manipulation_msgs.srv import SoftHandGrasp
 from geometry_msgs.msg import Pose, PoseStamped
 from squirrel_manipulation_msgs.msg import BlindGraspAction
@@ -27,6 +27,7 @@ class SoftHand(object):
                                                     BlindGraspAction, 
                                                     execute_cb=self._execute_grasp, 
                                                     auto_start=False)
+        self._server.start()
         rospy.loginfo(rospy.get_caller_id() + ': started')
 
 
@@ -39,38 +40,47 @@ class SoftHand(object):
             return
 
         correct_pose = None
+        d = goal.heap_bounding_cylinder.height/2.0
 
         if not goal.heap_center_pose.header.frame_id == 'origin':
             pose = goal.heap_center_pose
             pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
             correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
+            correct_pose.pose.position.z+=(d+0.05)
         else:
             correct_pose = goal.heap_center_pose
+            correct_pose.pose.position.z+=(d+0.05)
         
         ptp_goal = PtpGoal()
-        ptp_goal.pose.position.x = goal.correct_pose.pose.position.x
-        ptp_goal.pose.position.y = goal.correct_pose.pose.position.y
-        ptp_goal.pose.position.z = goal.correct_pose.pose.position.z + d + 0.1
+        ptp_goal.pose.position.x = correct_pose.pose.position.x
+        ptp_goal.pose.position.y = correct_pose.pose.position.y
+        ptp_goal.pose.position.z = correct_pose.pose.position.z
         ptp_goal.pose.orientation.w = 0.73
         ptp_goal.pose.orientation.x = 0.0
         ptp_goal.pose.orientation.y = 0.69
         ptp_goal.pose.orientation.z = 0.0
 
+        # open hand
         rospy.loginfo("Opening hand...")
         self.softhand(0.0)
 
-        rospy.loginfo("Approaching...")
+        # move to grasp pose
+        rospy.loginfo("Approaching grasp pose...")
         self.ptp.send_goal(ptp_goal)
         self.ptp.wait_for_result()
         result = self.ptp.get_result()                
         rospy.loginfo(result.result_status)
         if result.result_status == "execution failed.":
-            sys.exit("Grasping failed.")
+            error = 'Approaching grasp pose failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
             
+        #grasp the object
         rospy.loginfo("Grasping...")
         time.sleep(1)
         softhand(0.8)
             
+        # retract the arm
         ptp_goal.pose.position.z = goal.heap_center_pose.pose.position.z + d + 0.3
         rospy.loginfo("Retracting...")
         self.ptp.send_goal(goal)
@@ -78,4 +88,13 @@ class SoftHand(object):
         result = self.ptp.get_result()                
         rospy.loginfo(result.result_status)
         if result.result_status == "execution failed.":
-            sys.exit("Retraction failed.")
+            error = 'Retracting the arm failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+
+        # we're done
+        success = 'Object grasped.'
+        self.server.set_succeeded(self.grasp_result, success)
+        return
+
+
