@@ -10,6 +10,7 @@ find_package(catkin REQUIRED
   mongodb_store
   tf
   squirrel_softhand
+  kclhand_control
   geometry_msgs
 )
 

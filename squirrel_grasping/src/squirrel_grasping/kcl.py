@@ -1,184 +1,141 @@
 import rospy
 import actionlib
-from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal, JointPtpAction, JointPtpGoal
-from squirrel_manipulation_msgs.srv import SoftHandGrasp
-from geometry_msgs.msg import Pose, PoseStamped
-from pose_estimation_UIBK.srv import *
-from pose_estimation_UIBK.msg import *
+from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal
+from squirrel_kclhand.msg import ActuateHandAction, ActuateHandGoal
+from squirrel_manipulation_msgs.msg import BlindGraspAction
+from squirrel_manipulation_msgs.msg import BlindGraspResult
+from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
 import tf_lump
 import tf
 
 import time, sys
 
-class SoftHand(object):
+class KCLHand(object):
     def __init__(self):
-        'do nothing'
+        while rospy.get_time() == 0.0:
+            pass
 
-    def run(self):
-        try:
-            object_id = 'SquirrelBall'
-            
-            softhand = rospy.ServiceProxy('softhand_grasp', SoftHandGrasp)
-            rospy.wait_for_service('softhand_grasp')
-            rospy.wait_for_service('pose_recog_UIBK')
-            br = tf.TransformBroadcaster()
-            transformer = tf.TransformListener()
-            
-            pose = self.get_object_pose(object_id)
-            
-            goal_pose = self.stamp_pose(pose, 'kinect_rgb_optical_frame')
-            
-            br.sendTransform((goal_pose.pose.position.x, goal_pose.pose.position.y, 
-              goal_pose.pose.position.z), (goal_pose.pose.orientation.x, 
-              goal_pose.pose.orientation.y, goal_pose.pose.orientation.z, 
-              goal_pose.pose.orientation.w), 
-              rospy.Time.now(), 
-              goal_pose.header.frame_id, 
-              'kinect_rgb_optical_frame')       
-            rospy.sleep(1.0)
-            goal_pose.header.stamp = transformer.getLatestCommonTime(goal_pose.header.frame_id, 'origin')            
-            goal_pose_origin = transformer.transformPose('origin', goal_pose)
-            
-          
-            goal = PtpGoal()
-            goal.pose.position.x = goal_pose_origin.pose.position.x
-            goal.pose.position.y = goal_pose_origin.pose.position.y
-            goal.pose.position.z = goal_pose_origin.pose.position.z+0.1
-            #static orientation
-            #goal.pose.orientation.w = -0.00127845082898
-            #goal.pose.orientation.x = -0.0458614192903
-            #goal.pose.orientation.y = 0.998826861382
-            #goal.pose.orientation.z = -0.0154969207942
-            goal.pose.orientation.w = 0.73
-            goal.pose.orientation.x = 0.0
-            goal.pose.orientation.y = 0.69
-            goal.pose.orientation.z = 0.0
-                        
-            rospy.loginfo("Open hand.")
-            softhand(0.0)
-           
-            rospy.loginfo("Calculating goal.")
+        rospy.loginfo(rospy.get_caller_id() + ': starting up')
+        self.kclhand = actionlib.SimpleActionClient('actuate_hand', ActuateHandAction)
+        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.tf_listener = tf.TransformListener()
+        self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
+        self.ptp.wait_for_server()
+        self.server = actionlib.SimpleActionServer('kclGrasp', 
+                                                    BlindGraspAction, 
+                                                    execute_cb=self._execute_grasp, 
+                                                    auto_start=False)
+        self.grasp_result = BlindGraspResult()
+        self.server.start()
+        rospy.loginfo(rospy.get_caller_id() + ': started')
 
-            lump_pose = tf_lump.getLumpPose()
 
-            goal_lump = PtpGoal()
-            goal_lump.pose.position.x = lump_pose[0] 
-            goal_lump.pose.position.y = lump_pose[1]
-            goal_lump.pose.position.z = lump_pose[2]*2
-
-            goal_lump.pose.orientation.w = 0.73
-            goal_lump.pose.orientation.x = 0.0
-            goal_lump.pose.orientation.y = 0.69
-            goal_lump.pose.orientation.z = 0.0
-
-            print "UIBK Goal"
-            print goal
-
-            print "Lump Tracker Goal"
-            print goal_lump
-
-            client = actionlib.SimpleActionClient('cart_ptp', PtpAction)
-            client.wait_for_server()
-
-            ch = raw_input('Do you want to continiue (1 for UIBK, 2 for Lump)?')
-            if ch  == '1':
-              client.send_goal(goal)
-            elif ch == '2':
-              goal=goal_lump
-              client.send_goal(goal)
-            else:
-              sys.exit("Aborted")
-            
-            client.wait_for_result()
-            result = client.get_result()                
-            rospy.loginfo(result.result_status)
-            if result.result_status == "execution failed.":
-              sys.exit("Execution failed.")
-
-            rospy.loginfo("Grasp.")
-            time.sleep(1)
-            softhand(0.8)
-
-            rospy.loginfo("Retract.")
-            goal.pose.position.z = goal.pose.position.z+0.3
-            ch = raw_input('Do you want to continiue (y)?')
-            if ch  == 'y':
-              client.send_goal(goal)
-            else:
-              sys.exit("Aborted")
-
-            client.wait_for_result()
-            result = client.get_result()                
-            rospy.loginfo(result.result_status)
-            if result.result_status == "execution failed.":
-              softhand(0.0)
-              sys.exit("Execution failed.")
+    def _execute_grasp(self, goal):
+        rospy.loginfo(rospy.get_caller_id() + ': called')
         
-            rospy.loginfo("Letting loose.")
-            softhand(0.0)
+        if self.server.is_preempt_requested():
+            rospy.loginfo(rospy.get_caller_id() + ': preempted')
+            self.server.set_preempted()
+            return
 
-            print "Going Home"            
-            ch = raw_input('Do you want to continiue (y)?')
-            if ch  == 'y':
-              client_1 = actionlib.SimpleActionClient('joint_ptp', JointPtpAction)
-              client_1.wait_for_server()
-              goal_1 = JointPtpGoal()
-              goal_1.joints.data = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-              client_1.send_goal(goal_1)
-            
-              rospy.loginfo('Good night!')            
-            else:
-              sys.exit("Aborted")
-    
-            sys.exit()
-        except (rospy.ROSInterruptException, rospy.ServiceException) as e:
-            rospy.logerror(e)
+        pre_grasp = None
+        correct_pose = None
+        d = goal.heap_bounding_cylinder.height/2.0
 
-            
-    def stamp_pose(self, pose, frame_id):
-        pose_stamped = PoseStamped()
-        pose_stamped.header.stamp = rospy.Time.now()
-        pose_stamped.header.frame_id = frame_id
-        pose_stamped.pose.position.x = pose.position.x
-        pose_stamped.pose.position.y = pose.position.y
-        pose_stamped.pose.position.z = pose.position.z
-        pose_stamped.pose.orientation.x = pose.orientation.x
-        pose_stamped.pose.orientation.y = pose.orientation.y
-        pose_stamped.pose.orientation.z = pose.orientation.z
-        pose_stamped.pose.orientation.w = pose.orientation.w
-        return pose_stamped
-        
-            
-    def get_object_pose(self, obj_id):  
-        obj_names = [obj_id]
-        
-        print('********************')
-        print 'Detecting {0}'.format(obj_id)
-        #rospy.wait_for_service('pose_recog_UIBK')
-        arg_to_obj_detection = object_detect_UIBKRequest()
-        
-        for obj_name in obj_names:
-            obj_to_search = object_pose()
-            obj_to_search.id = obj_name
-            
-            opt_dev_no = 1
-            for i in range(opt_dev_no):
-                bb_2d = boundingbox_2d()
-                bb_2d.boundingbox_2d[0] = 0
-                bb_2d.boundingbox_2d[1] = 0
-                bb_2d.boundingbox_2d[2] = 639
-                bb_2d.boundingbox_2d[3] = 479
-                obj_to_search.bb_2dcams.append(bb_2d)#for each cam's bb, in order.
-            arg_to_obj_detection.multi_poses.append(obj_to_search)
-        try:
-            find_objs = rospy.ServiceProxy('pose_recog_UIBK',object_detect_UIBK)
-            obj_pose_ret = find_objs(arg_to_obj_detection)
-            return obj_pose_ret.detected_poses.multi_poses[0].obj_pose
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e            
-            
+        if not goal.heap_center_pose.header.frame_id == 'origin':
+            pose = goal.heap_center_pose
+            pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
+            correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
+            correct_pose.pose.position.z+=(d+0.05)
+            pre_grasp = correct_pose
+            pre_grasp.pose.position.z+=0.2
+        else:
+            correct_pose = goal.heap_center_pose
+            correct_pose.pose.position.z+=(d+0.05)
+            pre_grasp = correct_pose
+            pre_grasp.pose.position.z+=0.2
 
+        ptp_pre_goal = PtpGoal()
+        ptp_pre_goal.pose.position.x = pre_grasp.pose.position.x
+        ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y
+        ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z
+        ptp_pre_goal.pose.orientation.w = 0.73
+        ptp_pre_goal.pose.orientation.x = 0.0
+        ptp_pre_goal.pose.orientation.y = 0.69
+        ptp_pre_goal.pose.orientation.z = 0.0
+        
+        ptp_goal = PtpGoal()
+        ptp_goal.pose.position.x = correct_pose.pose.position.x
+        ptp_goal.pose.position.y = correct_pose.pose.position.y
+        ptp_goal.pose.position.z = correct_pose.pose.position.z
+        ptp_goal.pose.orientation.w = 0.73
+        ptp_goal.pose.orientation.x = 0.0
+        ptp_goal.pose.orientation.y = 0.69
+        ptp_goal.pose.orientation.z = 0.0
+
+        open_hand = ActuateHandGoal()
+        open_hand.command = 1
+        close_hand = ActuateHandGoal()
+        close_hand.command = 0
+        close_hand.grasp_type = 0
+
+        # open hand
+        rospy.loginfo("Opening hand...")
+        self.kclhand.send_goal(open_hand)
+        self.kclhand.wait_for_result()
+        if self.kclhand.getState() == GoalStatus.ABORTED:
+            error = 'Could not open hand.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+
+        # move to pre pose
+        rospy.loginfo("Approaching pre pose...")
+        self.ptp.send_goal(ptp_pre_goal)
+        self.ptp.wait_for_result()
+        result = self.ptp.get_result()                
+        rospy.loginfo(result.result_status)
+        if result.result_status == "execution failed.":
+            error = 'Approaching pre pose failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+
+        # move to grasp pose
+        rospy.loginfo("Approaching grasp pose...")
+        self.ptp.send_goal(ptp_goal)
+        self.ptp.wait_for_result()
+        result = self.ptp.get_result()                
+        rospy.loginfo(result.result_status)
+        if result.result_status == "execution failed.":
+            error = 'Approaching grasp pose failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
             
+        # grasp the object
+        rospy.loginfo("Grasping...")
+        self.kclhand.send_goal(open_hand)
+        result = self.kclhand.wait_for_result()
+        if self.kclhand.getState() == GoalStatus.ABORTED:
+            error = 'Grasping failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+            
+        # retract the arm
+        ptp_goal.pose.position.z+=0.3
+        rospy.loginfo("Retracting...")
+        self.ptp.send_goal(goal)
+        self.ptp.wait_for_result()
+        result = self.ptp.get_result()                
+        rospy.loginfo(result.result_status)
+        if result.result_status == "execution failed.":
+            error = 'Retracting the arm failed.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+
+        # we're done
+        success = 'Object grasped.'
+        self.server.set_succeeded(self.grasp_result, success)
+        return
+
 
         
