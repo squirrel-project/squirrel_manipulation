@@ -22,7 +22,7 @@ class KCLHand(object):
         self.tf_listener = tf.TransformListener()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
-        self.server = actionlib.SimpleActionServer('kcl_grasp_server', 
+        self.server = actionlib.SimpleActionServer('kclhand_grasp_server', 
                                                     BlindGraspAction, 
                                                     execute_cb=self._execute_grasp, 
                                                     auto_start=False)

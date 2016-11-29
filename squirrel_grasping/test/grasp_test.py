@@ -7,6 +7,7 @@ import actionlib
 rospy.init_node('grasp_test')
 rospy.spin()
 
+client =  actionlib.SimpleActionClient('kclhand_grasp_server', BlindGraspAction)
 client =  actionlib.SimpleActionClient('softhand_grasp_server', BlindGraspAction)
 
 goal = BlindGraspGoal()
