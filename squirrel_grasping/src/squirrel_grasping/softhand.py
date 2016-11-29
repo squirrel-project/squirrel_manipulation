@@ -23,7 +23,7 @@ class SoftHand(object):
         self.softhand = rospy.ServiceProxy('softhand_grasp', SoftHandGrasp)
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
-        self._server = actionlib.SimpleActionServer('pisaGrasp', 
+        self._server = actionlib.SimpleActionServer('softhand_grasp_server', 
                                                     BlindGraspAction, 
                                                     execute_cb=self._execute_grasp, 
                                                     auto_start=False)
