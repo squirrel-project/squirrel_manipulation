@@ -1,0 +1,3 @@
+<launch>
+  <node name="squirrel_ptp_server" pkg="squirrel_ptp_server" type="squirrel_ptp" respawn="true" />
+</launch>
