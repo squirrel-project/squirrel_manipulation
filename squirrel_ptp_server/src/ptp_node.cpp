@@ -40,7 +40,7 @@ protected:
 
 public:
 
-  PtpAction(std::string name, std::string jointPtpName) :
+  PtpAction(std::string name, std::string jointPtpName, std::string tip_link) :
     as_(nh_, name, boost::bind(&PtpAction::executeCB, this, _1), false),
     jointPtpAs_(nh_, jointPtpName, boost::bind(&PtpAction::executeJointPtp, this, _1), false),
     action_name_(name) {
@@ -147,7 +147,9 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "ptp");
   sleep(1); ros::AsyncSpinner spinner(10); spinner.start();
 
-  PtpAction ptp("cart_ptp", "joint_ptp");
+  std::string tip_link;
+  ros::param::param<std::string>("tip_link", tip_link, "hand_base_link");
+  PtpAction ptp("cart_ptp", "joint_ptp", tip_link);
   
   getchar();
 
