@@ -56,7 +56,7 @@ public:
     cout << "creating moveit kinematics instance" << endl;
     vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
     //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
-    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "hand_palm_link", false, 10, 2.0);
+    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 10, 2.0);
     
     robotinoQueue->setKinematics(mvKin);
     robotinoQueue->setPathPlanner(mvKin);
