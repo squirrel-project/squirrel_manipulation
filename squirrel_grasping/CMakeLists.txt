@@ -19,7 +19,7 @@ catkin_package(
 )
 
 install(PROGRAMS
-   scripts/squirrel_grasp_learner_node.py
+   scripts/squirrel_grasping_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
