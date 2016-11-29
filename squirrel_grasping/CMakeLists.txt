@@ -11,7 +11,6 @@ find_package(catkin REQUIRED
   tf
   squirrel_softhand
   geometry_msgs
-  pose_estimation_UIBK 
 )
 
 catkin_python_setup()
@@ -25,6 +24,6 @@ install(PROGRAMS
  )
 
 install(FILES
-   launch/squirrel_grasp_learner_node.launch
+   launch/squirrel_grasping.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
  )
