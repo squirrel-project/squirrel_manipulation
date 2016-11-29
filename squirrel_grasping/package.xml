@@ -17,7 +17,6 @@
   <build_depend>squirrel_softhand</build_depend>
   <build_depend>squirrel_ptp_server</build_depend>
   <build_depend>mongo_db_store</build_depend>
-  <build_depend>pose_estimation_UIBK</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>tf</build_depend>
 
@@ -28,7 +27,6 @@
   <run_depend>squirrel_softhand</run_depend>
   <run_depend>squirrel_ptp_server</run_depend>
   <run_depend>mongo_db_store</run_depend>
-  <run_depend>pose_estimation_UIBK</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>tf</run_depend>
 
