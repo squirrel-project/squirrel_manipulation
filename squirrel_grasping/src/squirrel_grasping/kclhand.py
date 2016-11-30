@@ -44,8 +44,7 @@ class KCLHand(object):
         d = goal.heap_bounding_cylinder.height/2.0
 
         if not goal.heap_center_pose.header.frame_id == 'origin':
-            pose = goal.heap_center_pose
-            pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
+            goal.heap_center_pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
             correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
             correct_pose.pose.position.z+=(d+0.05)
             pre_grasp = correct_pose
@@ -89,6 +88,17 @@ class KCLHand(object):
             self.server.set_aborted(self.grasp_result, error)
             return
 
+
+        ##########################
+        print ptp_pre_goal
+        ch = raw_input('Do you want to continiue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
+
+
         # move to pre pose
         rospy.loginfo("Approaching pre pose...")
         self.ptp.send_goal(ptp_pre_goal)
@@ -99,6 +109,17 @@ class KCLHand(object):
             error = 'Approaching pre pose failed.'
             self.server.set_aborted(self.grasp_result, error)
             return
+
+
+        ##########################
+        print ptp_goal
+        ch = raw_input('Do you want to continiue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
+
 
         # move to grasp pose
         rospy.loginfo("Approaching grasp pose...")
@@ -119,9 +140,22 @@ class KCLHand(object):
             error = 'Grasping failed.'
             self.server.set_aborted(self.grasp_result, error)
             return
+
             
         # retract the arm
         ptp_goal.pose.position.z+=0.3
+
+
+        ##########################
+        print ptp_goal
+        ch = raw_input('Do you want to continiue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
+
+
         rospy.loginfo("Retracting...")
         self.ptp.send_goal(goal)
         self.ptp.wait_for_result()
