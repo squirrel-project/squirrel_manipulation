@@ -1,7 +1,7 @@
 import rospy
 import actionlib
 from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal
-from squirrel_kclhand.msg import ActuateHandAction, ActuateHandGoal
+from kclhand_control.msg import ActuateHandAction, ActuateHandGoal
 from squirrel_manipulation_msgs.msg import BlindGraspAction
 from squirrel_manipulation_msgs.msg import BlindGraspResult
 from squirrel_manipulation_msgs.msg import BlindGraspFeedback
