@@ -9,8 +9,6 @@ from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
 import tf
 
-import time, sys
-
 class SoftHand(object):
     def __init__(self):
         while rospy.get_time() == 0.0:
@@ -23,7 +21,7 @@ class SoftHand(object):
         self.softhand = rospy.ServiceProxy('softhand_grasp', SoftHandGrasp)
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
-        self._server = actionlib.SimpleActionServer('pisaGrasp', 
+        self._server = actionlib.SimpleActionServer('softhand_grasp_server', 
                                                     BlindGraspAction, 
                                                     execute_cb=self._execute_grasp, 
                                                     auto_start=False)
@@ -43,8 +41,7 @@ class SoftHand(object):
         d = goal.heap_bounding_cylinder.height/2.0
 
         if not goal.heap_center_pose.header.frame_id == 'origin':
-            pose = goal.heap_center_pose
-            pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
+            goal.heap_center_pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
             correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
             correct_pose.pose.position.z+=(d+0.05)
         else:
@@ -63,6 +60,18 @@ class SoftHand(object):
         # open hand
         rospy.loginfo("Opening hand...")
         self.softhand(0.0)
+        time.sleep(1)
+
+
+        ##########################
+        print ptp_goal
+        ch = raw_input('Do you want to continiue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
+
 
         # move to grasp pose
         rospy.loginfo("Approaching grasp pose...")
@@ -77,11 +86,23 @@ class SoftHand(object):
             
         #grasp the object
         rospy.loginfo("Grasping...")
+        softhand(0.8)       
         time.sleep(1)
-        softhand(0.8)
             
         # retract the arm
-        ptp_goal.pose.position.z = goal.heap_center_pose.pose.position.z + d + 0.3
+        ptp_goal.pose.position.z+=0.3
+
+
+        ##########################
+        print ptp_goal
+        ch = raw_input('Do you want to continiue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
+
+
         rospy.loginfo("Retracting...")
         self.ptp.send_goal(goal)
         self.ptp.wait_for_result()
