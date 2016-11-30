@@ -20,11 +20,12 @@ catkin_package(
 )
 
 install(PROGRAMS
-   scripts/squirrel_grasp_learner_node.py
+   scripts/squirrel_grasping_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
 install(FILES
-   launch/squirrel_grasping.launch
+   launch/squirrel_grasping_metahand.launch
+   launch/squirrel_grasping_softhand.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
  )
