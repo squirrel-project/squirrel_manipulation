@@ -17,7 +17,6 @@ if __name__ == '__main__':
         elif hand == 'kclhand':
             gripper = kclhand.KCLHand()
 
-        gripper.run()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

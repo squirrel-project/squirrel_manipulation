@@ -6,10 +6,9 @@ from squirrel_manipulation_msgs.msg import BlindGraspAction
 from squirrel_manipulation_msgs.msg import BlindGraspResult
 from squirrel_manipulation_msgs.msg import BlindGraspFeedback
 
-import tf_lump
 import tf
-
-import time, sys
+import time
+from copy import copy
 
 class KCLHand(object):
     def __init__(self):
@@ -46,19 +45,18 @@ class KCLHand(object):
         if not goal.heap_center_pose.header.frame_id == 'origin':
             goal.heap_center_pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin') 
             correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
-            correct_pose.pose.position.z+=(d+0.05)
-            pre_grasp = correct_pose
-            pre_grasp.pose.position.z+=0.2
+            correct_pose.pose.position.z+=(d+0.11)
+            pre_grasp = copy(correct_pose)
         else:
             correct_pose = goal.heap_center_pose
-            correct_pose.pose.position.z+=(d+0.05)
-            pre_grasp = correct_pose
-            pre_grasp.pose.position.z+=0.2
+            correct_pose.pose.position.z+=(d+0.11)
+            pre_grasp = copy(correct_pose)
 
         ptp_pre_goal = PtpGoal()
         ptp_pre_goal.pose.position.x = pre_grasp.pose.position.x
         ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y
-        ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z
+        ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z+0.2
+        #do not change values below
         ptp_pre_goal.pose.orientation.w = 0.73
         ptp_pre_goal.pose.orientation.x = 0.0
         ptp_pre_goal.pose.orientation.y = 0.69
@@ -68,6 +66,7 @@ class KCLHand(object):
         ptp_goal.pose.position.x = correct_pose.pose.position.x
         ptp_goal.pose.position.y = correct_pose.pose.position.y
         ptp_goal.pose.position.z = correct_pose.pose.position.z
+        #do not change values below
         ptp_goal.pose.orientation.w = 0.73
         ptp_goal.pose.orientation.x = 0.0
         ptp_goal.pose.orientation.y = 0.69
@@ -79,6 +78,7 @@ class KCLHand(object):
         close_hand.command = 0
         close_hand.grasp_type = 0
 
+
         # open hand
         rospy.loginfo("Opening hand...")
         self.kclhand.send_goal(open_hand)
@@ -88,16 +88,14 @@ class KCLHand(object):
             self.server.set_aborted(self.grasp_result, error)
             return
 
-
         ##########################
         print ptp_pre_goal
-        ch = raw_input('Do you want to continiue (y)?')
+        ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
-
 
         # move to pre pose
         rospy.loginfo("Approaching pre pose...")
@@ -110,16 +108,14 @@ class KCLHand(object):
             self.server.set_aborted(self.grasp_result, error)
             return
 
-
         ##########################
         print ptp_goal
-        ch = raw_input('Do you want to continiue (y)?')
+        ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
-
 
         # move to grasp pose
         rospy.loginfo("Approaching grasp pose...")
@@ -140,21 +136,18 @@ class KCLHand(object):
             error = 'Grasping failed.'
             self.server.set_aborted(self.grasp_result, error)
             return
-
             
         # retract the arm
         ptp_goal.pose.position.z+=0.3
 
-
         ##########################
         print ptp_goal
-        ch = raw_input('Do you want to continiue (y)?')
+        ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
-
 
         rospy.loginfo("Retracting...")
         self.ptp.send_goal(goal)
