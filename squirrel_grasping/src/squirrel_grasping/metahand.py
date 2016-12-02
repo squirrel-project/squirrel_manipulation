@@ -1,5 +1,6 @@
 import rospy
 import actionlib
+from actionlib_msgs.msg import *
 from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal
 from kclhand_control.msg import ActuateHandAction, ActuateHandGoal
 from squirrel_manipulation_msgs.msg import BlindGraspAction
@@ -10,18 +11,19 @@ import tf
 import time
 from copy import copy
 
-class KCLHand(object):
+class MetaHand(object):
     def __init__(self):
         while rospy.get_time() == 0.0:
             pass
 
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
-        self.kclhand = actionlib.SimpleActionClient('actuate_hand', ActuateHandAction)
+        self.metahand = actionlib.SimpleActionClient('hand_controller/actuate_hand', ActuateHandAction)
+        self.metahand.wait_for_server()
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
-        self.server = actionlib.SimpleActionServer('kclhand_grasp_server', 
+        self.server = actionlib.SimpleActionServer('metahand_grasp_server', 
                                                     BlindGraspAction, 
                                                     execute_cb=self._execute_grasp, 
                                                     auto_start=False)
@@ -57,33 +59,33 @@ class KCLHand(object):
         ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y
         ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z+0.2
         #do not change values below
-        ptp_pre_goal.pose.orientation.w = 0.73
-        ptp_pre_goal.pose.orientation.x = 0.0
-        ptp_pre_goal.pose.orientation.y = 0.69
-        ptp_pre_goal.pose.orientation.z = 0.0
+        ptp_pre_goal.pose.orientation.w = 0.287
+        ptp_pre_goal.pose.orientation.x = 0.912
+        ptp_pre_goal.pose.orientation.y = 0.290
+        ptp_pre_goal.pose.orientation.z = 0.028
         
         ptp_goal = PtpGoal()
         ptp_goal.pose.position.x = correct_pose.pose.position.x
         ptp_goal.pose.position.y = correct_pose.pose.position.y
         ptp_goal.pose.position.z = correct_pose.pose.position.z
         #do not change values below
-        ptp_goal.pose.orientation.w = 0.73
-        ptp_goal.pose.orientation.x = 0.0
-        ptp_goal.pose.orientation.y = 0.69
-        ptp_goal.pose.orientation.z = 0.0
+        ptp_goal.pose.orientation.w = 0.287
+        ptp_goal.pose.orientation.x = 0.912
+        ptp_goal.pose.orientation.y = 0.290
+        ptp_goal.pose.orientation.z = 0.028
 
         open_hand = ActuateHandGoal()
-        open_hand.command = 1
+        open_hand.command = 0
         close_hand = ActuateHandGoal()
-        close_hand.command = 0
+        close_hand.command = 1
         close_hand.grasp_type = 0
 
 
         # open hand
         rospy.loginfo("Opening hand...")
-        self.kclhand.send_goal(open_hand)
-        self.kclhand.wait_for_result()
-        if self.kclhand.getState() == GoalStatus.ABORTED:
+        self.metahand.send_goal(open_hand)
+        self.metahand.wait_for_result()
+        if self.metahand.get_state() == GoalStatus.ABORTED:
             error = 'Could not open hand.'
             self.server.set_aborted(self.grasp_result, error)
             return
@@ -130,9 +132,9 @@ class KCLHand(object):
             
         # grasp the object
         rospy.loginfo("Grasping...")
-        self.kclhand.send_goal(open_hand)
-        result = self.kclhand.wait_for_result()
-        if self.kclhand.getState() == GoalStatus.ABORTED:
+        self.metahand.send_goal(open_hand)
+        result = self.metahand.wait_for_result()
+        if self.metahand.get_state() == GoalStatus.ABORTED:
             error = 'Grasping failed.'
             self.server.set_aborted(self.grasp_result, error)
             return
