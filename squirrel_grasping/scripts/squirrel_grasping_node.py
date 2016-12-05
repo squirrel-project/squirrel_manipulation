@@ -3,7 +3,7 @@
 import rospy
 
 from squirrel_grasping import softhand
-from squirrel_grasping import kclhand
+from squirrel_grasping import metahand
 
 
 if __name__ == '__main__':
@@ -15,9 +15,8 @@ if __name__ == '__main__':
         if hand == 'softhand':
             gripper = softhand.SoftHand()
         elif hand == 'kclhand':
-            gripper = kclhand.KCLHand()
+            gripper = metahand.MetaHand()
 
-        gripper.run()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
