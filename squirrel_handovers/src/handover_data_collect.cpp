@@ -10,6 +10,7 @@
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
 
 #define SENSOR_TOPIC "/wrist"
+#define HAND_SERVICE "/softhand_grasp"
 
 using namespace std;
 using namespace arma;
@@ -40,7 +41,6 @@ int main(int argc, char** args) {
     node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
 
     //hand
-    ros::ServiceClient hand_client_;
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
     graspService.request.position = 1.0;
     squirrel_manipulation_msgs::SoftHandGrasp releaseService;
@@ -81,7 +81,7 @@ int main(int argc, char** args) {
     write_file_set_ = false;
     while(end_task > 0) {
 
-        cout << "(handover) enetr experiment name: ";
+        cout << "(handover) enter experiment name: ";
         cin >> experiment_;
 
         writing_ = true;
@@ -113,7 +113,7 @@ int main(int argc, char** args) {
             stage = 4; //grasping the object
             cout<<"OK"<<endl;
 
-            if(hand_client_.call(graspService)){
+            if ( ros::service::call(HAND_SERVICE, graspService) ){
                 ROS_INFO("HAND Grasped!");
             }else{
                 ROS_ERROR("FAILED to Graps!");
@@ -141,7 +141,7 @@ int main(int argc, char** args) {
         if(grasp_value == 1){
             stage = 9   ; //releasing the object
             cout<<"OK"<<endl;
-            if(hand_client_.call(releaseService)){
+            if ( ros::service::call(HAND_SERVICE, releaseService) ){
                 ROS_INFO("HAND Released!");
             }else{
                 ROS_ERROR("FAILED to Release!");
@@ -158,6 +158,7 @@ int main(int argc, char** args) {
 
 
     }
+    data_store_->join();
 
     getchar();
 
@@ -178,34 +179,37 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
 void dataStore(){
 
-    std::ofstream rFile;
+    while(1){
 
-    string nameF = path_  + experiment_ + ".txt";
+        std::ofstream rFile;
 
-    if(!write_file_set_ && writing_){
-        write_file_set_ = true;
-         rFile.open(nameF.c_str());
-         rFile<< "time" << "\t" << "stage" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << endl;
-    }
-    if(write_file_set_&&writing_){
+        string nameF = path_  + experiment_ + ".txt";
 
-        rFile << ros::Time::now().toSec() << "\t";
-        rFile << stage <<"\t";
+        if(!write_file_set_ && writing_){
+            write_file_set_ = true;
+            rFile.open(nameF.c_str());
+            rFile<< "time" << "\t" << "stage" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << endl;
+        }
+        if(write_file_set_&&writing_){
 
-        rFile << wrist_sensor_.force.x << "\t";
-        rFile << wrist_sensor_.force.y << "\t";
-        rFile << wrist_sensor_.force.z << "\t";
-        rFile << wrist_sensor_.torque.x << "\t";
-        rFile << wrist_sensor_.torque.y << "\t";
-        rFile << wrist_sensor_.torque.z << "\t";
+            rFile << ros::Time::now().toSec() << "\t";
+            rFile << stage <<"\t";
 
-        rFile << endl;
+            rFile << wrist_sensor_.force.x << "\t";
+            rFile << wrist_sensor_.force.y << "\t";
+            rFile << wrist_sensor_.force.z << "\t";
+            rFile << wrist_sensor_.torque.x << "\t";
+            rFile << wrist_sensor_.torque.y << "\t";
+            rFile << wrist_sensor_.torque.z << "\t";
 
-    }
+            rFile << endl;
 
-    if(write_file_set_ && !writing_){
-        write_file_set_ = false;
-        rFile.close();
+        }
+
+        if(write_file_set_ && !writing_){
+            write_file_set_ = false;
+            rFile.close();
+        }
     }
 
 }
