@@ -20,6 +20,7 @@ boost::mutex sensor_mutex_;
 geometry_msgs::Wrench wrist_sensor_;
 bool write_file_set_, writing_;
 int stage;
+int end_task;
 
 string path_;
 string experiment_ = "../../../data/";
@@ -76,7 +77,7 @@ int main(int argc, char** args) {
 
     int grasp_value = 100;
     stage = 100;
-    int end_task = 100;
+     end_task = 100;
 
     write_file_set_ = false;
     while(end_task > 0) {
@@ -178,14 +179,16 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
 }
 
 void dataStore(){
+    ros::Rate lRate(20.0);
 
-    while(1){
+    while(end_task>0){
 
         std::ofstream rFile;
 
         string nameF = path_  + experiment_ + ".txt";
 
         if(!write_file_set_ && writing_){
+            cout <<"open file "<<endl;
             write_file_set_ = true;
             rFile.open(nameF.c_str());
             rFile<< "time" << "\t" << "stage" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << endl;
@@ -207,9 +210,11 @@ void dataStore(){
         }
 
         if(write_file_set_ && !writing_){
+            cout<<"closing file"<<endl;
             write_file_set_ = false;
             rFile.close();
         }
+        lRate.sleep();
     }
 
 }
