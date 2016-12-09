@@ -180,8 +180,11 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
 void dataStore(){
     ros::Rate lRate(20.0);
+    bool closed = false;
 
-    while(end_task>0){
+
+    while(end_task>0&&!closed){
+        closed = true;
 
         std::ofstream rFile;
 
@@ -213,6 +216,7 @@ void dataStore(){
             cout<<"closing file"<<endl;
             write_file_set_ = false;
             rFile.close();
+            closed = false;
         }
         lRate.sleep();
     }
