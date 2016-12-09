@@ -185,6 +185,7 @@ void dataStore(){
     if(!write_file_set_ && writing_){
         write_file_set_ = true;
          rFile.open(nameF.c_str());
+         rFile<< "time" << "\t" << "stage" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << endl;
     }
     if(write_file_set_&&writing_){
 
