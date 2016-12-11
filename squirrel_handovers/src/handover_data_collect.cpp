@@ -109,6 +109,8 @@ int main(int argc, char** args) {
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
         end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        cout << "end_effector "<< end_effector_<<endl;
+        cout <<  "sensro value " << wrist_sensor_ <<endl;
         //auto projectedReadings=projectReadings(scaledReadings,mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints)));
 
 
