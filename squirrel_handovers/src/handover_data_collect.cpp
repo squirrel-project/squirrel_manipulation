@@ -24,7 +24,7 @@ geometry_msgs::Wrench wrist_sensor_;
 geometry_msgs::Pose end_effector_;
 std::vector<double>  robot_joints_;
 
-bool write_file_set_, writing_;
+bool write_file_set_(false), writing_(false);
 int stage;
 int end_task = 1;
 
@@ -173,6 +173,7 @@ int main(int argc, char** args) {
 //        robotinoQueue->jointPtp(start);
 //        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
+        cout << "write " <<endl;
         writing_ = false;
         cout << "(handover) press 1 to start handover / 0 to exit" << endl;
         cin >> end_task;
@@ -207,7 +208,7 @@ void dataStore(){
 
 
         if(!write_file_set_ && writing_){
-            //cout <<"clear data "<<endl;
+            cout <<"clear data "<<endl;
             write_file_set_ = true;
             TimeVector.clear();
             SensorValues.clear();
