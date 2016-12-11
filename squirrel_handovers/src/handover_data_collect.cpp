@@ -138,6 +138,7 @@ int main(int argc, char** args) {
                 ROS_ERROR("FAILED to Graps!");
             }
         }
+        cout << "stage "<<stage<<endl;
 
         ROS_INFO("(handover) going to initial pose with the closed hand");
         stage = 5;
@@ -169,6 +170,7 @@ int main(int argc, char** args) {
                 ROS_ERROR("FAILED to Release!");
             }
         }
+        cout << "stage "<<stage<<endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 9;
