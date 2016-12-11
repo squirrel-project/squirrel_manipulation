@@ -12,22 +12,34 @@
 #define SENSOR_TOPIC "/wrist"
 #define HAND_SERVICE "/softhand_grasp"
 
+static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27;
+
+
 using namespace std;
 using namespace arma;
 using namespace kukadu;
 
 boost::mutex sensor_mutex_;
 geometry_msgs::Wrench wrist_sensor_;
+geometry_msgs::Pose end_effector_;
+std::vector<double>  robot_joints_;
+
 bool write_file_set_, writing_;
 int stage;
-int end_task;
+int end_task = 1;
+
 
 string path_;
 string experiment_ = "../../../data/";
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg);
-
 void dataStore();
+std::vector<geometry_msgs::Wrench> SensorValues;
+std::vector<double> TimeVector;
+std::vector<int> StageVector;
+std::vector<std::vector<double>> robotJointsVector;
+std::vector<geometry_msgs::Pose> endEffectorVector;
+
 
 int main(int argc, char** args) {
 
@@ -77,7 +89,6 @@ int main(int argc, char** args) {
 
     int grasp_value = 100;
     stage = 100;
-     end_task = 100;
 
     write_file_set_ = false;
     while(end_task > 0) {
@@ -97,6 +108,9 @@ int main(int argc, char** args) {
         stage = 1; // initial pose with the open hand
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        //auto projectedReadings=projectReadings(scaledReadings,mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints)));
+
 
         ROS_INFO("(handover) going to the handover pose with the open hand");
         stage = 2;
@@ -104,6 +118,7 @@ int main(int argc, char** args) {
 
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
         ROS_INFO("(handover) waiting to grasp the object");
         stage = 3;
@@ -128,10 +143,12 @@ int main(int argc, char** args) {
         stage = 6; // initial pose with the closed hand
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 7;
         robotinoQueue->jointPtp(end);
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
 
         ROS_INFO("(handover) waiting to release the object");
@@ -152,10 +169,11 @@ int main(int argc, char** args) {
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
         robotinoQueue->jointPtp(start);
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
+        writing_ = false;
         cout << "(handover) press 1 to start handover / 0 to exit" << endl;
         cin >> end_task;
-        writing_ = false;
 
 
     }
@@ -180,45 +198,91 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
 void dataStore(){
     ros::Rate lRate(20.0);
-    bool closed = false;
+    auto start_time = ros::Time::now().toSec();
 
+    while(end_task>0){
 
-    while(end_task>0&&!closed){
-        closed = true;
-
-        std::ofstream rFile;
-
-        string nameF = path_  + experiment_ + ".txt";
 
         if(!write_file_set_ && writing_){
-            cout <<"open file "<<endl;
+            //cout <<"clear data "<<endl;
             write_file_set_ = true;
-            rFile.open(nameF.c_str());
-            rFile<< "time" << "\t" << "stage" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << endl;
+            TimeVector.clear();
+            SensorValues.clear();
+            StageVector.clear();
+            start_time = ros::Time::now().toSec();
+
         }
         if(write_file_set_&&writing_){
+            TimeVector.push_back(ros::Time::now().toSec() - start_time);
+            sensor_mutex_.lock();
+            SensorValues.push_back(wrist_sensor_);
+            endEffectorVector.push_back(end_effector_);
+            sensor_mutex_.unlock();
+            StageVector.push_back(stage);
 
-            rFile << ros::Time::now().toSec() << "\t";
-            rFile << stage <<"\t";
-
-            rFile << wrist_sensor_.force.x << "\t";
-            rFile << wrist_sensor_.force.y << "\t";
-            rFile << wrist_sensor_.force.z << "\t";
-            rFile << wrist_sensor_.torque.x << "\t";
-            rFile << wrist_sensor_.torque.y << "\t";
-            rFile << wrist_sensor_.torque.z << "\t";
-
-            rFile << endl;
 
         }
 
         if(write_file_set_ && !writing_){
-            cout<<"closing file"<<endl;
+            // cout<<"writing to a file"<<endl;
             write_file_set_ = false;
+            std::ofstream rFile;
+            string nameF = path_  + experiment_ + ".txt";
+            rFile.open(nameF.c_str());
+            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<< endl;
+            for (int i; i<TimeVector.size(); ++i){
+                rFile << TimeVector.at(i)<< "\t";
+                rFile << StageVector.at(i)<< "\t";
+                rFile << endEffectorVector.at(i).position.x << "\t";
+                rFile << endEffectorVector.at(i).position.y << "\t";
+                rFile << endEffectorVector.at(i).position.z << "\t";
+                rFile << endEffectorVector.at(i).orientation.x << "\t";
+                rFile << endEffectorVector.at(i).orientation.y << "\t";
+                rFile << endEffectorVector.at(i).orientation.z << "\t";
+                rFile << endEffectorVector.at(i).orientation.w << "\t";
+                rFile << SensorValues.at(i).force.x << "\t";
+                rFile << SensorValues.at(i).force.y << "\t";
+                rFile << SensorValues.at(i).force.z << "\t";
+                rFile << SensorValues.at(i).torque.x << "\t";
+                rFile << SensorValues.at(i).torque.y << "\t";
+                rFile << SensorValues.at(i).torque.z << "\t";
+                rFile <<endl;
+
+            }
+
+
             rFile.close();
-            closed = false;
         }
         lRate.sleep();
     }
 
 }
+
+vector<double> projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma){
+    vector<double> newVec;
+    double i= vecX * (cos(beta)*cos(gamma)) + vecY *(cos(gamma)* sin(alpha)* sin(beta) - cos(alpha)*sin(gamma)) + vecZ *(cos(alpha)*cos(gamma)*sin(beta) +sin(alpha)*sin(gamma));
+    double j= vecX * (cos(beta)*sin(gamma)) + vecY *(cos(alpha)* cos(gamma) + sin(alpha)*sin(gamma)*sin(beta)) + vecZ *(-1*cos(gamma)*sin(alpha) +cos(alpha)*sin(beta)*sin(gamma));
+    double k= vecX * (-1*sin(beta)) + vecY *(cos(beta)* sin(alpha)) + vecZ *(cos(alpha)*cos(beta)); // ref: roll-x-alpha pitch-y-beta yaw-z-gamma
+    newVec.push_back(i);
+    newVec.push_back(j);
+    newVec.push_back(k);
+    return newVec;
+
+}
+std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose){ //memory problem?
+    tf::Quaternion quat(currentPose.orientation.x,currentPose.orientation.y,currentPose.orientation.z,currentPose.orientation.w);
+    tf::Matrix3x3 m(quat);
+    double roll,pitch,yaw;
+    m.getRPY(roll,pitch,yaw);
+    //Fix senser miss-alignment in respect to end effector and wrong sensor roll yaw conventions!!
+    vector<double> temp1 = projectVectors(readings.at(0),readings.at(1) ,readings.at(2),0.0,0.0,SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR);
+    vector<double> temp2 = projectVectors(readings.at(3),readings.at(4) ,readings.at(5),0.0,0.0, M_PI + SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR);
+    //Project based on joint states
+    vector<double> res1 = projectVectors(temp1.at(0),temp1.at(1) ,temp1.at(2),roll,pitch,yaw);
+    vector<double> res2 = projectVectors(temp2.at(0),temp2.at(1) ,temp2.at(2),roll,pitch,yaw);
+    res1.insert(res1.end(),res2.begin(),res2.end());
+
+    return res1;
+}
+
+
