@@ -110,68 +110,68 @@ int main(int argc, char** args) {
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
         end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
         cout << "end_effector "<< end_effector_<<endl;
-        cout <<  "sensro value " << wrist_sensor_ <<endl;
+        cout <<  "sensor value " << wrist_sensor_ <<endl;
         //auto projectedReadings=projectReadings(scaledReadings,mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints)));
 
 
-        ROS_INFO("(handover) going to the handover pose with the open hand");
-        stage = 2;
-        robotinoQueue->jointPtp(end);
+//        ROS_INFO("(handover) going to the handover pose with the open hand");
+//        stage = 2;
+//        robotinoQueue->jointPtp(end);
 
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+//        firstJoints = robotinoQueue->getCurrentJoints().joints;
+//        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
-        ROS_INFO("(handover) waiting to grasp the object");
-        stage = 3;
+//        ROS_INFO("(handover) waiting to grasp the object");
+//        stage = 3;
 
-        cout << "(handover) press 1 to close the hand" << endl;
-        cin >> grasp_value;
-        if(grasp_value == 1){
-            stage = 4; //grasping the object
-            cout<<"OK"<<endl;
+//        cout << "(handover) press 1 to close the hand" << endl;
+//        cin >> grasp_value;
+//        if(grasp_value == 1){
+//            stage = 4; //grasping the object
+//            cout<<"OK"<<endl;
 
-            if ( ros::service::call(HAND_SERVICE, graspService) ){
-                ROS_INFO("HAND Grasped!");
-            }else{
-                ROS_ERROR("FAILED to Graps!");
-            }
-        }
+//            if ( ros::service::call(HAND_SERVICE, graspService) ){
+//                ROS_INFO("HAND Grasped!");
+//            }else{
+//                ROS_ERROR("FAILED to Graps!");
+//            }
+//        }
 
-        ROS_INFO("(handover) going to initial pose with the closed hand");
-        stage = 5;
-        robotinoQueue->jointPtp(start);
+//        ROS_INFO("(handover) going to initial pose with the closed hand");
+//        stage = 5;
+//        robotinoQueue->jointPtp(start);
 
-        stage = 6; // initial pose with the closed hand
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+//        stage = 6; // initial pose with the closed hand
+//        firstJoints = robotinoQueue->getCurrentJoints().joints;
+//        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
-        ROS_INFO("(handover) going to the handover pose with the closed hand");
-        stage = 7;
-        robotinoQueue->jointPtp(end);
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+//        ROS_INFO("(handover) going to the handover pose with the closed hand");
+//        stage = 7;
+//        robotinoQueue->jointPtp(end);
+//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
 
-        ROS_INFO("(handover) waiting to release the object");
-        stage = 8;
+//        ROS_INFO("(handover) waiting to release the object");
+//        stage = 8;
 
-        cout << "(handover) press 1 to open the hand" << endl;
-        cin >> grasp_value;
-        if(grasp_value == 1){
-            stage = 9   ; //releasing the object
-            cout<<"OK"<<endl;
-            if ( ros::service::call(HAND_SERVICE, releaseService) ){
-                ROS_INFO("HAND Released!");
-            }else{
-                ROS_ERROR("FAILED to Release!");
-            }
-        }
+//        cout << "(handover) press 1 to open the hand" << endl;
+//        cin >> grasp_value;
+//        if(grasp_value == 1){
+//            stage = 9   ; //releasing the object
+//            cout<<"OK"<<endl;
+//            if ( ros::service::call(HAND_SERVICE, releaseService) ){
+//                ROS_INFO("HAND Released!");
+//            }else{
+//                ROS_ERROR("FAILED to Release!");
+//            }
+//        }
 
-        ROS_INFO("(handover) going to initial pose with the open hand");
-        stage = 0;
-        robotinoQueue->jointPtp(start);
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+//        ROS_INFO("(handover) going to initial pose with the open hand");
+//        stage = 0;
+//        robotinoQueue->jointPtp(start);
+//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
         writing_ = false;
         cout << "(handover) press 1 to start handover / 0 to exit" << endl;
@@ -188,6 +188,7 @@ int main(int argc, char** args) {
 }
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg){
+    cout<<"callback msg "<<endl;
 
     wrist_sensor_.force.x=msg.data.at(0);
     wrist_sensor_.force.y=msg.data.at(1);
@@ -211,6 +212,7 @@ void dataStore(){
             TimeVector.clear();
             SensorValues.clear();
             StageVector.clear();
+            endEffectorVector.clear();
             start_time = ros::Time::now().toSec();
 
         }
@@ -220,19 +222,21 @@ void dataStore(){
             SensorValues.push_back(wrist_sensor_);
             endEffectorVector.push_back(end_effector_);
             sensor_mutex_.unlock();
+            cout << "stage "<<stage<<endl;
             StageVector.push_back(stage);
 
 
         }
 
         if(write_file_set_ && !writing_){
-            // cout<<"writing to a file"<<endl;
+            cout<<"writing to a file"<<endl;
+            cout << "length end effecto vec "<<endEffectorVector.size() <<endl;
             write_file_set_ = false;
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
             rFile.open(nameF.c_str());
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<< endl;
-            for (int i; i<TimeVector.size(); ++i){
+            for (int i; i < TimeVector.size(); ++i){
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
                 rFile << endEffectorVector.at(i).position.x << "\t";
