@@ -51,7 +51,7 @@ int main(int argc, char** args) {
 
     ros::AsyncSpinner spinner(10); spinner.start();
     //wrist sensor
-    node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
+    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
@@ -205,6 +205,7 @@ void dataStore(){
     auto start_time = ros::Time::now().toSec();
 
     while(end_task>0){
+        cout <<"in loop "<<endl;
 
 
         if(!write_file_set_ && writing_){
