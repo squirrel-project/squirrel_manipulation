@@ -30,7 +30,7 @@ int end_task = 1;
 
 
 string path_;
-string experiment_ = "../../../data/";
+string experiment_ = "../../data/";
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg);
 void dataStore();
@@ -204,7 +204,7 @@ void dataStore(){
     auto start_time = ros::Time::now().toSec();
 
     while(end_task>0){
-        cout <<"in loop "<<endl;
+        //cout <<"in loop "<<endl;
 
 
         if(!write_file_set_ && writing_){
@@ -223,7 +223,7 @@ void dataStore(){
             SensorValues.push_back(wrist_sensor_);
             endEffectorVector.push_back(end_effector_);
             sensor_mutex_.unlock();
-            cout << "stage "<<stage<<endl;
+            //cout << "stage "<<stage<<endl;
             StageVector.push_back(stage);
 
 
@@ -231,7 +231,7 @@ void dataStore(){
 
         if(write_file_set_ && !writing_){
             cout<<"writing to a file"<<endl;
-            cout << "length end effecto vec "<<endEffectorVector.size() <<endl;
+            cout << "length end effector vec "<<endEffectorVector.size() <<endl;
             write_file_set_ = false;
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
