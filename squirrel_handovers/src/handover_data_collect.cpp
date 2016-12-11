@@ -127,8 +127,9 @@ int main(int argc, char** args) {
 
         cout << "(handover) press 1 to close the hand" << endl;
         cin >> grasp_value;
+        stage = 4   ; //grasping the object
         if(grasp_value == 1){
-            stage = 4; //grasping the object
+           // stage = 4; //grasping the object
             cout<<"OK"<<endl;
 
             if ( ros::service::call(HAND_SERVICE, graspService) ){
@@ -142,24 +143,25 @@ int main(int argc, char** args) {
         stage = 5;
         robotinoQueue->jointPtp(start);
 
-        stage = 6; // initial pose with the closed hand
+       // stage = 6; // initial pose with the closed hand
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
         end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
-        stage = 7;
+        stage = 6;
         robotinoQueue->jointPtp(end);
+
+        ROS_INFO("(handover) waiting to release the object");
+        stage = 7;
         end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
 
-        ROS_INFO("(handover) waiting to release the object");
-        stage = 8;
-
         cout << "(handover) press 1 to open the hand" << endl;
         cin >> grasp_value;
+        stage = 8  ; //releasing the object
         if(grasp_value == 1){
-            stage = 9   ; //releasing the object
+            //stage = 9   ; //releasing the object
             cout<<"OK"<<endl;
             if ( ros::service::call(HAND_SERVICE, releaseService) ){
                 ROS_INFO("HAND Released!");
@@ -169,11 +171,11 @@ int main(int argc, char** args) {
         }
 
         ROS_INFO("(handover) going to initial pose with the open hand");
-        stage = 0;
+        stage = 9;
         robotinoQueue->jointPtp(start);
         end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
-        cout << "write " <<endl;
+        //cout << "write " <<endl;
         writing_ = false;
         cout << "(handover) press 1 to start handover / 0 to exit" << endl;
         cin >> end_task;
@@ -230,8 +232,8 @@ void dataStore(){
         }
 
         if(write_file_set_ && !writing_){
-            cout<<"writing to a file"<<endl;
-            cout << "length end effector vec "<<endEffectorVector.size() <<endl;
+            //cout<<"writing to a file"<<endl;
+            //cout << "length end effector vec "<<endEffectorVector.size() <<endl;
             write_file_set_ = false;
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
