@@ -114,64 +114,64 @@ int main(int argc, char** args) {
         //auto projectedReadings=projectReadings(scaledReadings,mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints)));
 
 
-//        ROS_INFO("(handover) going to the handover pose with the open hand");
-//        stage = 2;
-//        robotinoQueue->jointPtp(end);
+        ROS_INFO("(handover) going to the handover pose with the open hand");
+        stage = 2;
+        robotinoQueue->jointPtp(end);
 
-//        firstJoints = robotinoQueue->getCurrentJoints().joints;
-//        cout << "(handover) current robot state: " << firstJoints.t() << endl;
-//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        firstJoints = robotinoQueue->getCurrentJoints().joints;
+        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
-//        ROS_INFO("(handover) waiting to grasp the object");
-//        stage = 3;
+        ROS_INFO("(handover) waiting to grasp the object");
+        stage = 3;
 
-//        cout << "(handover) press 1 to close the hand" << endl;
-//        cin >> grasp_value;
-//        if(grasp_value == 1){
-//            stage = 4; //grasping the object
-//            cout<<"OK"<<endl;
+        cout << "(handover) press 1 to close the hand" << endl;
+        cin >> grasp_value;
+        if(grasp_value == 1){
+            stage = 4; //grasping the object
+            cout<<"OK"<<endl;
 
-//            if ( ros::service::call(HAND_SERVICE, graspService) ){
-//                ROS_INFO("HAND Grasped!");
-//            }else{
-//                ROS_ERROR("FAILED to Graps!");
-//            }
-//        }
+            if ( ros::service::call(HAND_SERVICE, graspService) ){
+                ROS_INFO("HAND Grasped!");
+            }else{
+                ROS_ERROR("FAILED to Graps!");
+            }
+        }
 
-//        ROS_INFO("(handover) going to initial pose with the closed hand");
-//        stage = 5;
-//        robotinoQueue->jointPtp(start);
+        ROS_INFO("(handover) going to initial pose with the closed hand");
+        stage = 5;
+        robotinoQueue->jointPtp(start);
 
-//        stage = 6; // initial pose with the closed hand
-//        firstJoints = robotinoQueue->getCurrentJoints().joints;
-//        cout << "(handover) current robot state: " << firstJoints.t() << endl;
-//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        stage = 6; // initial pose with the closed hand
+        firstJoints = robotinoQueue->getCurrentJoints().joints;
+        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
-//        ROS_INFO("(handover) going to the handover pose with the closed hand");
-//        stage = 7;
-//        robotinoQueue->jointPtp(end);
-//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        ROS_INFO("(handover) going to the handover pose with the closed hand");
+        stage = 7;
+        robotinoQueue->jointPtp(end);
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
 
-//        ROS_INFO("(handover) waiting to release the object");
-//        stage = 8;
+        ROS_INFO("(handover) waiting to release the object");
+        stage = 8;
 
-//        cout << "(handover) press 1 to open the hand" << endl;
-//        cin >> grasp_value;
-//        if(grasp_value == 1){
-//            stage = 9   ; //releasing the object
-//            cout<<"OK"<<endl;
-//            if ( ros::service::call(HAND_SERVICE, releaseService) ){
-//                ROS_INFO("HAND Released!");
-//            }else{
-//                ROS_ERROR("FAILED to Release!");
-//            }
-//        }
+        cout << "(handover) press 1 to open the hand" << endl;
+        cin >> grasp_value;
+        if(grasp_value == 1){
+            stage = 9   ; //releasing the object
+            cout<<"OK"<<endl;
+            if ( ros::service::call(HAND_SERVICE, releaseService) ){
+                ROS_INFO("HAND Released!");
+            }else{
+                ROS_ERROR("FAILED to Release!");
+            }
+        }
 
-//        ROS_INFO("(handover) going to initial pose with the open hand");
-//        stage = 0;
-//        robotinoQueue->jointPtp(start);
-//        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        ROS_INFO("(handover) going to initial pose with the open hand");
+        stage = 0;
+        robotinoQueue->jointPtp(start);
+        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
 
         cout << "write " <<endl;
         writing_ = false;
@@ -189,7 +189,6 @@ int main(int argc, char** args) {
 }
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg){
-    cout<<"callback msg "<<endl;
 
     wrist_sensor_.force.x=msg.data.at(0);
     wrist_sensor_.force.y=msg.data.at(1);
