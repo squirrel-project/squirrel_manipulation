@@ -29,8 +29,8 @@ int stage;
 int end_task = 1;
 
 
-string path_;
-string experiment_ = "../../data/";
+string path_= "../../data/";
+string experiment_;
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg);
 void dataStore();
