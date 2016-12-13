@@ -5,6 +5,7 @@
 #include <boost/thread.hpp>
 
 #include <geometry_msgs/Wrench.h>
+#include <tf/transform_listener.h>
 
 #include <kukadu/kukadu.hpp>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
@@ -22,23 +23,31 @@ using namespace kukadu;
 boost::mutex sensor_mutex_;
 geometry_msgs::Wrench wrist_sensor_;
 geometry_msgs::Pose end_effector_;
-std::vector<double>  robot_joints_;
+std::vector<double>  robot_joints_, wrist_sensor_values_;
 
 bool write_file_set_(false), writing_(false);
 int stage;
 int end_task = 1;
 
-
+string base_frame_ = "/base_link";
+string wrist_frame_ = "/arm_link5";
 string path_= "../../data/";
+//string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg);
 void dataStore();
+std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose);
+
+geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
+
 std::vector<geometry_msgs::Wrench> SensorValues;
 std::vector<double> TimeVector;
 std::vector<int> StageVector;
 std::vector<std::vector<double>> robotJointsVector;
+std::vector<std::vector<double>> projectedSensorValues;
 std::vector<geometry_msgs::Pose> endEffectorVector;
+std::vector<geometry_msgs::Pose> poseWristVector;
 
 
 int main(int argc, char** args) {
@@ -47,6 +56,7 @@ int main(int argc, char** args) {
     ros::NodeHandle node;
     sleep(1);
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
+    boost::thread* poses_update_ = new boost::thread(boost::bind(dataStore));
 
 
     ros::AsyncSpinner spinner(10); spinner.start();
@@ -90,6 +100,8 @@ int main(int argc, char** args) {
     int grasp_value = 100;
     stage = 100;
 
+    std::vector<double> joint_val;
+
     write_file_set_ = false;
     while(end_task > 0) {
 
@@ -108,9 +120,11 @@ int main(int argc, char** args) {
         stage = 1; // initial pose with the open hand
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
-        cout << "end_effector "<< end_effector_<<endl;
-        cout <<  "sensor value " << wrist_sensor_ <<endl;
+        joint_val = armadilloToStdVec(robotinoQueue->getCurrentJoints().joints);
+        joint_val.at(0) = 0.0; joint_val.at(1) = 0.0; joint_val.at(2) = 0.0;
+        end_effector_ = mvKin->computeFk(joint_val);
+        //cout << "end_effector "<< end_effector_<<endl;
+        //cout <<  "sensor value " << wrist_sensor_ <<endl;
         //auto projectedReadings=projectReadings(scaledReadings,mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints)));
 
 
@@ -120,7 +134,9 @@ int main(int argc, char** args) {
 
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        joint_val = armadilloToStdVec(robotinoQueue->getCurrentJoints().joints);
+        joint_val.at(0) = 0.0; joint_val.at(1) = 0.0; joint_val.at(2) = 0.0;
+        end_effector_ = mvKin->computeFk(joint_val);
 
         ROS_INFO("(handover) waiting to grasp the object");
         stage = 3;
@@ -147,7 +163,9 @@ int main(int argc, char** args) {
        // stage = 6; // initial pose with the closed hand
         firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        joint_val = armadilloToStdVec(robotinoQueue->getCurrentJoints().joints);
+        joint_val.at(0) = 0.0; joint_val.at(1) = 0.0; joint_val.at(2) = 0.0;
+        end_effector_ = mvKin->computeFk(joint_val);
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6;
@@ -155,8 +173,9 @@ int main(int argc, char** args) {
 
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
-
+        joint_val = armadilloToStdVec(robotinoQueue->getCurrentJoints().joints);
+        joint_val.at(0) = 0.0; joint_val.at(1) = 0.0; joint_val.at(2) = 0.0;
+        end_effector_ = mvKin->computeFk(joint_val);
 
         cout << "(handover) press 1 to open the hand" << endl;
         cin >> grasp_value;
@@ -172,10 +191,13 @@ int main(int argc, char** args) {
         }
         cout << "stage "<<stage<<endl;
 
-        ROS_INFO("(handover) going to initial pose with the open hand");
+
         stage = 9;
+        ROS_INFO("(handover) going to initial pose with the open hand");
         robotinoQueue->jointPtp(start);
-        end_effector_ = mvKin->computeFk(armadilloToStdVec(robotinoQueue->getCurrentJoints().joints));
+        joint_val = armadilloToStdVec(robotinoQueue->getCurrentJoints().joints);
+        joint_val.at(0) = 0.0; joint_val.at(1) = 0.0; joint_val.at(2) = 0.0;
+        end_effector_ = mvKin->computeFk(joint_val);
 
         //cout << "write " <<endl;
         writing_ = false;
@@ -194,6 +216,15 @@ int main(int argc, char** args) {
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
+    wrist_sensor_values_.clear();
+    wrist_sensor_values_.push_back(msg.data.at(0));
+    wrist_sensor_values_.push_back(msg.data.at(1));
+    wrist_sensor_values_.push_back(msg.data.at(2));
+    wrist_sensor_values_.push_back(msg.data.at(3));
+    wrist_sensor_values_.push_back(msg.data.at(4));
+    wrist_sensor_values_.push_back(msg.data.at(5));
+
+
     wrist_sensor_.force.x=msg.data.at(0);
     wrist_sensor_.force.y=msg.data.at(1);
     wrist_sensor_.force.z=msg.data.at(2);
@@ -204,8 +235,12 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
 }
 
 void dataStore(){
-    ros::Rate lRate(20.0);
+    ros::Rate lRate(10.0);
     auto start_time = ros::Time::now().toSec();
+    tf::TransformListener tf_listener_;
+    tf::StampedTransform trans;
+    geometry_msgs::Pose pose_wrist_;
+    vector<double> projected_sensor_values_;
 
     while(end_task>0){
         //cout <<"in loop "<<endl;
@@ -216,8 +251,10 @@ void dataStore(){
             write_file_set_ = true;
             TimeVector.clear();
             SensorValues.clear();
+            poseWristVector.clear();
             StageVector.clear();
             endEffectorVector.clear();
+            projectedSensorValues.clear();
             start_time = ros::Time::now().toSec();
 
         }
@@ -225,6 +262,15 @@ void dataStore(){
             TimeVector.push_back(ros::Time::now().toSec() - start_time);
             sensor_mutex_.lock();
             SensorValues.push_back(wrist_sensor_);
+
+            tf_listener_.waitForTransform(base_frame_, wrist_frame_, ros::Time::now(), ros::Duration(0.1));
+            tf_listener_.lookupTransform(base_frame_, wrist_frame_, ros::Time(0), trans);
+            pose_wrist_ = tf_stamped2pose(trans);
+            poseWristVector.push_back(pose_wrist_);
+
+            projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
+            projectedSensorValues.push_back(wrist_sensor_values_);
+
             endEffectorVector.push_back(end_effector_);
             sensor_mutex_.unlock();
             //cout << "stage "<<stage<<endl;
@@ -234,13 +280,13 @@ void dataStore(){
         }
 
         if(write_file_set_ && !writing_){
-            //cout<<"writing to a file"<<endl;
+            cout<<"writing to a file"<<endl;
             //cout << "length end effector vec "<<endEffectorVector.size() <<endl;
             write_file_set_ = false;
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
             rFile.open(nameF.c_str());
-            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<< endl;
+            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
             for (int i; i < TimeVector.size(); ++i){
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
@@ -257,6 +303,12 @@ void dataStore(){
                 rFile << SensorValues.at(i).torque.x << "\t";
                 rFile << SensorValues.at(i).torque.y << "\t";
                 rFile << SensorValues.at(i).torque.z << "\t";
+                rFile << projectedSensorValues.at(i).at(0) << "\t";
+                rFile << projectedSensorValues.at(i).at(1) << "\t";
+                rFile << projectedSensorValues.at(i).at(2) << "\t";
+                rFile << projectedSensorValues.at(i).at(3) << "\t";
+                rFile << projectedSensorValues.at(i).at(4) << "\t";
+                rFile << projectedSensorValues.at(i).at(5) << "\t";
                 rFile <<endl;
 
             }
@@ -294,6 +346,21 @@ std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs:
     res1.insert(res1.end(),res2.begin(),res2.end());
 
     return res1;
+}
+
+geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in){
+    geometry_msgs::Pose Emap;
+
+    Emap.position.x = tf_in.getOrigin().x();
+    Emap.position.y = tf_in.getOrigin().y();
+    Emap.position.z = tf_in.getOrigin().z();;
+    Emap.orientation.x = tf_in.getRotation().x();
+    Emap.orientation.y = tf_in.getRotation().y();
+    Emap.orientation.z = tf_in.getRotation().z();;
+    Emap.orientation.w = tf_in.getRotation().w();;
+
+    return Emap;
+
 }
 
 
