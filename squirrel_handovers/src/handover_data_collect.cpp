@@ -26,7 +26,7 @@ geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
-string path_= "../data/";
+string path_= "~/catkin_ws/data/";
 //string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 
@@ -58,7 +58,7 @@ int main(int argc, char** args) {
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
-    graspService.request.position = 1.0;
+    graspService.request.position = 0.8;
     squirrel_manipulation_msgs::SoftHandGrasp releaseService;
     releaseService.request.position = 0.0;
 
@@ -229,7 +229,7 @@ void dataStore(){
     while(end_task>0){
 
         if(!store_set_ && store_){
-            cout <<"clear data "<<endl;
+            cout <<"(handovers) clear data "<<endl;
             store_set_ = true;
             writing_done_ = false;
             TimeVector.clear();
