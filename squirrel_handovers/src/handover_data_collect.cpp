@@ -26,11 +26,11 @@ geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
-string path_= "../../data/";
+string path_= "../data/";
 //string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 
-bool store_set_(false), store_(false);
+bool store_set_(false), store_(false), writing_done_(false);
 int stage = 100;
 int end_task = 100;
 
@@ -108,7 +108,6 @@ int main(int argc, char** args) {
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
         cout << "(handover) current stage "<<stage<<endl;
-
         robotinoQueue->jointPtp(start);
 
 
@@ -191,6 +190,9 @@ int main(int argc, char** args) {
         robotinoQueue->jointPtp(start);
 
         store_ = false;
+        while(!writing_done_){
+            sleep(1);
+        }
         cout << "(handover) press 1 to start handover / 0 to exit" << endl;
         cin >> end_task;
 
@@ -225,12 +227,11 @@ void dataStore(){
     vector<double> projected_sensor_values_;
 
     while(end_task>0){
-        // cout <<"in loop "<<endl;
-
 
         if(!store_set_ && store_){
             cout <<"clear data "<<endl;
             store_set_ = true;
+            writing_done_ = false;
             TimeVector.clear();
             SensorValues.clear();
             projectedSensorValues.clear();
@@ -257,12 +258,12 @@ void dataStore(){
         }
 
         if(store_set_ && !store_){
-            cout<<"writing to a file"<<endl;
+            cout<<"(handover) writing to a file"<<endl;
             store_set_ = false;
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
             rFile.open(nameF.c_str());
-            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
+            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
             for (int i; i < TimeVector.size(); ++i){
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
@@ -289,7 +290,7 @@ void dataStore(){
 
             }
 
-
+            writing_done_ = true;
             rFile.close();
         }
         lRate.sleep();
