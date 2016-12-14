@@ -58,34 +58,34 @@ int main(int argc, char** args) {
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
-    graspService.request.position = 0.8;
+    graspService.request.position = 0.9;
     squirrel_manipulation_msgs::SoftHandGrasp releaseService;
     releaseService.request.position = 0.0;
 
 
     //arm control
 
-    ROS_INFO("(handover) setting up control queue");
-    cout <<  endl;
-    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
+//    ROS_INFO("(handover) setting up control queue");
+//    cout <<  endl;
+//    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
 
-    ROS_INFO("(handover) creating moveit kinematics instance");
-    cout << endl;
-    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
-    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
+//    ROS_INFO("(handover) creating moveit kinematics instance");
+//    cout << endl;
+//    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+//    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
 
-    robotinoQueue->setKinematics(mvKin);
-    robotinoQueue->setPathPlanner(mvKin);
+//    robotinoQueue->setKinematics(mvKin);
+//    robotinoQueue->setPathPlanner(mvKin);
 
-    ROS_INFO("(handover) starting queue");
-    cout << endl;
-    auto realLqThread = robotinoQueue->startQueue();
+//    ROS_INFO("(handover) starting queue");
+//    cout << endl;
+//    auto realLqThread = robotinoQueue->startQueue();
 
-    cout << "switching to impedance mode if it is not there yet" << endl;
-    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
-        robotinoQueue->stopCurrentMode();
-        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
-    }
+//    cout << "(handover)switching to impedance mode if it is not there yet" << endl;
+//    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
+//        robotinoQueue->stopCurrentMode();
+//        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
+//    }
 
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -102,29 +102,29 @@ int main(int argc, char** args) {
         cin >> experiment_;
 
         store_ = true;
-        auto firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //auto firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
         cout << "(handover) current stage "<<stage<<endl;
-        robotinoQueue->jointPtp(start);
+        //robotinoQueue->jointPtp(start);
 
 
         stage = 1; // initial pose with the open hand
         cout << "(handover) current stage "<<stage<<endl;
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
 
         ROS_INFO("(handover) going to the handover pose with the open hand");
         stage = 2;
         cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+        //robotinoQueue->jointPtp(end);
 
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) waiting to grasp the object");
         stage = 3;
@@ -152,16 +152,16 @@ int main(int argc, char** args) {
         stage = 5;
         cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(start);
+        //robotinoQueue->jointPtp(start);
 
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
         cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+//        robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
@@ -187,7 +187,7 @@ int main(int argc, char** args) {
         cout << "(handover) current stage "<<stage<<endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
-        robotinoQueue->jointPtp(start);
+        //robotinoQueue->jointPtp(start);
 
         store_ = false;
         while(!writing_done_){
@@ -263,6 +263,9 @@ void dataStore(){
             std::ofstream rFile;
             string nameF = path_  + experiment_ + ".txt";
             rFile.open(nameF.c_str());
+            if(rFile.is_open()){
+                cout << "File open"<<endl;
+            }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
             for (int i; i < TimeVector.size(); ++i){
                 rFile << TimeVector.at(i)<< "\t";
