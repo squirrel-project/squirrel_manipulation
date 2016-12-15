@@ -37,11 +37,6 @@ int end_task = 100;
 boost::mutex sensor_mutex_;
 std::vector<double>  robot_joints_, wrist_sensor_values_;
 std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose);
-std::vector<double> TimeVector;
-std::vector<int> StageVector;
-std::vector<std::vector<double>> SensorValues;
-std::vector<std::vector<double>> projectedSensorValues;
-std::vector<geometry_msgs::Pose> poseWristVector;
 
 
 
@@ -53,7 +48,10 @@ int main(int argc, char** args) {
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
     ros::AsyncSpinner spinner(10); spinner.start();
+    ROS_INFO("(handover) node started");
+
     //wrist sensor
+
     auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
 
     //hand
@@ -91,11 +89,8 @@ int main(int argc, char** args) {
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
 
     int grasp_value = 100;
-    stage = 100;
-
-    std::vector<double> joint_val;
-
     store_set_ = false;
+
     while(end_task > 0) {
 
         cout << "(handover) enter experiment name: ";
@@ -210,6 +205,7 @@ int main(int argc, char** args) {
 void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
     wrist_sensor_values_.clear();
+    wrist_sensor_values_.shrink_to_fit();
     wrist_sensor_values_.push_back(msg.data.at(0));
     wrist_sensor_values_.push_back(msg.data.at(1));
     wrist_sensor_values_.push_back(msg.data.at(2));
@@ -227,6 +223,13 @@ void dataStore(){
     geometry_msgs::Pose pose_wrist_;
     vector<double> projected_sensor_values_;
 
+    std::vector<double> TimeVector;
+    std::vector<int> StageVector;
+    std::vector<std::vector<double>> SensorValues;
+    std::vector<std::vector<double>> projectedSensorValues;
+    std::vector<geometry_msgs::Pose> poseWristVector;
+
+
     while(end_task>0){
 
         if(!store_set_ && store_){
@@ -234,10 +237,15 @@ void dataStore(){
             store_set_ = true;
             writing_done_ = false;
             TimeVector.clear();
+            TimeVector.shrink_to_fit();
             SensorValues.clear();
+            SensorValues.shrink_to_fit();
             projectedSensorValues.clear();
+            projectedSensorValues.shrink_to_fit();
             poseWristVector.clear();
+            poseWristVector.shrink_to_fit();
             StageVector.clear();
+            StageVector.shrink_to_fit();
             start_time = ros::Time::now().toSec();
 
         }
@@ -266,6 +274,9 @@ void dataStore(){
             rFile.open(nameF.c_str());
             if(rFile.is_open()){
                 cout << "File open"<<endl;
+            }
+            else {
+                cout  << "File not open"<<endl;
             }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
             for (int i; i < TimeVector.size(); ++i){
