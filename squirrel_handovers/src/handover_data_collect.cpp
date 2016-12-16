@@ -119,8 +119,8 @@ int main(int argc, char** args) {
 
         robotinoQueue->jointPtp(end);
 
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) waiting to grasp the object");
         stage = 3;
@@ -150,8 +150,8 @@ int main(int argc, char** args) {
 
         robotinoQueue->jointPtp(start);
 
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
@@ -277,6 +277,7 @@ void dataStore(){
                 cout  << "File not open"<<endl;
             }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
+           cout <<"time vector size "<< TimeVector.size()<<endl;
             for (int i; i < TimeVector.size(); ++i){
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
