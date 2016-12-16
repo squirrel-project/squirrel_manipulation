@@ -35,7 +35,7 @@ int stage = 100;
 int end_task = 100;
 
 boost::mutex sensor_mutex_;
-std::vector<double>  robot_joints_, wrist_sensor_values_;
+std::vector<double>  robot_joints_, wrist_sensor_values_(6,0.0);
 std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose);
 
 
@@ -204,14 +204,12 @@ int main(int argc, char** args) {
 
 void sensorReadCallback(std_msgs::Float64MultiArray msg){
 
-    wrist_sensor_values_.clear();
-    wrist_sensor_values_.shrink_to_fit();
-    wrist_sensor_values_.push_back(msg.data.at(0));
-    wrist_sensor_values_.push_back(msg.data.at(1));
-    wrist_sensor_values_.push_back(msg.data.at(2));
-    wrist_sensor_values_.push_back(msg.data.at(3));
-    wrist_sensor_values_.push_back(msg.data.at(4));
-    wrist_sensor_values_.push_back(msg.data.at(5));
+    wrist_sensor_values_.at(0) = msg.data.at(0);
+    wrist_sensor_values_.at(1) = msg.data.at(1);
+    wrist_sensor_values_.at(2) = msg.data.at(2);
+    wrist_sensor_values_.at(3) = msg.data.at(3);
+    wrist_sensor_values_.at(4) = msg.data.at(4);
+    wrist_sensor_values_.at(5) = msg.data.at(5);
 
 }
 
@@ -228,7 +226,6 @@ void dataStore(){
     std::vector<std::vector<double>> SensorValues;
     std::vector<std::vector<double>> projectedSensorValues;
     std::vector<geometry_msgs::Pose> poseWristVector;
-
 
     while(end_task>0){
 
@@ -258,11 +255,13 @@ void dataStore(){
             poseWristVector.push_back(pose_wrist_);
             sensor_mutex_.lock();
             SensorValues.push_back(wrist_sensor_values_);
+            cout <<"here 3"<<endl;
+            pose_wrist_.orientation.w =1.0;
+
             projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
             sensor_mutex_.unlock();
             projectedSensorValues.push_back(projected_sensor_values_);
             StageVector.push_back(stage);
-
 
         }
 
