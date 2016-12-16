@@ -98,8 +98,8 @@ int main(int argc, char** args) {
 
         store_ = true;
         sleep(1);
-        auto firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //auto firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
@@ -109,8 +109,8 @@ int main(int argc, char** args) {
 
         stage = 1; // initial pose with the open hand
         cout << "(handover) current stage "<<stage<<endl;
-        firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
 
         ROS_INFO("(handover) going to the handover pose with the open hand");
@@ -277,8 +277,9 @@ void dataStore(){
                 cout  << "File not open"<<endl;
             }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
-           cout <<"time vector size "<< TimeVector.size()<<endl;
+            cout <<"time vector size "<< TimeVector.size()<<endl;
             for (int i; i < TimeVector.size(); ++i){
+                cout<< "here 1"<<endl;
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
                 rFile << poseWristVector.at(i).position.x << "\t";
