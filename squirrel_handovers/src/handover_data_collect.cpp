@@ -255,7 +255,6 @@ void dataStore(){
             poseWristVector.push_back(pose_wrist_);
             sensor_mutex_.lock();
             SensorValues.push_back(wrist_sensor_values_);
-            cout <<"here 3"<<endl;
             pose_wrist_.orientation.w =1.0;
 
             projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
