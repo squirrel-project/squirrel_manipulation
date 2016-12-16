@@ -227,6 +227,9 @@ void dataStore(){
     std::vector<std::vector<double>> projectedSensorValues;
     std::vector<geometry_msgs::Pose> poseWristVector;
 
+    std::ofstream rFile;
+    string nameF;
+
     while(end_task>0){
 
         if(!store_set_ && store_){
@@ -267,8 +270,7 @@ void dataStore(){
         if(store_set_ && !store_){
             cout<<"(handover) writing to a file"<<endl;
             store_set_ = false;
-            std::ofstream rFile;
-            string nameF = path_  + experiment_ + ".txt";
+            nameF = path_  + experiment_ + ".txt";
             rFile.open(nameF.c_str());
             if(rFile.is_open()){
                 cout << "File open"<<endl;
@@ -277,9 +279,8 @@ void dataStore(){
                 cout  << "File not open"<<endl;
             }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
-            cout <<"time vector size "<< TimeVector.size()<<endl;
+
             for (int i; i < TimeVector.size(); ++i){
-                cout<< "here 1"<<endl;
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
                 rFile << poseWristVector.at(i).position.x << "\t";
@@ -305,8 +306,8 @@ void dataStore(){
 
             }
 
-            writing_done_ = true;
             rFile.close();
+            writing_done_ = true;
         }
         lRate.sleep();
     }
