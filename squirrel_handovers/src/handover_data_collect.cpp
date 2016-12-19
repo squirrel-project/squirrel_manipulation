@@ -26,8 +26,8 @@ geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
-string path_= "/home/c7031098/catkin_ws/data/";
-//string path_ ="/home/c7031098/squirrel_ws_new/data/";
+//string path_= "/home/c7031098/catkin_ws/data/";
+string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 
 bool store_set_(false), store_(false), writing_done_(false);
@@ -50,40 +50,40 @@ int main(int argc, char** args) {
     ros::AsyncSpinner spinner(10); spinner.start();
     ROS_INFO("(handover) node started");
 
-    //wrist sensor
+//    //wrist sensor
 
-    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
+//    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
 
-    //hand
-    squirrel_manipulation_msgs::SoftHandGrasp graspService;
-    graspService.request.position = 0.9;
-    squirrel_manipulation_msgs::SoftHandGrasp releaseService;
-    releaseService.request.position = 0.0;
+//    //hand
+//    squirrel_manipulation_msgs::SoftHandGrasp graspService;
+//    graspService.request.position = 0.9;
+//    squirrel_manipulation_msgs::SoftHandGrasp releaseService;
+//    releaseService.request.position = 0.0;
 
 
-    //arm control
+//    //arm control
 
-    ROS_INFO("(handover) setting up control queue");
-    cout <<  endl;
-    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
+//    ROS_INFO("(handover) setting up control queue");
+//    cout <<  endl;
+//    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
 
-    ROS_INFO("(handover) creating moveit kinematics instance");
-    cout << endl;
-    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
-    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
+//    ROS_INFO("(handover) creating moveit kinematics instance");
+//    cout << endl;
+//    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+//    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
 
-    robotinoQueue->setKinematics(mvKin);
-    robotinoQueue->setPathPlanner(mvKin);
+//    robotinoQueue->setKinematics(mvKin);
+//    robotinoQueue->setPathPlanner(mvKin);
 
-    ROS_INFO("(handover) starting queue");
-    cout << endl;
-    auto realLqThread = robotinoQueue->startQueue();
+//    ROS_INFO("(handover) starting queue");
+//    cout << endl;
+//    auto realLqThread = robotinoQueue->startQueue();
 
-    cout << "(handover)switching to impedance mode if it is not there yet" << endl;
-    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
-        robotinoQueue->stopCurrentMode();
-        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
-    }
+//    cout << "(handover) switching to impedance mode if it is not there yet" << endl;
+//    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
+//        robotinoQueue->stopCurrentMode();
+//        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
+//    }
 
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -93,97 +93,104 @@ int main(int argc, char** args) {
 
     while(end_task > 0) {
 
-        cout << "(handover) enter experiment name: ";
-        cin >> experiment_;
+        string numo, nums;
+
+        cout << "(handover) enter subject id number: ";
+        cin >> nums;
+
+        cout << "(handover) enter object id number: ";
+        cin >> numo;
+
+        experiment_ = "subject" + nums + "object" + numo;
 
         store_ = true;
         sleep(1);
         //auto firstJoints = robotinoQueue->getCurrentJoints().joints;
         //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
-        ROS_INFO("(handover) going to initial pose with the open hand");
-        stage = 0;
-        cout << "(handover) current stage "<<stage<<endl;
-        robotinoQueue->jointPtp(start);
+//        ROS_INFO("(handover) going to initial pose with the open hand");
+//        stage = 0;
+//        cout << "(handover) current stage "<<stage<<endl;
+//        robotinoQueue->jointPtp(start);
 
 
-        stage = 1; // initial pose with the open hand
-        cout << "(handover) current stage "<<stage<<endl;
-        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+//        stage = 1; // initial pose with the open hand
+//        cout << "(handover) current stage "<<stage<<endl;
+//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
 
-        ROS_INFO("(handover) going to the handover pose with the open hand");
-        stage = 2;
-        cout << "(handover) current stage "<<stage<<endl;
+//        ROS_INFO("(handover) going to the handover pose with the open hand");
+//        stage = 2;
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+//        robotinoQueue->jointPtp(end);
 
-        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
-        ROS_INFO("(handover) waiting to grasp the object");
-        stage = 3;
-        cout << "(handover) current stage "<<stage<<endl;
+//        ROS_INFO("(handover) waiting to grasp the object");
+//        stage = 3;
+//        cout << "(handover) current stage "<<stage<<endl;
 
 
-        cout << "(handover) press 1 to close the hand" << endl;
-        cin >> grasp_value;
-        stage = 4   ; //grasping the object
-        cout << "(handover) current stage "<<stage<<endl;
+//        cout << "(handover) press 1 to close the hand" << endl;
+//        cin >> grasp_value;
+//        stage = 4   ; //grasping the object
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        if(grasp_value == 1){
-            // stage = 4; //grasping the object
-            cout<<"OK"<<endl;
+//        if(grasp_value == 1){
+//            // stage = 4; //grasping the object
+//            cout<<"OK"<<endl;
 
-            if ( ros::service::call(HAND_SERVICE, graspService) ){
-                ROS_INFO("(handover) HAND Grasped!");
-            }else{
-                ROS_ERROR("handover) FAILED to Graps!");
-            }
-        }
-        cout << "(handover) current stage "<<stage<<endl;
+//            if ( ros::service::call(HAND_SERVICE, graspService) ){
+//                ROS_INFO("(handover) HAND Grasped!");
+//            }else{
+//                ROS_ERROR("handover) FAILED to Graps!");
+//            }
+//        }
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        ROS_INFO("(handover) going to initial pose with the closed hand");
-        stage = 5;
-        cout << "(handover) current stage "<<stage<<endl;
+//        ROS_INFO("(handover) going to initial pose with the closed hand");
+//        stage = 5;
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(start);
+//        robotinoQueue->jointPtp(start);
 
-        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
-        ROS_INFO("(handover) going to the handover pose with the closed hand");
-        stage = 6; // initial pose with the closed hand
-        cout << "(handover) current stage "<<stage<<endl;
+//        ROS_INFO("(handover) going to the handover pose with the closed hand");
+//        stage = 6; // initial pose with the closed hand
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+//        robotinoQueue->jointPtp(end);
 
-        ROS_INFO("(handover) waiting to release the object");
-        stage = 7;
-        cout << "(handover) current stage "<<stage<<endl;
+//        ROS_INFO("(handover) waiting to release the object");
+//        stage = 7;
+//        cout << "(handover) current stage "<<stage<<endl;
 
 
         cout << "(handover) press 1 to open the hand" << endl;
         cin >> grasp_value;
-        stage = 8  ; //releasing the object
-        cout << "(handover) current stage "<<stage<<endl;
+//        stage = 8  ; //releasing the object
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        if(grasp_value == 1){
-            cout<<"OK"<<endl;
-            if ( ros::service::call(HAND_SERVICE, releaseService) ){
-                ROS_INFO("(handover) HAND Released!");
-            }else{
-                ROS_ERROR("handover) FAILED to Release!");
-            }
-        }
+//        if(grasp_value == 1){
+//            cout<<"OK"<<endl;
+//            if ( ros::service::call(HAND_SERVICE, releaseService) ){
+//                ROS_INFO("(handover) HAND Released!");
+//            }else{
+//                ROS_ERROR("handover) FAILED to Release!");
+//            }
+//        }
 
 
-        stage = 9;
-        cout << "(handover) current stage "<<stage<<endl;
+//        stage = 9;
+//        cout << "(handover) current stage "<<stage<<endl;
 
-        ROS_INFO("(handover) going to initial pose with the open hand");
-        robotinoQueue->jointPtp(start);
+//        ROS_INFO("(handover) going to initial pose with the open hand");
+//        robotinoQueue->jointPtp(start);
 
         store_ = false;
         while(!writing_done_){
@@ -252,9 +259,9 @@ void dataStore(){
         if(store_set_ && store_){
 
             TimeVector.push_back(ros::Time::now().toSec() - start_time);
-            tf_listener_.waitForTransform(base_frame_, wrist_frame_, ros::Time::now(), ros::Duration(0.1));
-            tf_listener_.lookupTransform(base_frame_, wrist_frame_, ros::Time(0), trans);
-            pose_wrist_ = tf_stamped2pose(trans);
+//            tf_listener_.waitForTransform(base_frame_, wrist_frame_, ros::Time::now(), ros::Duration(0.1));
+//            tf_listener_.lookupTransform(base_frame_, wrist_frame_, ros::Time(0), trans);
+//            pose_wrist_ = tf_stamped2pose(trans);
             poseWristVector.push_back(pose_wrist_);
             sensor_mutex_.lock();
             SensorValues.push_back(wrist_sensor_values_);
@@ -280,7 +287,8 @@ void dataStore(){
             }
             rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
 
-            for (int i; i < TimeVector.size(); ++i){
+            for (int i = 0; i < TimeVector.size(); ++i){
+
                 rFile << TimeVector.at(i)<< "\t";
                 rFile << StageVector.at(i)<< "\t";
                 rFile << poseWristVector.at(i).position.x << "\t";
@@ -302,9 +310,10 @@ void dataStore(){
                 rFile << projectedSensorValues.at(i).at(3) << "\t";
                 rFile << projectedSensorValues.at(i).at(4) << "\t";
                 rFile << projectedSensorValues.at(i).at(5) << "\t";
-                rFile <<endl;
+                rFile << endl;
 
             }
+
 
             rFile.close();
             writing_done_ = true;
