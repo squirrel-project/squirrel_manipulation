@@ -53,9 +53,9 @@ int main(int argc, char** args) {
 
     ros::init(argc, args, "handover_data_collection");
     ros::NodeHandle node;
+    sleep(1);
 
     node.param("robot",robot,std::string(uibk_robotino));
-    sleep(1);
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
     ros::AsyncSpinner spinner(10); spinner.start();
@@ -84,9 +84,6 @@ int main(int argc, char** args) {
     releaseServiceKCL.goal.force_limit = 1.0;
 
     sleep (1);
-
-
-
 
 
     //arm control
