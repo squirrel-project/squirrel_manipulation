@@ -65,7 +65,10 @@ int main(int argc, char** args) {
 
     auto sub_h = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackWrist);
 
-    auto sub_f = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackFingers);
+    ros::Subscriber sub_f;
+    if(robot == tuw_robotino){
+        sub_f = node.subscribe(FINGERTIP_TOPIC, 1, &sensorReadCallbackFingers);
+    }
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
@@ -316,8 +319,8 @@ void dataStore(){
             writing_done_ = false;
             TimeVector.clear();
             TimeVector.shrink_to_fit();
-           WristSensorValues.clear();
-           WristSensorValues.shrink_to_fit();
+            WristSensorValues.clear();
+            WristSensorValues.shrink_to_fit();
             projectedSensorValues.clear();
             projectedSensorValues.shrink_to_fit();
             poseWristVector.clear();
@@ -338,7 +341,6 @@ void dataStore(){
             WristSensorValues.push_back(wrist_sensor_values_);
             FingertipSensorValues.push_back(fingertip_sensor_values_);
             projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
-            cout << pose_wrist_ << endl;
             sensor_mutex_.unlock();
             projectedSensorValues.push_back(projected_sensor_values_);
             StageVector.push_back(stage);
