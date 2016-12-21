@@ -64,6 +64,7 @@ int main(int argc, char** args) {
     //wrist sensor
 
     auto sub_h = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackWrist);
+
     auto sub_f = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackFingers);
 
     //hand
@@ -81,6 +82,8 @@ int main(int argc, char** args) {
     kclhand_control::ActuateHandActionGoal releaseServiceKCL;
     releaseServiceKCL.goal.command = 0.0;
     releaseServiceKCL.goal.force_limit = 1.0;
+
+    sleep (1);
 
 
 
@@ -338,6 +341,7 @@ void dataStore(){
             WristSensorValues.push_back(wrist_sensor_values_);
             FingertipSensorValues.push_back(fingertip_sensor_values_);
             projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
+            cout << pose_wrist_ << endl;
             sensor_mutex_.unlock();
             projectedSensorValues.push_back(projected_sensor_values_);
             StageVector.push_back(stage);
