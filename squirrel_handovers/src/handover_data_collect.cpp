@@ -13,6 +13,7 @@
 #include <actionlib/client/simple_action_client.h>
 
 #define SENSOR_TOPIC "/wrist"
+#define FINGERTIP_TOPIC "/fingertips"
 #define HAND_SERVICE "/softhand_grasp"
 
 static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27;
@@ -22,18 +23,19 @@ using namespace std;
 using namespace arma;
 using namespace kukadu;
 
-void sensorReadCallback(std_msgs::Float64MultiArray msg);
+void sensorReadCallbackWrist(std_msgs::Float64MultiArray msg);
+void sensorReadCallbackFingers(std_msgs::Float64MultiArray msg);
 void dataStore();
 geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 
 
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
-//string path_= "/home/c7031098/catkin_ws/data/";
 string robotino;
 string tuw_robotino = "tuw-robotino2";
 string uibk_robotino = "uibk-robotino2-sh";
-string path_ ="/home/c7031098/squirrel_ws_new/data/";
+string path_= "/home/c7031098/catkin_ws/data/";
+//string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 string robot;
 
@@ -42,7 +44,7 @@ int stage = 100;
 int end_task = 100;
 
 boost::mutex sensor_mutex_;
-std::vector<double>  robot_joints_, wrist_sensor_values_(6,0.0);
+std::vector<double>  robot_joints_, wrist_sensor_values_(6,0.0), fingertip_sensor_values_(15,0.0);
 std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose);
 
 
@@ -61,7 +63,8 @@ int main(int argc, char** args) {
 
     //wrist sensor
 
-    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
+    auto sub_h = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackWrist);
+    auto sub_f = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallbackFingers);
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
@@ -256,7 +259,7 @@ int main(int argc, char** args) {
 
 }
 
-void sensorReadCallback(std_msgs::Float64MultiArray msg){
+void sensorReadCallbackWrist(std_msgs::Float64MultiArray msg){
 
     wrist_sensor_values_.at(0) = msg.data.at(0);
     wrist_sensor_values_.at(1) = msg.data.at(1);
@@ -266,6 +269,26 @@ void sensorReadCallback(std_msgs::Float64MultiArray msg){
     wrist_sensor_values_.at(5) = msg.data.at(5);
 
 }
+
+void sensorReadCallbackFingers(std_msgs::Float64MultiArray msg){
+
+    fingertip_sensor_values_.at(0) = msg.data.at(0);
+    fingertip_sensor_values_.at(1) = msg.data.at(1);
+    fingertip_sensor_values_.at(2) = msg.data.at(2);
+    fingertip_sensor_values_.at(3) = msg.data.at(3);
+    fingertip_sensor_values_.at(4) = msg.data.at(4);
+    fingertip_sensor_values_.at(5) = msg.data.at(5);
+    fingertip_sensor_values_.at(6) = msg.data.at(6);
+    fingertip_sensor_values_.at(7) = msg.data.at(7);
+    fingertip_sensor_values_.at(8) = msg.data.at(8);
+    fingertip_sensor_values_.at(9) = msg.data.at(9);
+    fingertip_sensor_values_.at(10) = msg.data.at(10);
+    fingertip_sensor_values_.at(11) = msg.data.at(11);
+    fingertip_sensor_values_.at(12) = msg.data.at(12);
+    fingertip_sensor_values_.at(13) = msg.data.at(13);
+    fingertip_sensor_values_.at(14) = msg.data.at(14);
+}
+
 
 void dataStore(){
     ros::Rate lRate(10.0);
@@ -277,7 +300,8 @@ void dataStore(){
 
     std::vector<double> TimeVector;
     std::vector<int> StageVector;
-    std::vector<std::vector<double>> SensorValues;
+    std::vector<std::vector<double>>WristSensorValues;
+    std::vector<std::vector<double>> FingertipSensorValues;
     std::vector<std::vector<double>> projectedSensorValues;
     std::vector<geometry_msgs::Pose> poseWristVector;
 
@@ -292,8 +316,8 @@ void dataStore(){
             writing_done_ = false;
             TimeVector.clear();
             TimeVector.shrink_to_fit();
-            SensorValues.clear();
-            SensorValues.shrink_to_fit();
+           WristSensorValues.clear();
+           WristSensorValues.shrink_to_fit();
             projectedSensorValues.clear();
             projectedSensorValues.shrink_to_fit();
             poseWristVector.clear();
@@ -311,9 +335,8 @@ void dataStore(){
             pose_wrist_ = tf_stamped2pose(trans);
             poseWristVector.push_back(pose_wrist_);
             sensor_mutex_.lock();
-            SensorValues.push_back(wrist_sensor_values_);
-            pose_wrist_.orientation.w =1.0;
-
+            WristSensorValues.push_back(wrist_sensor_values_);
+            FingertipSensorValues.push_back(fingertip_sensor_values_);
             projected_sensor_values_ = projectReadings(wrist_sensor_values_, pose_wrist_);
             sensor_mutex_.unlock();
             projectedSensorValues.push_back(projected_sensor_values_);
@@ -332,8 +355,12 @@ void dataStore(){
             else {
                 cout  << "File not open"<<endl;
             }
-            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t"<<  endl;
+            rFile<< "time" << "\t" << "stage" << "\t" << "wrist.pos.x" << "\t" << "wrist.pos.y" << "\t" << "wrist.pos.z" << "\t" << "wrist.orient.x" << "\t" << "wrist.orient.y" << "\t" << "wrist.orient.z" << "\t" << "wrist.orient.w" << "\t" <<"force.x" << "\t" <<"force.y" << "\t" <<"force.z" << "\t" <<"torque.x" << "\t" <<"torque.y" <<"\t" <<"torque.z" << "\t"<<"projected.force.x" << "\t" <<"projected.force.y" << "\t" <<"projected.force.z" << "\t" <<"projected.torque.x" << "\t" <<"projected.torque.y" <<"\t" <<"projected.torque.z" << "\t";
 
+            if(robot == tuw_robotino){
+                rFile << "Fz1" << "\t" << " Mx1" << "\t" << " My1" << "\t" << " Fz2" << "\t" << " Mx2" << "\t" << " My2" << "\t" << " Fz3" << "\t" << " Mx3" << "\t" << " My3" << "\t" << " Dd1" << "\t" << " Dp1" << "\t" << " Dd2" << "\t" << " Dp2" << "\t" << " Dd3" << "\t" << " Dp3";
+            }
+            rFile << endl;
             for (int i = 0; i < TimeVector.size(); ++i){
 
                 rFile << TimeVector.at(i)<< "\t";
@@ -345,18 +372,37 @@ void dataStore(){
                 rFile << poseWristVector.at(i).orientation.y << "\t";
                 rFile << poseWristVector.at(i).orientation.z << "\t";
                 rFile << poseWristVector.at(i).orientation.w << "\t";
-                rFile << SensorValues.at(i).at(0) << "\t";
-                rFile << SensorValues.at(i).at(1) << "\t";
-                rFile << SensorValues.at(i).at(2) << "\t";
-                rFile << SensorValues.at(i).at(3) << "\t";
-                rFile << SensorValues.at(i).at(4) << "\t";
-                rFile << SensorValues.at(i).at(5) << "\t";
+                rFile <<WristSensorValues.at(i).at(0) << "\t";
+                rFile <<WristSensorValues.at(i).at(1) << "\t";
+                rFile <<WristSensorValues.at(i).at(2) << "\t";
+                rFile <<WristSensorValues.at(i).at(3) << "\t";
+                rFile <<WristSensorValues.at(i).at(4) << "\t";
+                rFile <<WristSensorValues.at(i).at(5) << "\t";
                 rFile << projectedSensorValues.at(i).at(0) << "\t";
                 rFile << projectedSensorValues.at(i).at(1) << "\t";
                 rFile << projectedSensorValues.at(i).at(2) << "\t";
                 rFile << projectedSensorValues.at(i).at(3) << "\t";
                 rFile << projectedSensorValues.at(i).at(4) << "\t";
                 rFile << projectedSensorValues.at(i).at(5) << "\t";
+                if(robot == tuw_robotino){
+                    rFile <<FingertipSensorValues.at(i).at(0) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(1) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(2) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(3) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(4) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(5) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(6) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(7) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(8) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(9) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(10) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(11) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(12) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(13) << "\t";
+                    rFile <<FingertipSensorValues.at(i).at(14) << "\t";
+
+                }
+
                 rFile << endl;
 
             }
