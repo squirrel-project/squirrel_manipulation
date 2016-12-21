@@ -31,13 +31,13 @@ geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
-string robotino;
+string robot;
 string tuw_robotino = "tuw-robotino2";
 string uibk_robotino = "uibk-robotino2-sh";
 string path_= "/home/c7031098/catkin_ws/data/";
 //string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
-string robot;
+
 
 bool store_set_(false), store_(false), writing_done_(false);
 int stage = 100;
@@ -54,7 +54,7 @@ int main(int argc, char** args) {
     ros::init(argc, args, "handover_data_collection");
     ros::NodeHandle node;
 
-    node.param("robot", robot ,std::string(uibk_robotino));
+    node.param("robot",robot,std::string(uibk_robotino));
     sleep(1);
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
@@ -168,7 +168,7 @@ int main(int argc, char** args) {
             // stage = 4; //grasping the object
             cout<<"OK"<<endl;
 
-            if (robotino == uibk_robotino){
+            if (robot == uibk_robotino){
 
                 if ( ros::service::call(HAND_SERVICE, graspService) ){
                     ROS_INFO("(handover) HAND Grasped!");
@@ -176,7 +176,7 @@ int main(int argc, char** args) {
                     ROS_ERROR("handover) FAILED to Graps!");
                 }
             }
-            else if (robotino == tuw_robotino){
+            else if (robot == tuw_robotino){
                 kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
@@ -216,7 +216,7 @@ int main(int argc, char** args) {
         if(grasp_value == 1){
             cout<<"OK"<<endl;
 
-            if (robotino == uibk_robotino){
+            if (robot == uibk_robotino){
 
                 if ( ros::service::call(HAND_SERVICE, releaseService) ){
                     ROS_INFO("(handover) HAND Released!");
@@ -224,7 +224,7 @@ int main(int argc, char** args) {
                     ROS_ERROR("handover) FAILED to Release!");
                 }
             }
-            else if (robotino == tuw_robotino){
+            else if (robot == tuw_robotino){
                 kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
