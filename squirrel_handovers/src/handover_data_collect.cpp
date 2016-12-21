@@ -8,6 +8,9 @@
 
 #include <kukadu/kukadu.hpp>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
+#include <kclhand_control/ActuateHandAction.h>
+#include <kclhand_control/ActuateHandActionGoal.h>
+#include <actionlib/client/simple_action_client.h>
 
 #define SENSOR_TOPIC "/wrist"
 #define HAND_SERVICE "/softhand_grasp"
@@ -27,8 +30,12 @@ geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
 string base_frame_ = "/base_link";
 string wrist_frame_ = "/arm_link5";
 //string path_= "/home/c7031098/catkin_ws/data/";
+string robotino;
+string tuw_robotino = "tuw-robotino2";
+string uibk_robotino = "uibk-robotino2-sh";
 string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
+string robot;
 
 bool store_set_(false), store_(false), writing_done_(false);
 int stage = 100;
@@ -44,46 +51,61 @@ int main(int argc, char** args) {
 
     ros::init(argc, args, "handover_data_collection");
     ros::NodeHandle node;
+
+    node.param("robot", robot ,std::string(uibk_robotino));
     sleep(1);
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
     ros::AsyncSpinner spinner(10); spinner.start();
     ROS_INFO("(handover) node started");
 
-//    //wrist sensor
+    //wrist sensor
 
-//    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
+    auto sub = node.subscribe(SENSOR_TOPIC, 1, &sensorReadCallback);
 
-//    //hand
-//    squirrel_manipulation_msgs::SoftHandGrasp graspService;
-//    graspService.request.position = 0.9;
-//    squirrel_manipulation_msgs::SoftHandGrasp releaseService;
-//    releaseService.request.position = 0.0;
+    //hand
+    squirrel_manipulation_msgs::SoftHandGrasp graspService;
+    graspService.request.position = 0.9;
+    squirrel_manipulation_msgs::SoftHandGrasp releaseService;
+    releaseService.request.position = 0.0;
+
+    actionlib::SimpleActionClient<kclhand_control::ActuateHandAction> kclhandGraspActionClient("hand_controller/actuate_hand", true);
+    if (robot == tuw_robotino){
+        kclhandGraspActionClient.waitForServer();}
+    kclhand_control::ActuateHandActionGoal graspServiceKCL;
+    graspServiceKCL.goal.command = 1.0;
+    graspServiceKCL.goal.force_limit = 1.0;
+    kclhand_control::ActuateHandActionGoal releaseServiceKCL;
+    releaseServiceKCL.goal.command = 0.0;
+    releaseServiceKCL.goal.force_limit = 1.0;
 
 
-//    //arm control
 
-//    ROS_INFO("(handover) setting up control queue");
-//    cout <<  endl;
-//    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
 
-//    ROS_INFO("(handover) creating moveit kinematics instance");
-//    cout << endl;
-//    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
-//    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
 
-//    robotinoQueue->setKinematics(mvKin);
-//    robotinoQueue->setPathPlanner(mvKin);
+    //arm control
 
-//    ROS_INFO("(handover) starting queue");
-//    cout << endl;
-//    auto realLqThread = robotinoQueue->startQueue();
+    ROS_INFO("(handover) setting up control queue");
+    cout <<  endl;
+    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", node));
 
-//    cout << "(handover) switching to impedance mode if it is not there yet" << endl;
-//    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
-//        robotinoQueue->stopCurrentMode();
-//        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
-//    }
+    ROS_INFO("(handover) creating moveit kinematics instance");
+    cout << endl;
+    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+    auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, node, "robotino", controlledJoints, "arm_link5");
+
+    robotinoQueue->setKinematics(mvKin);
+    robotinoQueue->setPathPlanner(mvKin);
+
+    ROS_INFO("(handover) starting queue");
+    cout << endl;
+    auto realLqThread = robotinoQueue->startQueue();
+
+    cout << "(handover) switching to impedance mode if it is not there yet" << endl;
+    if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
+        robotinoQueue->stopCurrentMode();
+        robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
+    }
 
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -105,92 +127,117 @@ int main(int argc, char** args) {
 
         store_ = true;
         sleep(1);
-        //auto firstJoints = robotinoQueue->getCurrentJoints().joints;
+        auto firstJoints = robotinoQueue->getCurrentJoints().joints;
+        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+
+        ROS_INFO("(handover) going to initial pose with the open hand");
+        stage = 0;
+        cout << "(handover) current stage "<<stage<<endl;
+        robotinoQueue->jointPtp(start);
+
+
+        stage = 1; // initial pose with the open hand
+        cout << "(handover) current stage "<<stage<<endl;
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
         //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
-//        ROS_INFO("(handover) going to initial pose with the open hand");
-//        stage = 0;
-//        cout << "(handover) current stage "<<stage<<endl;
-//        robotinoQueue->jointPtp(start);
+
+        ROS_INFO("(handover) going to the handover pose with the open hand");
+        stage = 2;
+        cout << "(handover) current stage "<<stage<<endl;
+
+        robotinoQueue->jointPtp(end);
+
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+
+        ROS_INFO("(handover) waiting to grasp the object");
+        stage = 3;
+        cout << "(handover) current stage "<<stage<<endl;
 
 
-//        stage = 1; // initial pose with the open hand
-//        cout << "(handover) current stage "<<stage<<endl;
-//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        cout << "(handover) press 1 to close the hand" << endl;
+        cin >> grasp_value;
+        stage = 4   ; //grasping the object
+        cout << "(handover) current stage "<<stage<<endl;
 
+        if(grasp_value == 1){
+            // stage = 4; //grasping the object
+            cout<<"OK"<<endl;
 
-//        ROS_INFO("(handover) going to the handover pose with the open hand");
-//        stage = 2;
-//        cout << "(handover) current stage "<<stage<<endl;
+            if (robotino == uibk_robotino){
 
-//        robotinoQueue->jointPtp(end);
+                if ( ros::service::call(HAND_SERVICE, graspService) ){
+                    ROS_INFO("(handover) HAND Grasped!");
+                }else{
+                    ROS_ERROR("handover) FAILED to Graps!");
+                }
+            }
+            else if (robotino == tuw_robotino){
+                kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
+                kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
+                if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+                    ROS_INFO("(handover) HAND Grasped!");
+                }else{
+                    ROS_ERROR("handover) FAILED to Graps!");
+                }
+            }
+        }
+        cout << "(handover) current stage "<<stage<<endl;
 
-//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        ROS_INFO("(handover) going to initial pose with the closed hand");
+        stage = 5;
+        cout << "(handover) current stage "<<stage<<endl;
 
-//        ROS_INFO("(handover) waiting to grasp the object");
-//        stage = 3;
-//        cout << "(handover) current stage "<<stage<<endl;
+        robotinoQueue->jointPtp(start);
 
+        //firstJoints = robotinoQueue->getCurrentJoints().joints;
+        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
 
-//        cout << "(handover) press 1 to close the hand" << endl;
-//        cin >> grasp_value;
-//        stage = 4   ; //grasping the object
-//        cout << "(handover) current stage "<<stage<<endl;
+        ROS_INFO("(handover) going to the handover pose with the closed hand");
+        stage = 6; // initial pose with the closed hand
+        cout << "(handover) current stage "<<stage<<endl;
 
-//        if(grasp_value == 1){
-//            // stage = 4; //grasping the object
-//            cout<<"OK"<<endl;
+        robotinoQueue->jointPtp(end);
 
-//            if ( ros::service::call(HAND_SERVICE, graspService) ){
-//                ROS_INFO("(handover) HAND Grasped!");
-//            }else{
-//                ROS_ERROR("handover) FAILED to Graps!");
-//            }
-//        }
-//        cout << "(handover) current stage "<<stage<<endl;
-
-//        ROS_INFO("(handover) going to initial pose with the closed hand");
-//        stage = 5;
-//        cout << "(handover) current stage "<<stage<<endl;
-
-//        robotinoQueue->jointPtp(start);
-
-//        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-//        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
-
-//        ROS_INFO("(handover) going to the handover pose with the closed hand");
-//        stage = 6; // initial pose with the closed hand
-//        cout << "(handover) current stage "<<stage<<endl;
-
-//        robotinoQueue->jointPtp(end);
-
-//        ROS_INFO("(handover) waiting to release the object");
-//        stage = 7;
-//        cout << "(handover) current stage "<<stage<<endl;
+        ROS_INFO("(handover) waiting to release the object");
+        stage = 7;
+        cout << "(handover) current stage "<<stage<<endl;
 
 
         cout << "(handover) press 1 to open the hand" << endl;
         cin >> grasp_value;
-//        stage = 8  ; //releasing the object
-//        cout << "(handover) current stage "<<stage<<endl;
+        stage = 8  ; //releasing the object
+        cout << "(handover) current stage "<<stage<<endl;
 
-//        if(grasp_value == 1){
-//            cout<<"OK"<<endl;
-//            if ( ros::service::call(HAND_SERVICE, releaseService) ){
-//                ROS_INFO("(handover) HAND Released!");
-//            }else{
-//                ROS_ERROR("handover) FAILED to Release!");
-//            }
-//        }
+        if(grasp_value == 1){
+            cout<<"OK"<<endl;
+
+            if (robotino == uibk_robotino){
+
+                if ( ros::service::call(HAND_SERVICE, releaseService) ){
+                    ROS_INFO("(handover) HAND Released!");
+                }else{
+                    ROS_ERROR("handover) FAILED to Release!");
+                }
+            }
+            else if (robotino == tuw_robotino){
+                kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
+                kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
+                if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+                    ROS_INFO("(handover) HAND Released!");
+                }else{
+                    ROS_ERROR("handover) FAILED to Release!");
+                }
+            }
+        }
 
 
-//        stage = 9;
-//        cout << "(handover) current stage "<<stage<<endl;
+        stage = 9;
+        cout << "(handover) current stage "<<stage<<endl;
 
-//        ROS_INFO("(handover) going to initial pose with the open hand");
-//        robotinoQueue->jointPtp(start);
+        ROS_INFO("(handover) going to initial pose with the open hand");
+        robotinoQueue->jointPtp(start);
 
         store_ = false;
         while(!writing_done_){
@@ -259,9 +306,9 @@ void dataStore(){
         if(store_set_ && store_){
 
             TimeVector.push_back(ros::Time::now().toSec() - start_time);
-//            tf_listener_.waitForTransform(base_frame_, wrist_frame_, ros::Time::now(), ros::Duration(0.1));
-//            tf_listener_.lookupTransform(base_frame_, wrist_frame_, ros::Time(0), trans);
-//            pose_wrist_ = tf_stamped2pose(trans);
+            tf_listener_.waitForTransform(base_frame_, wrist_frame_, ros::Time::now(), ros::Duration(0.1));
+            tf_listener_.lookupTransform(base_frame_, wrist_frame_, ros::Time(0), trans);
+            pose_wrist_ = tf_stamped2pose(trans);
             poseWristVector.push_back(pose_wrist_);
             sensor_mutex_.lock();
             SensorValues.push_back(wrist_sensor_values_);
