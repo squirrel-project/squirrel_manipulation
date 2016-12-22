@@ -34,7 +34,8 @@ string wrist_frame_ = "/arm_link5";
 string robot;
 string tuw_robotino = "tuw-robotino2";
 string uibk_robotino = "uibk-robotino2-sh";
-string path_= "/home/c7031098/catkin_ws/data/";
+string path_= "data/";
+//string path_= "/home/c7031098/catkin_ws/data/";
 //string path_ ="/home/c7031098/squirrel_ws_new/data/";
 string experiment_;
 
@@ -55,7 +56,7 @@ int main(int argc, char** args) {
     ros::NodeHandle node;
     sleep(1);
 
-    node.param("robot",robot,std::string(uibk_robotino));
+    node.param("robot",robot,std::string(tuw_robotino));
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
     ros::AsyncSpinner spinner(10); spinner.start();
