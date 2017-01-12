@@ -12,6 +12,7 @@ find_package(catkin REQUIRED
   squirrel_softhand
   kclhand_control
   geometry_msgs
+  visualization_msgs
 )
 
 catkin_python_setup()
