@@ -133,28 +133,25 @@ class SoftHand(object):
 
 
     def _visualize_grasp(self, ptp_goal):
-        self.graspMarker = Marker()
-        self.graspMarker.header.frame_id = "/origin"
-        self.graspMarker.header.stamp = rospy.get_rostime()
-        self.graspMarker.ns = "grasp"
-        self.graspMarker.id = 0
-        self.graspMarker.type = 2
-        self.graspMarker.action = 0
-        self.graspMarker.pose.position = ptp_goal.pose.position
-        self.graspMarker.pose.orientation.x = 0
-        self.graspMarker.pose.orientation.y = 0
-        self.graspMarker.pose.orientation.z = 0
-        self.graspMarker.pose.orientation.w = 1.0
-        self.graspMarker.scale.x = 1.0
-        self.graspMarker.scale.y = 1.0
-        self.graspMarker.scale.z = 1.0
-
-        self.graspMarker.color.r = 0.0
-        self.graspMarker.color.g = 1.0
-        self.graspMarker.color.b = 0.0
-        self.graspMarker.color.a = 1.0
-
-        self.graspMarker.lifetime = rospy.Duration(secs=5)
-
+        graspMarker = Marker()
+        graspMarker.header.frame_id = "/origin"
+        graspMarker.header.stamp = rospy.get_rostime()
+        graspMarker.ns = "grasp"
+        graspMarker.id = 0
+        graspMarker.type = 2
+        graspMarker.action = 0
+        graspMarker.pose.position = ptp_goal.pose.position
+        graspMarker.pose.orientation.x = 0
+        graspMarker.pose.orientation.y = 0
+        graspMarker.pose.orientation.z = 0
+        graspMarker.pose.orientation.w = 1.0
+        graspMarker.scale.x = 0.05
+        graspMarker.scale.y = 0.05
+        graspMarker.scale.z = 0.05
+        graspMarker.color.r = 0.0
+        graspMarker.color.g = 1.0
+        graspMarker.color.b = 0.0
+        graspMarker.color.a = 1.0
+        graspMarker.lifetime = rospy.Duration(secs=30)
         self.markerPub.publish(graspMarker)
 
