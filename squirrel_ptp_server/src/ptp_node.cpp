@@ -23,13 +23,13 @@ protected:
 
   ros::NodeHandle nh_;
   // NodeHandle instance must be created before this line. Otherwise strange error may occur.
-  actionlib::SimpleActionServer<squirrel_manipulation_msgs::PtpAction> as_;
+  actionlib::SimpleActionServer<squirrel_manipulation_msgs::PtpAction> cartPtpAs_;
   actionlib::SimpleActionServer<squirrel_manipulation_msgs::JointPtpAction> jointPtpAs_;
   std::string action_name_;
   std::string jointPtpName;
   // create messages that are used to published feedback/result
-  squirrel_manipulation_msgs::PtpFeedback feedback_;
-  squirrel_manipulation_msgs::PtpResult result_;
+  squirrel_manipulation_msgs::PtpFeedback cptpfeedback_;
+  squirrel_manipulation_msgs::PtpResult cptpresult_;
   
   squirrel_manipulation_msgs::JointPtpFeedback jptpfeedback_;
   squirrel_manipulation_msgs::JointPtpResult jptpresult_;
@@ -41,7 +41,7 @@ protected:
 public:
 
   PtpAction(std::string name, std::string jointPtpName, std::string tip_link) :
-    as_(nh_, name, boost::bind(&PtpAction::executeCB, this, _1), false),
+    cartPtpAs_(nh_, name, boost::bind(&PtpAction::executeCB, this, _1), false),
     jointPtpAs_(nh_, jointPtpName, boost::bind(&PtpAction::executeJointPtp, this, _1), false),
     action_name_(name) {
       
@@ -50,10 +50,10 @@ public:
     cartPtpRunning = false;
     jointPtpRunning = false;
       
-    cout << "setting up control queue" << endl;
+    ROS_INFO("setting up control queue");
     robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh_));
     
-    cout << "creating moveit kinematics instance" << endl;
+    ROS_INFO("creating moveit kinematics instance");
     vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
     //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
     mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 10, 2.0);
@@ -61,10 +61,10 @@ public:
     robotinoQueue->setKinematics(mvKin);
     robotinoQueue->setPathPlanner(mvKin);
 
-    cout << "starting queue" << endl;           
+    ROS_INFO("starting queue");           
     realLqThread = robotinoQueue->startQueue();
     
-    as_.start();
+    cartPtpAs_.start();
     jointPtpAs_.start();
     
   }
@@ -112,27 +112,28 @@ public:
         robotinoQueue->stopCurrentMode();
         robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
       }
-      feedback_.current_status = "executing";
-      as_.publishFeedback(feedback_);
+      cptpfeedback_.current_status = "executing";
+      cartPtpAs_.publishFeedback(cptpfeedback_);
 
       bool succeded=false;
       try{
         robotinoQueue->cartesianPtp(goal->pose);
         succeded=true;
       } catch (KukaduException& ex) {
-        cout << "No Ik Found: retry." << endl;
+	cartPtpRunning = false;
+	ROS_ERROR("PTP Server failed: %s", ex.what());
       }
       robotinoQueue->stopCurrentMode();
       if (succeded) {
-        result_.result_status = "execution done.";
+        cptpresult_.result_status = "execution done.";
+	cartPtpAs_.setSucceeded(cptpresult_);
       } else {
-        result_.result_status = "execution failed.";                
-      }
-      as_.setSucceeded(result_);
-      
+        cptpresult_.result_status = "execution failed.";                
+	cartPtpAs_.setAborted(cptpresult_);
+      }      
     } else {
-      jptpresult_.result_status = "execution failed because another ptp is currently running";
-      jointPtpAs_.setSucceeded(jptpresult_);      
+      cptpresult_.result_status = "execution failed because another ptp is currently running";
+      cartPtpAs_.setSucceeded(cptpresult_);      
     }
     
     cartPtpRunning = false;

@@ -2,13 +2,13 @@
 
 import rospy
 
-from squirrel_grasping import softhand
-from squirrel_grasping import metahand
+from squirrel_placement import softhand
+from squirrel_placement import metahand
 
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('squirrel_grasping_node')
+        rospy.init_node('squirrel_placement_node')
         hand = rospy.get_param('~hand')
         gripper = None
 
