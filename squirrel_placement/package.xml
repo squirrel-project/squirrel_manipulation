@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>squirrel_grasping</name>
+  <name>squirrel_placement</name>
   <version>0.0.0</version>
-  <description>The squirrel_grasping package</description>
+  <description>The squirrel_placement package</description>
 
   <maintainer email="philipp.zech@uibk.ac.at">Philipp Zech</maintainer>
 
@@ -17,9 +17,7 @@
   <build_depend>squirrel_softhand</build_depend>
   <build_depend>kclhand_control</build_depend>
   <build_depend>squirrel_ptp_server</build_depend>
-  <build_depend>mongodb_store</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>tf</build_depend>
   <build_depend>visualization_msgs</build_depend>
 
   <run_depend>squirrel_manipulation_msgs</run_depend>
@@ -29,11 +27,8 @@
   <run_depend>squirrel_softhand</run_depend>
   <run_depend>kclhand_control</run_depend>
   <run_depend>squirrel_ptp_server</run_depend>
-  <run_depend>mongodb_store</run_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>tf</run_depend>
   <run_depend>visualization_msgs</run_depend>
-
 
 
   <!-- The export tag contains other, unspecified, tags -->

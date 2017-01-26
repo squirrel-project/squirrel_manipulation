@@ -38,6 +38,7 @@ include_directories(
 
 add_executable(handover src/handover.cpp)
 target_link_libraries(handover ${catkin_LIBRARIES})
+add_dependencies(handover squirrel_manipulation_msgs_gencpp)
 
 add_executable(handover_collect src/handover_data_collect.cpp)
 target_link_libraries(handover_collect ${catkin_LIBRARIES})

@@ -6,6 +6,7 @@ from geometry_msgs.msg import Pose, PoseStamped
 from squirrel_manipulation_msgs.msg import BlindGraspAction
 from squirrel_manipulation_msgs.msg import BlindGraspResult
 from squirrel_manipulation_msgs.msg import BlindGraspFeedback
+from visualization_msgs.msg import Marker
 
 import tf
 import time
@@ -23,18 +24,19 @@ class SoftHand(object):
         self.softhand = rospy.ServiceProxy('softhand_grasp', SoftHandGrasp)
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
-        self.server = actionlib.SimpleActionServer('softhand_grasp_server', 
-                                                    BlindGraspAction, 
-                                                    execute_cb=self._execute_grasp, 
+        self.server = actionlib.SimpleActionServer('softhand_grasp_server',
+                                                    BlindGraspAction,
+                                                    execute_cb=self._execute_grasp,
                                                     auto_start=False)
         self.grasp_result = BlindGraspResult()
         self.server.start()
+        self.markerPub = rospy.Publisher('graspMarker', Marker, queue_size=10)
         rospy.loginfo(rospy.get_caller_id() + ': started')
 
 
     def _execute_grasp(self, goal):
         rospy.loginfo(rospy.get_caller_id() + ': called')
-       
+
         if self.server.is_preempt_requested():
             rospy.loginfo(rospy.get_caller_id() + ': preempted')
             self.server.set_preempted()
@@ -53,7 +55,7 @@ class SoftHand(object):
             correct_pose = goal.heap_center_pose
             correct_pose.pose.position.z+=d
             pre_grasp = copy(correct_pose)
-        
+
         ptp_pre_goal = PtpGoal()
         ptp_pre_goal.pose.position.x = pre_grasp.pose.position.x
         ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y
@@ -74,18 +76,19 @@ class SoftHand(object):
         ptp_goal.pose.orientation.y = 0.69
         ptp_goal.pose.orientation.z = 0.0
 
+        self._visualize_grasp(ptp_goal)
 
         # open hand
         rospy.loginfo("Opening hand...")
         self.softhand(0.0)
         time.sleep(3)
 
-        
+
         # moving to pre pose
         rospy.loginfo("Approaching pre pose...")
         self.ptp.send_goal(ptp_pre_goal)
         self.ptp.wait_for_result()
-        result = self.ptp.get_result()                
+        result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
         if result.result_status == "Execution failed.":
             error = 'Approaching pre pose failed.'
@@ -97,25 +100,25 @@ class SoftHand(object):
         rospy.loginfo("Approaching grasp pose...")
         self.ptp.send_goal(ptp_goal)
         self.ptp.wait_for_result()
-        result = self.ptp.get_result()                
+        result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
         if result.result_status == "Execution failed.":
             error = 'Approaching grasp pose failed.'
             self.server.set_aborted(self.grasp_result, error)
             return
-            
+
 
         #grasp the object
         rospy.loginfo("Grasping...")
-        self.softhand(0.8)       
+        self.softhand(0.8)
         time.sleep(3)
-            
+
 
         # retract the arm
         rospy.loginfo("Retracting...")
         self.ptp.send_goal(ptp_pre_goal)
         self.ptp.wait_for_result()
-        result = self.ptp.get_result()                
+        result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
         if result.result_status == "Execution failed.":
             error = 'Retracting the arm failed.'
@@ -128,4 +131,27 @@ class SoftHand(object):
         self.server.set_succeeded(self.grasp_result, success)
         return
 
+
+    def _visualize_grasp(self, ptp_goal):
+        graspMarker = Marker()
+        graspMarker.header.frame_id = "/origin"
+        graspMarker.header.stamp = rospy.get_rostime()
+        graspMarker.ns = "grasp"
+        graspMarker.id = 0
+        graspMarker.type = 2
+        graspMarker.action = 0
+        graspMarker.pose.position = ptp_goal.pose.position
+        graspMarker.pose.orientation.x = 0
+        graspMarker.pose.orientation.y = 0
+        graspMarker.pose.orientation.z = 0
+        graspMarker.pose.orientation.w = 1.0
+        graspMarker.scale.x = 0.05
+        graspMarker.scale.y = 0.05
+        graspMarker.scale.z = 0.05
+        graspMarker.color.r = 0.0
+        graspMarker.color.g = 1.0
+        graspMarker.color.b = 0.0
+        graspMarker.color.a = 1.0
+        graspMarker.lifetime = rospy.Duration(secs=30)
+        self.markerPub.publish(graspMarker)
 
