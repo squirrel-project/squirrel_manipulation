@@ -43,7 +43,9 @@ target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_L
 
 add_library(robotino
    src/RobotinoControl.cpp
+   src/RobotinoBaseControl.cpp
 )
+
 add_library(pushlib
    src/pushing/src/PushPlanner.cpp
    src/pushing/src/VisualisePushPlanner.cpp
@@ -76,3 +78,6 @@ target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LI
 
 add_executable(smash src/smash.cpp)
 target_link_libraries(smash robotino utils ${catkin_LIBRARIES})
+
+add_executable(test_base src/test_move_base.cpp)
+target_link_libraries(test_base robotino ${catkin_LIBRARIES})
