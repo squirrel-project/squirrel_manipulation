@@ -52,11 +52,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     releaseServiceKCL.goal.force_limit = 1.0;
 
 
-    ros::Rate lRate(20.0);
-    ros::AsyncSpinner spinner(10); spinner.start();
-
-    sleep(1);
-
     sleep (1);
 
 
@@ -304,7 +299,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "manipulation");
 
     HandoverAction handover(HANDOVER_NAME);
-    ros::spin();
+    ros::AsyncSpinner spinner(10); spinner.start();
 
     return 0;
 

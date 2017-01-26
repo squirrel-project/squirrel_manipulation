@@ -56,7 +56,7 @@ int main(int argc, char** args) {
     ros::NodeHandle node;
     sleep(1);
 
-    node.param("robot",robot,std::string(tuw_robotino));
+    node.param("robot",robot,std::string(uibk_robotino));
     boost::thread* data_store_ = new boost::thread(boost::bind(dataStore));
 
     ros::AsyncSpinner spinner(10); spinner.start();
