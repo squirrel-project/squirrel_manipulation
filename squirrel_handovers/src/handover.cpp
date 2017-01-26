@@ -85,8 +85,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     bool handover_success_ = false;
     stage = 0;
+    
+    std::string take ("take");
+    std::string give ("give");    
 
-    if(goal->action_type =="take"){
+    if(take.compare(goal->action_type.c_str())==0){
         sleep(1);
         auto firstJoints = robotinoQueue->getCurrentJoints().joints;
         cout << "(handover) current robot state: " << firstJoints.t() << endl;
@@ -146,7 +149,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
         robotinoQueue->jointPtp(start);
     }
-    else if(goal->action_type =="take"){
+    else if(take.compare(goal->action_type.c_str()) ==0){
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
@@ -263,7 +266,8 @@ geometry_msgs::Pose HandoverAction::tf_stamped2pose(tf::StampedTransform tf_in){
 
 void HandoverAction::sensorReadCallbackWrist(std_msgs::Float64MultiArray msg){
     wrist_sensor_values_ = msg.data;
-    //    wrist_sensor_values_.at(0) = msg.data.at(0);
+   cout<<wrist_sensor_values_ <<endl;   
+//    wrist_sensor_values_.at(0) = msg.data.at(0);
     //    wrist_sensor_values_.at(1) = msg.data.at(1);
     //    wrist_sensor_values_.at(2) = msg.data.at(2);
     //    wrist_sensor_values_.at(3) = msg.data.at(3);
@@ -298,9 +302,10 @@ int main(int argc, char** argv) {
 
     ros::init(argc, argv, "manipulation");
 
-    HandoverAction handover(HANDOVER_NAME);
-    ros::AsyncSpinner spinner(10); spinner.start();
-
+//    HandoverAction handover(HANDOVER_NAME);
+//    ros::AsyncSpinner spinner(10); spinner.start();
+    HandoverAction hadnover(HANDOVER_NAME);
+    ros::spin();
     return 0;
 
 }
