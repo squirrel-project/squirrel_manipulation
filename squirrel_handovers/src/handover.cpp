@@ -54,7 +54,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     sleep (1);
 
-
     //arm control
 
     ROS_INFO("(handover) setting up control queue");
@@ -79,20 +78,72 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
     }
 
+    auto firstJoints = robotinoQueue->getCurrentJoints().joints;
+    cout << "(handover) current robot state: " << firstJoints.t() << endl;
+
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto end_type1 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto end_type2 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto end_type3 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto end_type4 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+
+    //robot shall not move base
+
+    copy(firstJoints.begin(), firstJoints.begin() + 3, start.begin());
+    copy(firstJoints.begin(), firstJoints.begin() + 3, end.begin());
+
+
+    //handover type
+
+    if (goal->handover_type == 1){
+        copy(end_type1.begin() + 3, end_type1.end(), end.begin() + 3);
+    }
+    else if (goal->handover_type == 2){
+        copy(end_type2.begin() + 3, end_type2.end(), end.begin() + 3);
+
+    }
+    else if (goal->handover_type == 3){
+        copy(end_type3.begin() + 3, end_type3.end(), end.begin() + 3);
+
+    }
+    else if (goal->handover_type == 4){
+        copy(end_type4.begin() + 3, end_type4.end(), end.begin() + 3);
+    }
 
 
     bool handover_success_ = false;
     stage = 0;
     
     std::string take ("take");
-    std::string give ("give");    
+    std::string give ("give");
 
     if(take.compare(goal->action_type.c_str())==0){
         sleep(1);
-        auto firstJoints = robotinoQueue->getCurrentJoints().joints;
-        cout << "(handover) current robot state: " << firstJoints.t() << endl;
+
+        //make sure hand is open
+
+        if (robot == uibk_robotino){
+
+            if ( ros::service::call(HAND_SERVICE, releaseService) ){
+                ROS_INFO("(handover) HAND Released!");
+                handover_success_ = true;
+            }else{
+                ROS_ERROR("handover) FAILED to Release!");
+                handover_success_ = false;
+            }
+        }
+        else if (robot == tuw_robotino){
+            kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
+            kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
+            if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+                ROS_INFO("(handover) HAND Released!");
+                handover_success_ = true;
+            }else{
+                ROS_ERROR("handover) FAILED to Release!");
+                handover_success_ = false;
+            }
+        }
 
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
@@ -119,8 +170,17 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 4; //grasping the object
         cout << "(handover) current stage "<<stage<<endl;
 
+        torque_past.clear();
+        force_past.clear();
+
+        if (record_magnitude(current_forces_, current_torques_))
+        {
+                grasp_value = detector();
+        }
+
 
         if(grasp_value){
+
             // stage = 4; //grasping the object
             cout<<"OK"<<endl;
 
@@ -128,8 +188,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
                 if ( ros::service::call(HAND_SERVICE, graspService) ){
                     ROS_INFO("(handover) HAND Grasped!");
+                    handover_success_ = true;
                 }else{
                     ROS_ERROR("handover) FAILED to Graps!");
+                    handover_success_ = false;
                 }
             }
             else if (robot == tuw_robotino){
@@ -137,8 +199,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
                     ROS_INFO("(handover) HAND Grasped!");
+                    handover_success_ = true;
                 }else{
                     ROS_ERROR("handover) FAILED to Graps!");
+                    handover_success_ = false;
                 }
             }
         }
@@ -149,7 +213,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
         robotinoQueue->jointPtp(start);
     }
-    else if(take.compare(goal->action_type.c_str()) ==0){
+    else if(give.compare(goal->action_type.c_str()) ==0){
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
@@ -171,8 +235,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
                 if ( ros::service::call(HAND_SERVICE, releaseService) ){
                     ROS_INFO("(handover) HAND Released!");
+                    handover_success_ = true;
                 }else{
                     ROS_ERROR("handover) FAILED to Release!");
+                    handover_success_ = false;
                 }
             }
             else if (robot == tuw_robotino){
@@ -180,8 +246,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
                     ROS_INFO("(handover) HAND Released!");
+                    handover_success_ = true;
                 }else{
                     ROS_ERROR("handover) FAILED to Release!");
+                    handover_success_ = false;
                 }
             }
         }
@@ -196,14 +264,13 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     else{
         ROS_ERROR(" Handover: Handover action unknown");
         cout<<endl;
+        handover_success_ = false;
     }
 
     ROS_INFO(" Handover: Handover sequence finished.");
     cout<<endl;
     
 
-
-    handover_success_ = true;
 
     if(handover_success_){
         handoverResult.result_status = "success";
@@ -266,44 +333,94 @@ geometry_msgs::Pose HandoverAction::tf_stamped2pose(tf::StampedTransform tf_in){
 
 void HandoverAction::sensorReadCallbackWrist(std_msgs::Float64MultiArray msg){
     wrist_sensor_values_ = msg.data;
-   cout<<wrist_sensor_values_ <<endl;   
-//    wrist_sensor_values_.at(0) = msg.data.at(0);
-    //    wrist_sensor_values_.at(1) = msg.data.at(1);
-    //    wrist_sensor_values_.at(2) = msg.data.at(2);
-    //    wrist_sensor_values_.at(3) = msg.data.at(3);
-    //    wrist_sensor_values_.at(4) = msg.data.at(4);
-    //    wrist_sensor_values_.at(5) = msg.data.at(5);
+    copy( wrist_sensor_values_.begin(), wrist_sensor_values_.begin() + 3, current_forces_.begin());
+    copy( wrist_sensor_values_.begin() + 3, wrist_sensor_values_.end(), current_torques_.begin());
 
 }
 
 void HandoverAction::sensorReadCallbackFingers(std_msgs::Float64MultiArray msg){
 
     fingertip_sensor_values_ = msg.data;
-    //    fingertip_sensor_values_.at(0) = msg.data.at(0);
-    //    fingertip_sensor_values_.at(1) = msg.data.at(1);
-    //    fingertip_sensor_values_.at(2) = msg.data.at(2);
-    //    fingertip_sensor_values_.at(3) = msg.data.at(3);
-    //    fingertip_sensor_values_.at(4) = msg.data.at(4);
-    //    fingertip_sensor_values_.at(5) = msg.data.at(5);
-    //    fingertip_sensor_values_.at(6) = msg.data.at(6);
-    //    fingertip_sensor_values_.at(7) = msg.data.at(7);
-    //    fingertip_sensor_values_.at(8) = msg.data.at(8);
-    //    fingertip_sensor_values_.at(9) = msg.data.at(9);
-    //    fingertip_sensor_values_.at(10) = msg.data.at(10);
-    //    fingertip_sensor_values_.at(11) = msg.data.at(11);
-    //    fingertip_sensor_values_.at(12) = msg.data.at(12);
-    //    fingertip_sensor_values_.at(13) = msg.data.at(13);
-    //    fingertip_sensor_values_.at(14) = msg.data.at(14);
 }
 
+bool HandoverAction::record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq)
+{
+    double frc_mag = sqrt(pow(frc[X], 2) + pow(frc[Y], 2) + pow(frc[Z], 2));
+    double trq_mag = sqrt(pow(trq[X], 2) + pow(trq[Y], 2) + pow(trq[Z], 2));
+
+    int f_size = force_past.size();
+    int t_size = torque_past.size();
+    if (f_size < MIN_VALS)
+    {
+        force_past.push_back(frc_mag);
+        ++f_size;
+    }
+    else
+    {
+        double tmp=force_past[MIN_VALS-1];
+        force_past[MIN_VALS - 1] = frc_mag;			//last value
+        for (int i = MIN_VALS - 2; i >= 0; --i)	//value before the last
+        {
+            std::swap(force_past[i],tmp);
+        }
+    }
+
+    if (t_size < MIN_VALS)
+    {
+        torque_past.push_back(trq_mag);
+        ++t_size;
+    }
+    else
+    {
+        double tmp = torque_past[MIN_VALS - 1];
+        torque_past[MIN_VALS - 1] = trq_mag;			//last value
+        for (int i = MIN_VALS - 2; i >= 0; --i)	//value before the last
+        {
+            std::swap(torque_past[i], tmp);
+        }
+    }
+
+    if (t_size == MIN_VALS && f_size == MIN_VALS)	//if we acquired the right amount of data
+    {
+        return true;
+    }
+    return false;	//too few or too many values
+}
+
+bool HandoverAction::detector()
+{
+    //if we don't get what expected, fail
+    assert(force_past.size() == MIN_VALS && torque_past.size() == MIN_VALS);
+
+    std::vector<double> f_diffs;
+    std::vector<double> t_diffs;
+
+    int idx=force_past.size();
+
+    //this can be optimised in a for loop if needed
+    //NOTE here the order is reversed: v[0] is the newest - if the for loop is increasing, we will have the same order
+    f_diffs.push_back(force_past.at(idx-1) - force_past.at(idx - 2));
+    f_diffs.push_back(force_past.at(idx-2) - force_past.at(idx - 3));
+    t_diffs.push_back(torque_past.at(idx-1) - torque_past.at(idx - 2));
+    t_diffs.push_back(torque_past.at(idx-2) - torque_past.at(idx - 3));
+
+    //normally we should always have exactly 2 values, if we don't something's gone wrong
+    assert(f_diffs.size() == 2 && t_diffs.size() == 2);
+
+    //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1 || (f_diffs.at(1) - f_diffs.at(0)) < -1) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 1 || (t_diffs.at(1) - t_diffs.at(0)) < -1) ? true : false;
+
+    return f_good;	//return true only if force threashold is good, torque is for future use
+}
 
 
 int main(int argc, char** argv) {
 
     ros::init(argc, argv, "manipulation");
 
-//    HandoverAction handover(HANDOVER_NAME);
-//    ros::AsyncSpinner spinner(10); spinner.start();
+    //    HandoverAction handover(HANDOVER_NAME);
+    //    ros::AsyncSpinner spinner(10); spinner.start();
     HandoverAction hadnover(HANDOVER_NAME);
     ros::spin();
     return 0;

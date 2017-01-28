@@ -1,8 +1,14 @@
 #include <ros/ros.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <math.h>
+#include <algorithm>
+#include <cassert>
+
+
 #include <boost/thread.hpp>
 
 #include <tf/transform_listener.h>
@@ -25,11 +31,18 @@
 #define FINGERTIP_TOPIC "/fingertips"
 #define HAND_SERVICE "/softhand_grasp"
 
-
+enum Axes
+{
+    X,
+    Y,
+    Z,
+    AxesNum
+};
 
 class HandoverAction {
 private:
-    static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27;
+    static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27; //displacement  of forces and torques
+    static auto constexpr MIN_VALS = 3;	//minimum number of readings per quantity required for the computatio
 
     //parameters
     std::string base_frame_;
@@ -44,7 +57,13 @@ private:
     boost::mutex sensor_mutex_;
     std::vector<double> robot_joints_;
     std::vector<double> wrist_sensor_values_;
+    std::vector<double> current_forces_;
+    std::vector<double> current_torques_;
     std::vector<double> fingertip_sensor_values_;
+
+    //senor
+    std::vector<double> force_past;
+    std::vector<double> torque_past;
 
 
     //subscribers
@@ -68,7 +87,8 @@ protected:
     geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
     std::vector<double> projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma);
 
-
+    bool record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq);
+    bool detector();
 
 public:
 
