@@ -111,6 +111,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         copy(end_type4.begin() + 3, end_type4.end(), end.begin() + 3);
     }
 
+    cout<<"(handover)current target handover"<<endl<<end<<endl;
+
 
     bool handover_success_ = false;
     stage = 0;
@@ -175,7 +177,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         if (record_magnitude(current_forces_, current_torques_))
         {
-                grasp_value = detector();
+            grasp_value = detector();
         }
 
 
@@ -419,10 +421,11 @@ int main(int argc, char** argv) {
 
     ros::init(argc, argv, "manipulation");
 
-    //    HandoverAction handover(HANDOVER_NAME);
-    //    ros::AsyncSpinner spinner(10); spinner.start();
-    HandoverAction hadnover(HANDOVER_NAME);
-    ros::spin();
+    HandoverAction handover(HANDOVER_NAME);
+    ros::AsyncSpinner spinner(10); spinner.start();
+    //HandoverAction hadnover(HANDOVER_NAME);
+    //ros::spin();
+    getchar();
     return 0;
 
 }
