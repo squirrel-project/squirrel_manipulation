@@ -9,17 +9,22 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
     private_nh("~")
 {
+    cout << "here 1"<<endl;
     private_nh.param("base_frame", base_frame_, std::string("/base_link"));
     private_nh.param("wrist_frame", wrist_frame_, std::string("/arm_link5"));
     private_nh.param("tuw_robotino", tuw_robotino, std::string("tuw-robotino2"));
     private_nh.param("uibk_robotino", uibk_robotino, std::string("uibk-robotino2-sh"));
     private_nh.param("robot", robot, std::string("uibk-robotino2-sh"));
 
+    cout << "here 2"<<endl;
+
     sub_h = nh.subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
 
+    cout << "here 3"<<endl;
     if(robot == tuw_robotino){
         sub_f = nh.subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
     }
+    cout << "here 4"<<endl;
 
     handoverServer.start();
     ROS_INFO("(Handover) server started \n");
@@ -419,12 +424,11 @@ bool HandoverAction::detector()
 
 int main(int argc, char** argv) {
 
-    ros::init(argc, argv, "manipulation");
+    ros::init(argc, argv, "handover");
+    sleep(1); ros::AsyncSpinner spinner(10); spinner.start();
 
-    HandoverAction handover(HANDOVER_NAME);
-    ros::AsyncSpinner spinner(10); spinner.start();
-    //HandoverAction hadnover(HANDOVER_NAME);
-    //ros::spin();
+    HandoverAction hadnover(HANDOVER_NAME);
+
     getchar();
     return 0;
 
