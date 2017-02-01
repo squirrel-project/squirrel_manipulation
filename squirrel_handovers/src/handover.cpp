@@ -276,7 +276,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         bool release = false;
         double mean=0;
-        bool ref=false;
+        bool ref = false;
         bool isCurPos = false;
         int condition=0;
         while (!release && runHandover_){
@@ -284,27 +284,31 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
             //force_past is a global
             int i = force_past.size() - 1;
+            cout << "curent value" << i << endl;
             if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
             {
                 mean = getMean(force_past);
                 double absValRef = force_past[i] - mean;
+                cout << " 0 " << absValRef << endl;
                 ref = absValRef>0 ? true : false;
+                cout << "ref is " << ref << endl;
 
             }
             else
             {
                 double absVal = force_past[i] - mean;
-                //std::cout<< absVal << std::endl;
+                cout<<" 1 " << absVal << endl;
                 isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
-                if(abs(isCurPos - ref) > 0.1)
+                if(isCurPos != ref)
                 {
                     ++condition;
                     release = condition == 4? true : false;
                 }
                 else
                 {
+                    cout<<" switching sign " << condition << endl;
                     ref = -ref;				//here we change ref to the other sign
-                    condition=0;
+                    condition = 0;
                 }
 
 
@@ -502,8 +506,8 @@ bool HandoverAction::detector()
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
 
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.4 || (f_diffs.at(1) - f_diffs.at(0)) < -0.4) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.4 || (t_diffs.at(1) - t_diffs.at(0)) < -0.4) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.5 || (f_diffs.at(1) - f_diffs.at(0)) < -0.5) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.5 || (t_diffs.at(1) - t_diffs.at(0)) < -0.5) ? true : false;
 
     return f_good;	//return true only if force threashold is good, torque is for future use
 }
