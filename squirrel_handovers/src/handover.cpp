@@ -16,6 +16,10 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     private_nh.param("uibk_robotino", uibk_robotino, std::string("uibk-robotino2-sh"));
     private_nh.param("robot", robot, std::string("uibk-robotino2-sh"));
 
+    //set callback for cancel request
+    handoverServer.registerPreemptCallback(boost::bind(&HandoverAction::preemptCB, this));
+
+
     vector<double> temp (3,0);
     current_forces_ = temp;
     current_torques_ = temp;
@@ -238,34 +242,34 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         bool ref=false;
         bool isCurPos = false;
         int condition=0;
-        while (force_past.size() <= MIN_VALS && !release){
-            for (unsigned int i = 0; i < force_past.size() && !release; ++i)
-            {
-                record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
-                //force_past is a global
-                if ( i <= MIN_VALS-1 )	//we enter here only once as part of the initialisation
-                {
-                    mean = getMean(force_past);
-                    double absValRef = force_past[i] - mean;
-                    ref= absValRef>0 ? true : false;
+        while (force_past.size() <= MIN_VALS_GIVE && !release){
 
+            record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
+            //force_past is a global
+            int i = force_past.size() - 1;
+            if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
+            {
+                mean = getMean(force_past);
+                double absValRef = force_past[i] - mean;
+                ref = absValRef>0 ? true : false;
+
+            }
+            else
+            {
+                double absVal = force_past[i] - mean;
+                //std::cout<< absVal << std::endl;
+                isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
+                if(isCurPos != ref)
+                {
+                    ++condition;
+                    release = condition == 4? true : false;
                 }
                 else
                 {
-                    double absVal=force_past[i]-mean;
-                    //std::cout<< absVal << std::endl;
-                    isCurPos = (force_past[i - 1]-mean) >0 ? true : false;		//update current value
-                    if(isCurPos != ref)
-                    {
-                        ++condition;
-                        release = condition == 4? true : false;
-                    }
-                    else
-                    {
-                        ref = -ref;				//here we change ref to the other sign
-                        condition=0;
-                    }
+                    ref = -ref;				//here we change ref to the other sign
+                    condition=0;
                 }
+
 
             }
         }
@@ -313,6 +317,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     ROS_INFO(" Handover: Handover sequence finished.");
     cout<<endl;
+
+    //stop arm queue
 
     robotinoQueue->stopQueue();
 
@@ -452,7 +458,8 @@ bool HandoverAction::detector()
     assert(f_diffs.size() == 2 && t_diffs.size() == 2);
 
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1 || (f_diffs.at(1) - f_diffs.at(0)) < -1) ? true : false;
+    //according to the data value is 2.4
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1.5 || (f_diffs.at(1) - f_diffs.at(0)) < -1.5) ? true : false;
     bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 1 || (t_diffs.at(1) - t_diffs.at(0)) < -1) ? true : false;
 
     return f_good;	//return true only if force threashold is good, torque is for future use
@@ -481,6 +488,15 @@ double HandoverAction::getMean(const std::vector<double>& starters)
     }
 
     return (sum/numVal);
+}
+void HandoverAction::preemptCB(){
+
+    ROS_INFO("(handover) Canceled handover action by the high-level planner");
+    cout<<endl;
+    runHandover_ = false;
+    //this->finishPush();
+    //pushServer.setPreempted();
+
 }
 
 int main(int argc, char** argv) {
