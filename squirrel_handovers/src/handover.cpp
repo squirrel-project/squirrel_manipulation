@@ -296,7 +296,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 double absVal = force_past[i] - mean;
                 //std::cout<< absVal << std::endl;
                 isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
-                if(isCurPos != ref)
+                if(abs(isCurPos - ref) > 0.1)
                 {
                     ++condition;
                     release = condition == 4? true : false;
@@ -501,11 +501,9 @@ bool HandoverAction::detector()
 
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1 || (f_diffs.at(1) - f_diffs.at(0)) < -1) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 1 || (t_diffs.at(1) - t_diffs.at(0)) < -1) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.4 || (f_diffs.at(1) - f_diffs.at(0)) < -0.4) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.4 || (t_diffs.at(1) - t_diffs.at(0)) < -0.4) ? true : false;
 
-
-    cout << "output "<<f_good<<endl;
     return f_good;	//return true only if force threashold is good, torque is for future use
 }
 
