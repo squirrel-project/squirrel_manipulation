@@ -258,6 +258,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 }
             }
         }
+        ROS_INFO("(handover) going to the initial pose with the closed hand");
+        stage = 0; // initial pose with the closed hand
+        cout << "(handover) current stage "<<stage<<endl;
+
+        if (runHandover_) robotinoQueue->jointPtp(start);
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
@@ -274,7 +279,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         bool ref=false;
         bool isCurPos = false;
         int condition=0;
-        while (force_past.size() <= MIN_VALS_GIVE && !release && runHandover_){
+        while (!release && runHandover_){
 
             record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
             //force_past is a global
@@ -352,7 +357,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     //stop arm queue
 
-    if (runHandover_) robotinoQueue->stopQueue();
+     robotinoQueue->stopQueue();
 
     if (!runHandover_){
         handoverResult.result_status = "calceled";
@@ -496,9 +501,11 @@ bool HandoverAction::detector()
 
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1.5 || (f_diffs.at(1) - f_diffs.at(0)) < -1.5) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 1 || (f_diffs.at(1) - f_diffs.at(0)) < -1) ? true : false;
     bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 1 || (t_diffs.at(1) - t_diffs.at(0)) < -1) ? true : false;
 
+
+    cout << "output "<<f_good<<endl;
     return f_good;	//return true only if force threashold is good, torque is for future use
 }
 
