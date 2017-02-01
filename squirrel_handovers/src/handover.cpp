@@ -275,45 +275,53 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
 
         bool release = false;
-        double mean=0;
-        bool ref = false;
-        bool isCurPos = false;
-        int condition=0;
-        while (!release && runHandover_){
 
-            record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
-            //force_past is a global
-            int i = force_past.size() - 1;
-            cout << "curent value" << i << endl;
-            if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
+        while(runHandover_ && !release){
+
+            if (record_magnitude(current_forces_, current_torques_)&&runHandover_)
             {
-                mean = getMean(force_past);
-                double absValRef = force_past[i] - mean;
-                cout << " 0 " << absValRef << endl;
-                ref = absValRef>0 ? true : false;
-                cout << "ref is " << ref << endl;
-
-            }
-            else
-            {
-                double absVal = force_past[i] - mean;
-                cout<<" 1 " << absVal << endl;
-                isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
-                if(isCurPos != ref)
-                {
-                    ++condition;
-                    release = condition == 4? true : false;
-                }
-                else
-                {
-                    cout<<" switching sign " << condition << endl;
-                    ref = -ref;				//here we change ref to the other sign
-                    condition = 0;
-                }
-
-
+                release = detector();
             }
         }
+//        double mean=0;
+//        bool ref = false;
+//        bool isCurPos = false;
+//        int condition=0;
+//        while (!release && runHandover_){
+
+//            record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
+//            //force_past is a global
+//            int i = force_past.size() - 1;
+//            cout << "curent value" << i << endl;
+//            if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
+//            {
+//                mean = getMean(force_past);
+//                double absValRef = force_past[i] - mean;
+//                cout << " 0 " << absValRef << endl;
+//                ref = absValRef>0 ? true : false;
+//                cout << "ref is " << ref << endl;
+
+//            }
+//            else
+//            {
+//                double absVal = force_past[i] - mean;
+//                cout<<" 1 " << absVal << endl;
+//                isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
+//                if(isCurPos != ref)
+//                {
+//                    ++condition;
+//                    release = condition == 4? true : false;
+//                }
+//                else
+//                {
+//                    cout<<" switching sign " << condition << endl;
+//                    ref = -ref;				//here we change ref to the other sign
+//                    condition = 0;
+//                }
+
+
+//            }
+//        }
         stage = 8  ; //releasing the object
         cout << "(handover) current stage "<<stage<<endl;
 
