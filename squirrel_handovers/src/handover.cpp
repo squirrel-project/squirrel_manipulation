@@ -7,6 +7,7 @@ using namespace kukadu;
 
 HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
+    runHandover_ (true),
     private_nh("~")
 {
 
@@ -41,6 +42,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     ROS_INFO("(Handover) action started \n");
     cout<<endl;
+    runHandover_ = true;
 
     cout<<"(Handover) action type "<<goal->action_type<<endl;
     cout<<"(Handover) handover type "<<goal->handover_type<<endl;
@@ -130,12 +132,15 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     std::string take ("take");
     std::string give ("give");
 
-    if(take.compare(goal->action_type.c_str())==0){
+    torque_past.clear();
+    force_past.clear();
+
+    if(take.compare(goal->action_type.c_str())==0 && runHandover_){
         sleep(1);
 
         //make sure hand is open
 
-        if (robot == uibk_robotino){
+        if (robot == uibk_robotino && runHandover_){
 
             if ( ros::service::call(HAND_SERVICE, releaseService) ){
                 ROS_INFO("(handover) HAND Released!");
@@ -145,7 +150,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 handover_success_ = false;
             }
         }
-        else if (robot == tuw_robotino){
+        else if (robot == tuw_robotino && runHandover_){
             kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
             kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
             if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
@@ -173,30 +178,30 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 2;
         cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+        if(runHandover_)robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to grasp the object");
         stage = 3;
-        bool grasp_value = true; //detect object
+        bool grasp_value = false; //detect object
 
         stage = 4; //grasping the object
         cout << "(handover) current stage "<<stage<<endl;
 
-        torque_past.clear();
-        force_past.clear();
+        while(runHandover_ && !grasp_value){
 
-        if (record_magnitude(current_forces_, current_torques_))
-        {
-            grasp_value = detector();
+            if (record_magnitude(current_forces_, current_torques_)&&runHandover_)
+            {
+                grasp_value = detector();
+            }
         }
 
 
-        if(grasp_value){
+        if(grasp_value && runHandover_){
 
             // stage = 4; //grasping the object
             cout<<"OK"<<endl;
 
-            if (robot == uibk_robotino){
+            if (robot == uibk_robotino && runHandover_){
 
                 if ( ros::service::call(HAND_SERVICE, graspService) ){
                     ROS_INFO("(handover) HAND Grasped!");
@@ -206,7 +211,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     handover_success_ = false;
                 }
             }
-            else if (robot == tuw_robotino){
+            else if (robot == tuw_robotino && runHandover_){
                 kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
@@ -223,15 +228,42 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         ROS_INFO("(handover) going to initial pose with the closed hand");
         stage = 5;
         cout << "(handover) current stage "<<stage<<endl;
-        robotinoQueue->jointPtp(start);
+        if(runHandover_) robotinoQueue->jointPtp(start);
     }
-    else if(give.compare(goal->action_type.c_str()) ==0){
+    else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
+
+        //make sure hand is closed
+
+        if (runHandover_){
+
+            if (robot == uibk_robotino && runHandover_){
+
+                if ( ros::service::call(HAND_SERVICE, graspService) ){
+                    ROS_INFO("(handover) HAND Grasped!");
+                    handover_success_ = true;
+                }else{
+                    ROS_ERROR("handover) FAILED to Graps!");
+                    handover_success_ = false;
+                }
+            }
+            else if (robot == tuw_robotino && runHandover_){
+                kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
+                kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
+                if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+                    ROS_INFO("(handover) HAND Grasped!");
+                    handover_success_ = true;
+                }else{
+                    ROS_ERROR("handover) FAILED to Graps!");
+                    handover_success_ = false;
+                }
+            }
+        }
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
         cout << "(handover) current stage "<<stage<<endl;
 
-        robotinoQueue->jointPtp(end);
+        if (runHandover_) robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
@@ -242,7 +274,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         bool ref=false;
         bool isCurPos = false;
         int condition=0;
-        while (force_past.size() <= MIN_VALS_GIVE && !release){
+        while (force_past.size() <= MIN_VALS_GIVE && !release && runHandover_){
 
             record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
             //force_past is a global
@@ -276,10 +308,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 8  ; //releasing the object
         cout << "(handover) current stage "<<stage<<endl;
 
-        if(release){
+        if(release && runHandover_){
             cout<<"OK"<<endl;
 
-            if (robot == uibk_robotino){
+            if (robot == uibk_robotino && runHandover_){
 
                 if ( ros::service::call(HAND_SERVICE, releaseService) ){
                     ROS_INFO("(handover) HAND Released!");
@@ -289,7 +321,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     handover_success_ = false;
                 }
             }
-            else if (robot == tuw_robotino){
+            else if (robot == tuw_robotino && runHandover_){
                 kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
                 kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
                 if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
@@ -306,7 +338,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
-        robotinoQueue->jointPtp(start);
+        if (runHandover_) robotinoQueue->jointPtp(start);
 
     }
     else{
@@ -320,9 +352,14 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     //stop arm queue
 
-    robotinoQueue->stopQueue();
+    if (runHandover_) robotinoQueue->stopQueue();
 
-    if(handover_success_){
+    if (!runHandover_){
+        handoverResult.result_status = "calceled";
+        handoverServer.setAborted(handoverResult);
+        ROS_INFO(" Handover: failed ");
+        cout<< endl;}
+    else if(handover_success_){
         handoverResult.result_status = "success";
         handoverServer.setSucceeded(handoverResult);
         ROS_INFO(" Handover: Sucessfuly finished ");
