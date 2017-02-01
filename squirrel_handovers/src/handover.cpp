@@ -9,25 +9,26 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
     private_nh("~")
 {
-    cout << "here 1"<<endl;
+
     private_nh.param("base_frame", base_frame_, std::string("/base_link"));
     private_nh.param("wrist_frame", wrist_frame_, std::string("/arm_link5"));
     private_nh.param("tuw_robotino", tuw_robotino, std::string("tuw-robotino2"));
     private_nh.param("uibk_robotino", uibk_robotino, std::string("uibk-robotino2-sh"));
     private_nh.param("robot", robot, std::string("uibk-robotino2-sh"));
 
-    cout << "here 2"<<endl;
+    vector<double> temp (3,0);
+    current_forces_ = temp;
+    current_torques_ = temp;
 
     sub_h = nh.subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
 
-    cout << "here 3"<<endl;
     if(robot == tuw_robotino){
         sub_f = nh.subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
     }
-    cout << "here 4"<<endl;
 
     handoverServer.start();
     ROS_INFO("(Handover) server started \n");
+    cout<<endl;
 
 }
 
@@ -231,11 +232,48 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
         cout << "(handover) current stage "<<stage<<endl;
-        bool release_value = true;//here detection
+        // bool release_value = true;//here detection
+
+        bool release = false;
+        double mean=0;
+        bool ref=false;
+        bool isCurPos = false;
+        int condition=0;
+        while (force_past.size() <= MIN_VALS && !release){
+            for (unsigned int i = 0; i < force_past.size() && !release; ++i)
+            {
+                record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
+                //force_past is a global
+                if ( i <= MIN_VALS-1 )	//we enter here only once as part of the initialisation
+                {
+                    mean = getMean(force_past);
+                    double absValRef = force_past[i] - mean;
+                    ref= absValRef>0 ? true : false;
+
+                }
+                else
+                {
+                    double absVal=force_past[i]-mean;
+                    //std::cout<< absVal << std::endl;
+                    isCurPos = (force_past[i - 1]-mean) >0 ? true : false;		//update current value
+                    if(isCurPos != ref)
+                    {
+                        ++condition;
+                        release = condition == 4? true : false;
+                    }
+                    else
+                    {
+                        ref = -ref;				//here we change ref to the other sign
+                        condition=0;
+                    }
+                }
+
+            }
+        }
         stage = 8  ; //releasing the object
         cout << "(handover) current stage "<<stage<<endl;
 
-        if(release_value){
+        if(release){
             cout<<"OK"<<endl;
 
             if (robot == uibk_robotino){
@@ -421,6 +459,30 @@ bool HandoverAction::detector()
     return f_good;	//return true only if force threashold is good, torque is for future use
 }
 
+//returns true if enough data is collected and the detection algorithm can be executed, returns false is not enough values are collected
+//in normal operating conditions, fills force and torque vectors by shifting older values towards the beginning of each vector (i.e. v[0] is the oldest)
+void HandoverAction::record_magnitude_give(const std::vector<double>& frc, const std::vector<double>& trq)
+{
+
+    double frc_mag = sqrt(pow(frc[X], 2) + pow(frc[Y], 2) + pow(frc[Z], 2));
+
+    force_past.push_back(frc_mag);
+
+}
+
+//this method calculates the mean
+double HandoverAction::getMean(const std::vector<double>& starters)
+{
+    int numVal=starters.size();
+
+    double sum=0;
+    for(unsigned int i=0;i<starters.size();++i)
+    {
+        sum+=starters[i];
+    }
+
+    return (sum/numVal);
+}
 
 int main(int argc, char** argv) {
 

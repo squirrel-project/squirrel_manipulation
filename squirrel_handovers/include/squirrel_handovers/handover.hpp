@@ -43,6 +43,7 @@ class HandoverAction {
 private:
     static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27; //displacement  of forces and torques
     static auto constexpr MIN_VALS = 3;	//minimum number of readings per quantity required for the computatio
+    static auto constexpr DETECT_THREAS = 5;
 
     //parameters
     std::string base_frame_;
@@ -57,11 +58,11 @@ private:
     boost::mutex sensor_mutex_;
     std::vector<double> robot_joints_;
     std::vector<double> wrist_sensor_values_;
-    std::vector<double> current_forces_;
+    std::vector<double> current_forces_ ;
     std::vector<double> current_torques_;
     std::vector<double> fingertip_sensor_values_;
 
-    //senor
+    //sesnor
     std::vector<double> force_past;
     std::vector<double> torque_past;
 
@@ -88,6 +89,8 @@ protected:
     std::vector<double> projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma);
 
     bool record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq);
+    void record_magnitude_give(const std::vector<double>& frc, const std::vector<double>& trq);
+    double getMean(const std::vector<double>& starters);
     bool detector();
 
 public:
