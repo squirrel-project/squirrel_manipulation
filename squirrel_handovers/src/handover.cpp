@@ -38,8 +38,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     ROS_INFO("(Handover) action started \n");
     cout<<endl;
 
-    cout<<"(Handover) action type"<<goal->action_type<<endl;
-    cout<<"(Handover) handover type"<<goal->handover_type<<endl;
+    cout<<"(Handover) action type "<<goal->action_type<<endl;
+    cout<<"(Handover) handover type "<<goal->handover_type<<endl;
 
     //hand
     squirrel_manipulation_msgs::SoftHandGrasp graspService;
@@ -117,7 +117,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         copy(end_type4.begin() + 3, end_type4.end(), end.begin() + 3);
     }
 
-    cout<<"(handover)current target handover"<<endl<<end<<endl;
+    cout<<"(handover)current target handover "<<endl<<end<<endl;
 
 
     bool handover_success_ = false;
@@ -232,7 +232,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
         cout << "(handover) current stage "<<stage<<endl;
-        // bool release_value = true;//here detection
 
         bool release = false;
         double mean=0;
@@ -314,8 +313,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     ROS_INFO(" Handover: Handover sequence finished.");
     cout<<endl;
-    
 
+    robotinoQueue->stopQueue();
 
     if(handover_success_){
         handoverResult.result_status = "success";
