@@ -501,6 +501,7 @@ bool HandoverAction::detector()
 
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
+
     bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.4 || (f_diffs.at(1) - f_diffs.at(0)) < -0.4) ? true : false;
     bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.4 || (t_diffs.at(1) - t_diffs.at(0)) < -0.4) ? true : false;
 
