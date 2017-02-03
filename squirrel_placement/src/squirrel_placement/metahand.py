@@ -65,14 +65,14 @@ class MetaHand(object):
             self.put_server.set_preempted()
             return
 
-        self._visualize_put_down(goal.destPoseSE2)
-
         correct_pose = None
         if not goal.destPoseSE2.header.frame_id == 'origin':
             goal.destPoseSE2.header.stamp = self.tf_listener.getLatestCommonTime(goal.destPoseSE2.header.frame_id, 'origin')
             correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2)
         else:
             correct_pose = goal.destPoseSE2.pose
+
+        self._visualize_put_down(correct_pose)
 
         ptp_goal = PtpGoal()
         ptp_goal.pose.position.x = correct_pose.position.x
