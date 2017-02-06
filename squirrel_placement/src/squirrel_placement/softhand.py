@@ -15,6 +15,8 @@ class SoftHand(object):
 
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
         rospy.wait_for_service('softhand_grasp')
+        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.tf_listener = tf.TransformListener()
         self.softhand = rospy.ServiceProxy('softhand_grasp', SoftHandGrasp)
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
@@ -64,7 +66,7 @@ class SoftHand(object):
         correct_pose = None
         if not goal.destPoseSE2.header.frame_id == 'origin':
             goal.destPoseSE2.header.stamp = self.tf_listener.getLatestCommonTime(goal.destPoseSE2.header.frame_id, 'origin')
-            correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2)
+            correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2).pose
         else:
             correct_pose = goal.destPoseSE2.pose
 

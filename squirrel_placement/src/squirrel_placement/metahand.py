@@ -11,6 +11,8 @@ class MetaHand(object):
             pass
 
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
+        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.tf_listener = tf.TransformListener()
         self.metahand = actionlib.SimpleActionClient('hand_controller/actuate_hand', ActuateHandAction)
         self.metahand.wait_for_server()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
@@ -68,7 +70,7 @@ class MetaHand(object):
         correct_pose = None
         if not goal.destPoseSE2.header.frame_id == 'origin':
             goal.destPoseSE2.header.stamp = self.tf_listener.getLatestCommonTime(goal.destPoseSE2.header.frame_id, 'origin')
-            correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2)
+            correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2).pose
         else:
             correct_pose = goal.destPoseSE2.pose
 

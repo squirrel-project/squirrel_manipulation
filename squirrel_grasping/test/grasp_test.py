@@ -61,13 +61,13 @@ if __name__ == '__main__':
         put_down_goal = PutDownGoal()
         put_down_goal.destination_id = 'somewhere'
         put_down_goal.destPoseSE2.header.frame_id = 'origin'
-        put_down_goal.destPoseSE2.pose.position.x = 0.5
-        put_down_goal.destPoseSE2.pose.position.y = 0.5
-        put_down_goal.destPoseSE2.pose.position.z = 0.4
-        put_down_goal.destPoseSE2.pose.orientation.w = 0.73
+        put_down_goal.destPoseSE2.pose.position.x = 0.3
+        put_down_goal.destPoseSE2.pose.position.y = 0.4
+        put_down_goal.destPoseSE2.pose.position.z = 0.3
+        put_down_goal.destPoseSE2.pose.orientation.w = 1.0
         put_down_goal.destPoseSE2.pose.orientation.x = 0.0
-        put_down_goal.destPoseSE2.pose.orientation.y = 0.69
-        put_down_goal.destPoseSE2.poseorientation.z = 0.0
+        put_down_goal.destPoseSE2.pose.orientation.y = 0.0
+        put_down_goal.destPoseSE2.pose.orientation.z = 0.0
         
         rospy.loginfo('Sending put down goal:\n{0}'.format(put_down_goal))
         place.send_goal(put_down_goal)
