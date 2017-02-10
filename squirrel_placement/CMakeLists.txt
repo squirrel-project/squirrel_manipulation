@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
   kclhand_control
   geometry_msgs
   visualization_msgs
+  tf
 )
 
 catkin_python_setup()
