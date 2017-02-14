@@ -16,6 +16,7 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     private_nh.param("tuw_robotino", tuw_robotino, std::string("tuw-robotino2"));
     private_nh.param("uibk_robotino", uibk_robotino, std::string("uibk-robotino2-sh"));
     private_nh.param("robot", robot, std::string("uibk-robotino2-sh"));
+    private_nh.param("frequency", handover_frequency_, 10.00);
 
     //set callback for cancel request
     handoverServer.registerPreemptCallback(boost::bind(&HandoverAction::preemptCB, this));
@@ -43,6 +44,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     ROS_INFO("(Handover) action started \n");
     cout<<endl;
     runHandover_ = true;
+    ros::Rate lRate(handover_frequency_);
 
     cout<<"(Handover) action type "<<goal->action_type<<endl;
     cout<<"(Handover) handover type "<<goal->handover_type<<endl;
@@ -62,7 +64,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     kclhand_control::ActuateHandActionGoal releaseServiceKCL;
     releaseServiceKCL.goal.command = 0.0;
     releaseServiceKCL.goal.force_limit = 1.0;
-
 
     sleep (1);
 
@@ -125,7 +126,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     cout<<"(handover)current target handover "<<endl<<end<<endl;
 
-
     bool handover_success_ = false;
     stage = 0;
     
@@ -139,7 +139,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         sleep(1);
 
         //make sure hand is open
-
         if (robot == uibk_robotino && runHandover_){
 
             if ( ros::service::call(HAND_SERVICE, releaseService) ){
@@ -157,7 +156,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 ROS_INFO("(handover) HAND Released!");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("handover) FAILED to Release!");
+                ROS_ERROR("(handover) FAILED to Release!");
                 handover_success_ = false;
             }
         }
@@ -181,8 +180,21 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         if(runHandover_)robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to grasp the object");
+        sleep(3.0);
         stage = 3;
         bool grasp_value = false; //detect object
+
+        //getting mean magnitude for grasp confirmation
+        int k = 0;
+        force_past.clear();
+        torque_past.clear();
+
+        while (k < 5){
+            record_magnitude_simple(current_forces_, current_torques_);
+            lRate.sleep();
+        }
+        double init_magnitude = getMean(force_past);
+
 
         stage = 4; //grasping the object
         cout << "(handover) current stage "<<stage<<endl;
@@ -191,7 +203,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
             if (record_magnitude(current_forces_, current_torques_)&&runHandover_)
             {
-                grasp_value = detector();
+                grasp_value = detector_take();
+                lRate.sleep();
             }
         }
 
@@ -224,6 +237,22 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             }
         }
         cout << "(handover) current stage "<<stage<<endl;
+
+        //checking if the object is actually grasped
+
+        force_past.clear();
+        torque_past.clear();
+
+        while (k < 5){
+            record_magnitude_simple(current_forces_, current_torques_);
+            lRate.sleep();
+        }
+        double new_magnitude = getMean(force_past);
+
+        if (abs((init_magnitude - new_magnitude)/init_magnitude) < 0.1){
+            ROS_ERROR("handover) FAILED to Graps. Emptx hand!");
+            handover_success_ = false;
+        }
 
         ROS_INFO("(handover) going to initial pose with the closed hand");
         stage = 5;
@@ -269,59 +298,62 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
 
         if (runHandover_) robotinoQueue->jointPtp(end);
+        sleep(3.0);
 
         ROS_INFO("(handover) waiting to release the object");
         stage = 7;
         cout << "(handover) current stage "<<stage<<endl;
 
         bool release = false;
+        torque_past.clear();
+        force_past.clear();
 
-        while(runHandover_ && !release){
+//        while(runHandover_ && !release){
 
-            if (record_magnitude(current_forces_, current_torques_)&&runHandover_)
-            {
-                release = detector();
-            }
-        }
-//        double mean=0;
-//        bool ref = false;
-//        bool isCurPos = false;
-//        int condition=0;
-//        while (!release && runHandover_){
-
-//            record_magnitude_give(current_forces_, current_torques_);		//TODO here is likely to be a bug, force_past does not grow correctly
-//            //force_past is a global
-//            int i = force_past.size() - 1;
-//            cout << "curent value" << i << endl;
-//            if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
+//            if (record_magnitude(current_forces_, current_torques_) && runHandover_)
 //            {
-//                mean = getMean(force_past);
-//                double absValRef = force_past[i] - mean;
-//                cout << " 0 " << absValRef << endl;
-//                ref = absValRef>0 ? true : false;
-//                cout << "ref is " << ref << endl;
-
-//            }
-//            else
-//            {
-//                double absVal = force_past[i] - mean;
-//                cout<<" 1 " << absVal << endl;
-//                isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
-//                if(isCurPos != ref)
-//                {
-//                    ++condition;
-//                    release = condition == 4? true : false;
-//                }
-//                else
-//                {
-//                    cout<<" switching sign " << condition << endl;
-//                    ref = -ref;				//here we change ref to the other sign
-//                    condition = 0;
-//                }
-
-
+//                release = detector_give();
 //            }
 //        }
+        double mean=0;
+        bool ref = false;
+        bool isCurPos = false;
+        int condition=0;
+        while (!release && runHandover_){
+
+            record_magnitude_simple(current_forces_, current_torques_);
+            //force_past is a global
+            int i = force_past.size() - 1;
+            cout << "curent value" << i << endl;
+            if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
+            {
+                mean = getMean(force_past);
+                double absValRef = force_past[i] - mean;
+                cout << " 0 " << absValRef << endl;
+                ref = absValRef>0 ? true : false;
+                cout << "ref is " << ref << endl;
+
+            }
+            else
+            {
+                double absVal = force_past[i] - mean;
+                cout<<" 1 " << absVal << endl;
+                isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
+                if(isCurPos != ref)
+                {
+                    ++condition;
+                    release = condition == 4? true : false;
+                }
+                else
+                {
+                    cout<<" switching sign " << condition << endl;
+                    ref = -ref;				//here we change ref to the other sign
+                    condition = 0;
+                }
+
+            }
+            lRate.sleep();
+        }
         stage = 8  ; //releasing the object
         cout << "(handover) current stage "<<stage<<endl;
 
@@ -491,7 +523,35 @@ bool HandoverAction::record_magnitude(const std::vector<double>& frc, const std:
     return false;	//too few or too many values
 }
 
-bool HandoverAction::detector()
+bool HandoverAction::detector_take()
+{
+    //if we don't get what expected, fail
+    assert(force_past.size() == MIN_VALS && torque_past.size() == MIN_VALS);
+
+    std::vector<double> f_diffs;
+    std::vector<double> t_diffs;
+
+    int idx=force_past.size();
+
+    //this can be optimised in a for loop if needed
+    //NOTE here the order is reversed: v[0] is the newest - if the for loop is increasing, we will have the same order
+    f_diffs.push_back(force_past.at(idx-1) - force_past.at(idx - 2));
+    f_diffs.push_back(force_past.at(idx-2) - force_past.at(idx - 3));
+    t_diffs.push_back(torque_past.at(idx-1) - torque_past.at(idx - 2));
+    t_diffs.push_back(torque_past.at(idx-2) - torque_past.at(idx - 3));
+
+    //normally we should always have exactly 2 values, if we don't something's gone wrong
+    assert(f_diffs.size() == 2 && t_diffs.size() == 2);
+
+    //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
+    //according to the data value is 2.4
+
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.5 || (f_diffs.at(1) - f_diffs.at(0)) < -0.5) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.5 || (t_diffs.at(1) - t_diffs.at(0)) < -0.5) ? true : false;
+
+    return f_good;	//return true only if force threashold is good, torque is for future use
+}
+bool HandoverAction::detector_give()
 {
     //if we don't get what expected, fail
     assert(force_past.size() == MIN_VALS && torque_past.size() == MIN_VALS);
@@ -522,7 +582,7 @@ bool HandoverAction::detector()
 
 //returns true if enough data is collected and the detection algorithm can be executed, returns false is not enough values are collected
 //in normal operating conditions, fills force and torque vectors by shifting older values towards the beginning of each vector (i.e. v[0] is the oldest)
-void HandoverAction::record_magnitude_give(const std::vector<double>& frc, const std::vector<double>& trq)
+void HandoverAction::record_magnitude_simple(const std::vector<double>& frc, const std::vector<double>& trq)
 {
 
     double frc_mag = sqrt(pow(frc[X], 2) + pow(frc[Y], 2) + pow(frc[Z], 2));

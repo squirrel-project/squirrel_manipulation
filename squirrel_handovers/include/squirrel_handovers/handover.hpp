@@ -55,6 +55,7 @@ private:
     //variables
     int stage;
     bool runHandover_;
+    double handover_frequency_;
 
     boost::mutex sensor_mutex_;
     std::vector<double> robot_joints_;
@@ -66,7 +67,6 @@ private:
     //sensor
     std::vector<double> force_past;
     std::vector<double> torque_past;
-
 
     //subscribers
     ros::Subscriber sub_h, sub_f ;
@@ -90,9 +90,10 @@ protected:
     std::vector<double> projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma);
 
     bool record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq);
-    void record_magnitude_give(const std::vector<double>& frc, const std::vector<double>& trq);
+    void record_magnitude_simple(const std::vector<double>& frc, const std::vector<double>& trq);
     double getMean(const std::vector<double>& starters);
-    bool detector();
+    bool detector_take();
+    bool detector_give();
 
     void preemptCB();
 
