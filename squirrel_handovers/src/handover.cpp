@@ -164,7 +164,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         ROS_INFO("(handover) going to initial pose with the open hand");
         stage = 0;
         cout << "(handover) current stage "<<stage<<endl;
-        robotinoQueue->jointPtp(start);
+        //robotinoQueue->jointPtp(start);
 
 
         stage = 1; // initial pose with the open hand
@@ -177,7 +177,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 2;
         cout << "(handover) current stage "<<stage<<endl;
 
-        if(runHandover_)robotinoQueue->jointPtp(end);
+        //if(runHandover_)robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to grasp the object");
         sleep(3.0);
@@ -205,6 +205,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             {
                 grasp_value = detector_take();
                 lRate.sleep();
+                cout << "here"<<endl;
             }
         }
 
@@ -257,7 +258,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         ROS_INFO("(handover) going to initial pose with the closed hand");
         stage = 5;
         cout << "(handover) current stage "<<stage<<endl;
-        if(runHandover_) robotinoQueue->jointPtp(start);
+        //if(runHandover_) robotinoQueue->jointPtp(start);
     }
     else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
 
@@ -291,13 +292,13 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 0; // initial pose with the closed hand
         cout << "(handover) current stage "<<stage<<endl;
 
-        if (runHandover_) robotinoQueue->jointPtp(start);
+       // if (runHandover_) robotinoQueue->jointPtp(start);
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         stage = 6; // initial pose with the closed hand
         cout << "(handover) current stage "<<stage<<endl;
 
-        if (runHandover_) robotinoQueue->jointPtp(end);
+        //if (runHandover_) robotinoQueue->jointPtp(end);
         sleep(3.0);
 
         ROS_INFO("(handover) waiting to release the object");
@@ -387,7 +388,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
 
         ROS_INFO("(handover) going to initial pose with the open hand");
-        if (runHandover_) robotinoQueue->jointPtp(start);
+        //if (runHandover_) robotinoQueue->jointPtp(start);
 
     }
     else{
