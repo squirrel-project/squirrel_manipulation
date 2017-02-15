@@ -85,7 +85,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     cout << endl;
     auto realLqThread = robotinoQueue->startQueue();
 
-    cout << "(handover) switching to impedance mode if it is not there yet" << endl;
     if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
         robotinoQueue->stopCurrentMode();
         robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
@@ -124,8 +123,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         copy(end_type4.begin() + 3, end_type4.end(), end.begin() + 3);
     }
 
-    //cout<<"(handover)current target handover "<<endl<<end<<endl;
-
     bool handover_success_ = false;
     stage = 0;
     
@@ -137,6 +134,15 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     if(take.compare(goal->action_type.c_str())==0 && runHandover_){
         sleep(1);
+        int k = 0;
+        force_past.clear();
+        torque_past.clear();
+        while (k < 3){
+            record_magnitude_simple(current_forces_, current_torques_);
+            lRate.sleep();
+            k++;
+        }
+        double init_magnitude = getMean(force_past);
 
         //make sure hand is open
         if (robot == uibk_robotino && runHandover_){
@@ -184,19 +190,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         stage = 3;
         bool grasp_value = false; //detect object
 
-        //getting mean magnitude for grasp confirmation
-        int k = 0;
-        force_past.clear();
-        torque_past.clear();
-
-        while (k < 5){
-            record_magnitude_simple(current_forces_, current_torques_);
-            lRate.sleep();
-            k++;
-        }
-        double init_magnitude = getMean(force_past);
-
-        cout << "mean" << init_magnitude<<end;
         stage = 4; //grasping the object
         cout << "(handover) current stage "<<stage<<endl;
         
@@ -241,25 +234,27 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         //checking if the object is actually grasped
 
+        ROS_INFO("(handover) going to initial pose with the closed hand");
+        stage = 5;
+        cout << "(handover) current stage "<<stage<<endl;
+        if(runHandover_) robotinoQueue->jointPtp(start);
+        lRate.sleep();
         force_past.clear();
         torque_past.clear();
         k = 0;
-        while (k < 5){
+        while (k < 3){
             record_magnitude_simple(current_forces_, current_torques_);
             lRate.sleep();
             k++;
         }
         double new_magnitude = getMean(force_past);
-
-        if (abs((init_magnitude - new_magnitude)/init_magnitude) < 0.075){
+        cout<<"new mag "<<new_magnitude<< endl;
+        if (abs((init_magnitude - new_magnitude)) < 0.2){
             ROS_ERROR("handover) FAILED to Graps. Empty hand!");
             handover_success_ = false;
         }
 
-        ROS_INFO("(handover) going to initial pose with the closed hand");
-        stage = 5;
-        cout << "(handover) current stage "<<stage<<endl;
-        if(runHandover_) robotinoQueue->jointPtp(start);
+
     }
     else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
 
@@ -319,20 +314,16 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             record_magnitude_simple(current_forces_, current_torques_);
             //force_past is a global
             int i = force_past.size() - 1;
-            //ut << "curent value" << i << endl;
             if ( i <= MIN_VALS_GIVE - 1 )	//we enter here only once as part of the initialisation
             {
                 mean = getMean(force_past);
                 double absValRef = force_past[i] - mean;
-                //ut << " 0 " << absValRef << endl;
                 ref = absValRef>0 ? true : false;
-                //cout << "ref is " << ref << endl;
 
             }
             else if (abs(force_past[i] - mean) > 0.05)
             {
                 double absVal = force_past[i] - mean;
-                //ut<<" 1 " << absVal << endl;
                 isCurPos = (force_past[i - 1] - mean) >0 ? true : false;		//update current value
                 if(isCurPos != ref)
                 {
@@ -341,7 +332,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 }
                 else
                 {
-                   //out<<" switching sign " << condition << endl;
                     ref = -ref;				//here we change ref to the other sign
                     condition = 0;
                 }
@@ -353,7 +343,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         cout << "(handover) current stage "<<stage<<endl;
 
         if(release && runHandover_){
-            cout<<"OK"<<endl;
 
             if (robot == uibk_robotino && runHandover_){
 
@@ -541,8 +530,8 @@ bool HandoverAction::detector_take()
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
 
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.5 || (f_diffs.at(1) - f_diffs.at(0)) < -0.5) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.5 || (t_diffs.at(1) - t_diffs.at(0)) < -0.5) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.8 || (f_diffs.at(1) - f_diffs.at(0)) < -0.8) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.8 || (t_diffs.at(1) - t_diffs.at(0)) < -0.8) ? true : false;
 
     return f_good;	//return true only if force threashold is good, torque is for future use
 }

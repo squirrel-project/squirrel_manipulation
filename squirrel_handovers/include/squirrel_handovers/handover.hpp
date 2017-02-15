@@ -43,7 +43,7 @@ class HandoverAction {
 private:
     static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27; //displacement  of forces and torques
     static auto constexpr MIN_VALS = 3;	//minimum number of readings per quantity required for the computatio
-    static auto constexpr MIN_VALS_GIVE = 7;	//minimum number of readings per quantity required for the computation
+    static auto constexpr MIN_VALS_GIVE = 5;	//minimum number of readings per quantity required for the computation
 
     //parameters
     std::string base_frame_;
