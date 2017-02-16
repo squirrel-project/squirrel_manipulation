@@ -257,6 +257,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         if (abs((init_magnitude - new_magnitude)) < 0.2){
             ROS_ERROR("handover) FAILED to Graps. Empty hand! \n");
             handover_success_ = false;
+            runHandover_ = false;
         }
 
 
@@ -319,18 +320,18 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             }
             lRate.sleep();
         }
-        stage = 8  ; //releasing the object
-        cout << "(handover) current stage "<<stage<<endl;
+        //stage = 8  ; //releasing the object
+        //cout << "(handover) current stage "<<stage<<endl;
 
         if(release && runHandover_){
 
             if (robot == uibk_robotino && runHandover_){
 
                 if ( ros::service::call(HAND_SERVICE, releaseService) ){
-                    ROS_INFO("(handover) HAND Released!");
+                    ROS_INFO("(handover) (hand msg) HAND Released!");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) FAILED to Release!");
+                    ROS_ERROR("handover) (hand msg)  FAILED to Release!");
                     handover_success_ = false;
                     runHandover_ = false;
                 }
