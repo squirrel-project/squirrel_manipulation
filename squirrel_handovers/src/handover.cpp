@@ -188,7 +188,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         if(runHandover_)robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to grasp the object \n");
-        sleep(1.0);
+        sleep(3.0);
         //stage = 3;
         bool grasp_value = false; //detect object
 
@@ -276,7 +276,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //cout << "(handover) current stage "<<stage<<endl;
 
         if (runHandover_) robotinoQueue->jointPtp(end);
-        sleep(1.0);
+        sleep(3.0);
 
         ROS_INFO("(handover) waiting to release the object \n");
         //stage = 7;
