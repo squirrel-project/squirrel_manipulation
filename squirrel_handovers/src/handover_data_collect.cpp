@@ -35,8 +35,7 @@ string robot;
 string tuw_robotino = "tuw-robotino2";
 string uibk_robotino = "uibk-robotino2-sh";
 string path_= "data/";
-//string path_= "/home/c7031098/catkin_ws/data/";
-//string path_ ="/home/c7031098/squirrel_ws_new/data/";
+
 string experiment_;
 
 
