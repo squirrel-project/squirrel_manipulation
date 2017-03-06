@@ -11,6 +11,8 @@ class MetaHand(object):
             pass
 
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
+        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.tf_listener = tf.TransformListener()
         self.metahand = actionlib.SimpleActionClient('hand_controller/actuate_hand', ActuateHandAction)
         self.metahand.wait_for_server()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
@@ -28,7 +30,7 @@ class MetaHand(object):
         self.put_result = PutDownResult()
         self.drop_server.start()
         self.put_server.start()
-        self.markerPub = rospy.Publisher('put_downMarker', Marker, queue_size=10) 
+        self.markerPub = rospy.Publisher('put_downMarker', Marker, queue_size=10)
         rospy.loginfo(rospy.get_caller_id() + ': started')
 
 
@@ -65,16 +67,23 @@ class MetaHand(object):
             self.put_server.set_preempted()
             return
 
-        self._visualize_put_down(goal.destPoseSE2)
+        correct_pose = None
+        if not goal.destPoseSE2.header.frame_id == 'origin':
+            goal.destPoseSE2.header.stamp = self.tf_listener.getLatestCommonTime(goal.destPoseSE2.header.frame_id, 'origin')
+            correct_pose = self.tf_listener.transformPose('origin', goal.destPoseSE2).pose
+        else:
+            correct_pose = goal.destPoseSE2.pose
+
+        self._visualize_put_down(correct_pose)
 
         ptp_goal = PtpGoal()
-        ptp_goal.pose.position.x = goal.destPoseSE2.position.x
-        ptp_goal.pose.position.y = goal.destPoseSE2.position.y
-        ptp_goal.pose.position.z = goal.destPoseSE2.position.z
-        ptp_goal.pose.orientation.w = goal.destPoseSE2.orientation.w
-        ptp_goal.pose.orientation.x = goal.destPoseSE2.orientation.x
-        ptp_goal.pose.orientation.y = goal.destPoseSE2.orientation.y
-        ptp_goal.pose.orientation.z = goal.destPoseSE2.orientation.z
+        ptp_goal.pose.position.x = correct_pose.position.x
+        ptp_goal.pose.position.y = correct_pose.position.y
+        ptp_goal.pose.position.z = correct_pose.position.z
+        ptp_goal.pose.orientation.w = correct_pose.orientation.w
+        ptp_goal.pose.orientation.x = correct_pose.orientation.x
+        ptp_goal.pose.orientation.y = correct_pose.orientation.y
+        ptp_goal.pose.orientation.z = correct_pose.orientation.z
 
         rospy.loginfo("Approaching placement pose...")
         self.ptp.send_goal(ptp_goal)
@@ -102,21 +111,21 @@ class MetaHand(object):
         self.put_server.set_succeeded(self.put_result, success)
         return
 
-    def _visualize_put_down(self, pose):   
-        put_downMarker = Marker()         
-        put_downMarker.header.frame_id = "/origin" 
+    def _visualize_put_down(self, pose):
+        put_downMarker = Marker()
+        put_downMarker.header.frame_id = "/origin"
         put_downMarker.header.stamp = rospy.get_rostime()
-        put_downMarker.ns = "grasp"                      
-        put_downMarker.id = 0                            
-        put_downMarker.type = 2                          
-        put_downMarker.action = 0                        
-        put_downMarker.pose.position = pose.position                                   
-        put_downMarker.pose.orientation.x = 0                                                 
-        put_downMarker.pose.orientation.y = 0                                                 
-        put_downMarker.pose.orientation.z = 0                                                 
-        put_downMarker.pose.orientation.w = 1.0                                               
+        put_downMarker.ns = "grasp"
+        put_downMarker.id = 0
+        put_downMarker.type = 2
+        put_downMarker.action = 0
+        put_downMarker.pose.position = pose.position
+        put_downMarker.pose.orientation.x = 0
+        put_downMarker.pose.orientation.y = 0
+        put_downMarker.pose.orientation.z = 0
+        put_downMarker.pose.orientation.w = 1.0
         put_downMarker.scale.x = 0.05
-        put_downMarker.scale.y = 0.05                                                          
+        put_downMarker.scale.y = 0.05
         put_downMarker.scale.z = 0.05
         put_downMarker.color.r = 0.0
         put_downMarker.color.g = 1.0
