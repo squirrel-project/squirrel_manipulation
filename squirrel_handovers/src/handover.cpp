@@ -275,7 +275,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //cout << "(handover) current stage "<<stage<<endl;
 
         if (runHandover_) robotinoQueue->jointPtp(end);
-        sleep(3.0);
+        sleep(1.0);
 
         ROS_INFO("(handover) waiting to release the object \n");
         //stage = 7;
