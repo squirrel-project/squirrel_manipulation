@@ -10,7 +10,6 @@ env:
     - ROS_DISTRO="indigo"
     - UPSTREAM_WORKSPACE=file
     - ROSINSTALL_FILENAME=.travis.rosinstall
-    - BEFORE_SCRIPT="./.travis.install.sh"
   matrix:
     - ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu
 install:
