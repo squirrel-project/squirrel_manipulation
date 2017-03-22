@@ -39,7 +39,7 @@ include_directories(
 )
 
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
-target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} utils  ${ARMADILLO_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} kukadu_utils  ${ARMADILLO_LIBRARIES})
 
 add_library(robotino
    src/RobotinoControl.cpp
@@ -61,23 +61,23 @@ add_library(pushlib
    src/pushing/src/DynamicPush.cpp
 )
 
-add_library(utils
+add_library(kukadu_utils
    src/utils/conversion_utils.cpp
    src/utils/math_utils.cpp
    src/utils/gnuplot-cpp/gnuplot_i.cpp
 )
 
-target_link_libraries(robotino utils)
-target_link_libraries(pushlib utils)
+target_link_libraries(robotino kukadu_utils)
+target_link_libraries(pushlib kukadu_utils)
 
 add_executable(ardemo src/ARDemo.cpp)
-target_link_libraries(ardemo robotino utils ${catkin_LIBRARIES})
+target_link_libraries(ardemo robotino kukadu_utils ${catkin_LIBRARIES})
 
 add_executable(push src/pushing/pushing.cpp)
-target_link_libraries(push robotino utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(push robotino kukadu_utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(smash src/smash.cpp)
-target_link_libraries(smash robotino utils ${catkin_LIBRARIES})
+target_link_libraries(smash robotino kukadu_utils ${catkin_LIBRARIES})
 
 add_executable(test_base src/test_move_base.cpp)
 target_link_libraries(test_base robotino ${catkin_LIBRARIES})

@@ -1,3 +1,0 @@
-<launch>
-	<node name="squirrel_hsf_grasping_node" pkg="squirrel_grasping" type="squirrel_haf_grasping_node.py" output="screen"/>
-</launch>

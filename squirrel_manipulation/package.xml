@@ -4,20 +4,23 @@
   <version>0.0.0</version>
   <description>manipulation metapackage</description>
 
-  <maintainer email="simon.hangl@uibk.ac.at">simon hangl</maintainer>
+  <maintainer email="philipp.zech@uibk.ac.at">Philipp Zech</maintainer>
 
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   
-  <run_depend>robotino_6dof_moveit_config</run_depend>
-  <run_depend>robotino_5dof_moveit_config</run_depend>
-  <run_depend>uibk_robotino2_moveit_config</run_depend>
-  <run_depend>uibk_robotino2_5dof_moveit_config</run_depend>
   <run_depend>squirrel_grasping</run_depend>
   <run_depend>squirrel_manipulation_waypoint</run_depend>
-  <run_depend>squirrel_object_manipulation</run_depend>
   <run_depend>squirrel_moveit_utils</run_depend>
+  <run_depend>squirrel_object_manipulation</run_depend>
+  <run_depend>uibk_moveit_config</run_depend>
+  <run_depend>uibk_moveit_config_sh</run_depend>
+  <run_depend>tuw_moveit_config</run_depend>
+  <run_depend>uibk_planning_test</run_depend>
+  <run_depend>kinesthetic_teaching</run_depend>
+  <run_depend>squirrel_ptp_server</run_depend>
+  <run_depend>squirrel_handovers</run_depend>  
 
   <export>
     <metapackage/>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+   <include file="$(find uibk_robot_driver)/launch/controller.launch">
+  </include>
+  
+  <!--node name="kinesthetic_teaching_node" pkg="kinesthetic_teaching" type="kinesthetic_teaching_node" output="screen">
+  </node-->
+  
+</launch>

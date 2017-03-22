@@ -1,0 +1,8 @@
+<launch>
+
+  <param name="octomap_frame" type="string" value="/map"/>
+  <param name="octomap_resolution" type="double" value="0.025"/>
+  <param name="max_range" type="double" value="4.0"/>
+
+  <rosparam command="load" file="$(find uibk_moveit_config_sh)/config/sensors_kinect.yaml" />  
+</launch>
