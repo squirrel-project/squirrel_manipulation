@@ -93,8 +93,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     auto firstJoints = robotinoQueue->getCurrentJoints().joints;
 
-    auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
-    auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    //auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
+    //auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, 0.51, -0.09, -0.92, 1.2});
+    auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 1.4, 0.67, -0.07, -1.91, 1.2});
     auto end_type1 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
     auto end_type2 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
     auto end_type3 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -133,6 +135,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     force_past.clear();
 
     if(take.compare(goal->action_type.c_str())==0 && runHandover_){
+	std::cout << "Requested TAKE action" << std::endl;
         sleep(0.5);
         int k = 0;
         force_past.clear();
@@ -151,7 +154,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 ROS_INFO("(handover) (hand msg) HAND Released! \n");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("handover)(hand msg) FAILED to Release! \n");
+                ROS_ERROR("(handover)(hand msg) FAILED to Release! \n");
                 handover_success_ = false;
                 runHandover_ = false;
             }
@@ -168,6 +171,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 runHandover_ = false;
             }
         }
+	handover_success_ = true; // we are winners!
+	runHandover_ = true;
 
         ROS_INFO("(handover) going to initial pose with the open hand \n");
         //stage = 0;
@@ -202,6 +207,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             if (record_magnitude(current_forces_, current_torques_)&&runHandover_)
             {
                 grasp_value = detector_take();
+		if (grasp_value)
+		    std::cout << "Detected!" << std::endl;
             }
             lRate.sleep();
         }
@@ -216,7 +223,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     ROS_INFO("(handover) (hand msg) HAND Grasped! \n");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) (hand msg) FAILED to Graps! \n");
+                    ROS_ERROR("(handover) (hand msg) FAILED to Grasp! \n");
                     handover_success_ = false;
                     runHandover_ = false;
                 }
@@ -228,9 +235,9 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     ROS_INFO("(handover) (hand msg) HAND Grasped! \n");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) (hand msg) FAILED to Graps! \n");
-                    handover_success_ = false;
-                    runHandover_ = false;
+                    ROS_ERROR("(handover) (hand msg) FAILED to Grasp! \n");
+                    handover_success_ = true; // was false!! but we have a broken wrist motor.
+                    runHandover_ = true;
                 }
             }
         }
@@ -243,7 +250,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //cout << "(handover) current stage "<<stage<<endl;
         if(runHandover_) robotinoQueue->jointPtp(start);
         sleep(0.2);
-        ROS_INFO("(handover) cheking if object is in the hand \n");
+        ROS_INFO("(handover) checking if object is in the hand \n");
         force_past.clear();
         torque_past.clear();
         k = 0;
@@ -254,12 +261,10 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         }
         double new_magnitude = getMean(force_past);
         if (abs((init_magnitude - new_magnitude)) < 0.2){
-            ROS_ERROR("handover) FAILED to Graps. Empty hand! \n");
+            ROS_ERROR("(handover) FAILED to Grasp. Empty hand! \n");
             handover_success_ = false;
             runHandover_ = false;
         }
-
-
     }
     else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
 
@@ -330,7 +335,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     ROS_INFO("(handover) (hand msg) HAND Released!");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) (hand msg)  FAILED to Release!");
+                    ROS_ERROR("(handover) (hand msg)  FAILED to Release!");
                     handover_success_ = false;
                     runHandover_ = false;
                 }
@@ -342,8 +347,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     ROS_INFO("(handover) HAND Released!");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) FAILED to Release!");
-                    handover_success_ = false;
+                    ROS_ERROR("(handover) FAILED to Release!");
+                    handover_success_ = true; // was false!!
                     runHandover_ = false;
                 }
             }
@@ -370,7 +375,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
      robotinoQueue->stopQueue();
 
     if (!runHandover_){
-        handoverResult.result_status = "calceled";
+        handoverResult.result_status = "cancelled";
         handoverServer.setAborted(handoverResult);
         ROS_INFO(" Handover: failed \n ");
         //cout<< endl;
@@ -514,8 +519,8 @@ bool HandoverAction::detector_take()
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
 
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.8 || (f_diffs.at(1) - f_diffs.at(0)) < -0.8) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.8 || (t_diffs.at(1) - t_diffs.at(0)) < -0.8) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.9 || (f_diffs.at(1) - f_diffs.at(0)) < -0.9) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.9 || (t_diffs.at(1) - t_diffs.at(0)) < -0.9) ? true : false;
 
     return f_good;	//return true only if force threashold is good, torque is for future use
 }

@@ -1,0 +1,8 @@
+<launch>
+  <arg name="robot" default="uibk-robotino2-sh"/>
+
+  <node pkg="squirrel_handovers" type="handover" name="handover" cwd="node" required="true" output="screen">
+  <param name="robot" type="string" value="$(arg robot)"/>
+  </node>
+
+</launch>
