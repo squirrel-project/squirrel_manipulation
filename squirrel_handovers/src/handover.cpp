@@ -133,7 +133,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     force_past.clear();
 
     if(take.compare(goal->action_type.c_str())==0 && runHandover_){
-        sleep(1);
+        sleep(0.5);
         int k = 0;
         force_past.clear();
         torque_past.clear();
@@ -253,7 +253,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             k++;
         }
         double new_magnitude = getMean(force_past);
-        cout<<"new mag "<<new_magnitude<< endl;
         if (abs((init_magnitude - new_magnitude)) < 0.2){
             ROS_ERROR("handover) FAILED to Graps. Empty hand! \n");
             handover_success_ = false;
