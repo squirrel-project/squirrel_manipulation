@@ -2,6 +2,7 @@
 #include <actionlib/server/simple_action_server.h>
 #include <squirrel_manipulation_msgs/PtpAction.h>
 #include <squirrel_manipulation_msgs/JointPtpAction.h>
+#include <kukadu/kinematics/komoplanner.hpp>
 
 #include <vector>
 #include <memory>
@@ -36,6 +37,7 @@ protected:
   
   KUKADU_SHARED_PTR<KukieControlQueue> robotinoQueue;
   KUKADU_SHARED_PTR<MoveItKinematics> mvKin;
+  
   KUKADU_SHARED_PTR<kukadu_thread> realLqThread;
 
 public:
@@ -56,10 +58,19 @@ public:
     ROS_INFO("creating moveit kinematics instance");
     vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
     //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
-    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 10, 2.0);
+    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 4, 2.0);
     
+
+    //auto komoAll = make_shared<KomoPlanner>(robotinoQueue,
+    //		"/home/rss2017/catkin_ws/src/kukadu/external/komo/share/data/robotino_model/robotino.kvg",
+    //		"/home/rss2017/catkin_ws/src/kukadu/external/komo/share/data/robotino_model/MT.cfg",
+    //	        "");
+  
+
     robotinoQueue->setKinematics(mvKin);
     robotinoQueue->setPathPlanner(mvKin);
+    //robotinoQueue->setPathPlanner(komoAll);
+    //robotinoQueue->setKinematics(komoAll);
 
     ROS_INFO("starting queue");           
     realLqThread = robotinoQueue->startQueue();

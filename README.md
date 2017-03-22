@@ -1,3 +1,5 @@
+Travis-CI: [![Build Status](https://travis-ci.org/squirrel-project/squirrel_manipulation.svg?branch=indigo_dev)](https://travis-ci.org/squirrel-project/squirrel_manipulation)
+
 Squirrel_manipulation
 =====================
 
