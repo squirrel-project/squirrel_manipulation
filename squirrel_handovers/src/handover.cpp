@@ -19,7 +19,7 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     private_nh.param("frequency", handover_frequency_, 10.00);
 
     //set callback for cancel request
-    handoverServer.registerPreemptCallback(boost::bind(&HandoverAction::preemptCB, this));
+    handoverServer.registerPreemptCallback(boost::bind(&HandoverAction::preemptCB, this));  
 
 
     vector<double> temp (3,0);
@@ -27,6 +27,10 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     current_torques_ = temp;
 
     sub_h = nh.subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
+    tiltPub = nh.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
+    panPub = nh.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
+    safety_pub_ = nh.advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
+
 
     if(robot == tuw_robotino){
         sub_f = nh.subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
@@ -95,6 +99,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
     auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
     auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
+    auto handover_vienna = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, 1.0, 0.0, -1.2, -1.9});
+    auto start_vienna = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 1.6, 0.0, -1.8, -1.9});
     auto end_type1 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
     auto end_type2 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
     auto end_type3 = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -123,6 +129,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         copy(end_type4.begin() + 3, end_type4.end(), end.begin() + 3);
     }
 
+    if (robot == tuw_robotino){
+        copy(start_vienna.begin() + 3, start_vienna.end(), start.begin() + 3);
+        copy(handover_vienna.begin() + 3, handover_vienna.end(), end.begin() + 3);
+    }
+
     bool handover_success_ = false;
     stage = 0;
     
@@ -143,58 +154,50 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             k++;
         }
         double init_magnitude = getMean(force_past);
+        this->resetSafety();
 
-        //make sure hand is open
+        //hand  should be closed
         if (robot == uibk_robotino && runHandover_){
 
-            if ( ros::service::call(HAND_SERVICE, releaseService) ){
-                ROS_INFO("(handover) (hand msg) HAND Released! \n");
+            if (ros::service::call(HAND_SERVICE, graspService) ){
+                ROS_INFO("(handover) (hand msg) HAND Closed! \n");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("handover)(hand msg) FAILED to Release! \n");
+                ROS_ERROR("handover)(hand msg) FAILED to Closed! \n");
                 handover_success_ = false;
                 runHandover_ = false;
             }
         }
         else if (robot == tuw_robotino && runHandover_){
-            kclhandGraspActionClient.sendGoal(releaseServiceKCL.goal);
+            kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
             kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
             if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-                ROS_INFO("(handover) (hand msg) HAND Released! \n");
+                ROS_INFO("(handover) (hand msg) HAND Close! \n");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("(handover) (hand msg) FAILED to Release! \n");
+                ROS_ERROR("(handover) (hand msg) FAILED to Close! \n");
                 handover_success_ = false;
-                runHandover_ = false;
+                handover_success_ = true; //to be removed after hadn is fixed
+                //runHandover_ = false;
             }
         }
-
-        ROS_INFO("(handover) going to initial pose with the open hand \n");
-        //stage = 0;
-        //cout << "(handover) current stage "<<stage<<endl;
-        if(runHandover_) robotinoQueue->jointPtp(start);
+        this->resetSafety();
 
 
-        //stage = 1; // initial pose with the open hand
-        //cout << "(handover) current stage "<<stage<<endl;
-        //firstJoints = robotinoQueue->getCurrentJoints().joints;
-        //cout << "(handover) current robot state: " << firstJoints.t() << endl;
+        //ROS_INFO("(handover) going to initial pose with the open hand \n");
+
+        //if(runHandover_) robotinoQueue->jointPtp(start);
 
 
         ROS_INFO("(handover) going to the handover pose with the open hand \n");
-        //stage = 2;
-        //cout << "(handover) current stage "<<stage<<endl;
 
         if(runHandover_)robotinoQueue->jointPtp(end);
 
         ROS_INFO("(handover) waiting to grasp the object \n");
-        sleep(3.0);
-        //stage = 3;
+        sleep(1.0);
+
         bool grasp_value = false; //detect object
 
-        //stage = 4; //grasping the object
-        //cout << "(handover) current stage "<<stage<<endl;
-        
         force_past.clear();
         torque_past.clear();
         while(runHandover_ && !grasp_value){
@@ -208,7 +211,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
 
         if(grasp_value && runHandover_){
-
 
             if (robot == uibk_robotino && runHandover_){
 
@@ -228,20 +230,19 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     ROS_INFO("(handover) (hand msg) HAND Grasped! \n");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("handover) (hand msg) FAILED to Graps! \n");
+                    ROS_ERROR("handover) (hand msg) FAILED to Grap! \n");
                     handover_success_ = false;
-                    runHandover_ = false;
+                    handover_success_ = true; //to be removed after hand is fixed
+                    //runHandover_ = false;
                 }
             }
         }
-        //cout << "(handover) current stage "<<stage<<endl;
 
-        //checking if the object is actually grasped
+        this->resetSafety();
 
-        ROS_INFO("(handover) going to initial pose with the closed hand");
-        //stage = 5;
-        //cout << "(handover) current stage "<<stage<<endl;
-        if(runHandover_) robotinoQueue->jointPtp(start);
+        //ROS_INFO("(handover) going to initial pose with the closed hand");
+
+        //if(runHandover_) robotinoQueue->jointPtp(start);
         sleep(0.2);
         ROS_INFO("(handover) cheking if object is in the hand \n");
         force_past.clear();
@@ -258,28 +259,25 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             handover_success_ = false;
             runHandover_ = false;
         }
+        this->resetSafety();
 
 
     }
     else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
 
 
-        ROS_INFO("(handover) going to the initial pose \n");
-        //stage = 0; // initial pose with the closed hand
-        //cout << "(handover) current stage "<<stage<<endl;
+       // ROS_INFO("(handover) going to the initial pose \n");
 
-        if (runHandover_) robotinoQueue->jointPtp(start);
+       // if (runHandover_) robotinoQueue->jointPtp(start);
 
         ROS_INFO("(handover) going to the handover pose with the closed hand");
         //stage = 6; // initial pose with the closed hand
         //cout << "(handover) current stage "<<stage<<endl;
 
         if (runHandover_) robotinoQueue->jointPtp(end);
-        sleep(3.0);
+        sleep(1.0);
 
         ROS_INFO("(handover) waiting to release the object \n");
-        //stage = 7;
-        //cout << "(handover) current stage "<<stage<<endl;
 
         bool release = false;
         torque_past.clear();
@@ -319,8 +317,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             }
             lRate.sleep();
         }
-        //stage = 8  ; //releasing the object
-        //cout << "(handover) current stage "<<stage<<endl;
 
         if(release && runHandover_){
 
@@ -344,13 +340,12 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                 }else{
                     ROS_ERROR("handover) FAILED to Release!");
                     handover_success_ = false;
-                    runHandover_ = false;
+                    handover_success_ = true; //to be removed after hadn is fixed
+                    //runHandover_ = false;
                 }
             }
         }
-
-        //stage = 9;
-        //cout << "(handover) current stage "<<stage<<endl;
+        this->resetSafety();
 
         ROS_INFO("(handover) going to initial pose with the open hand \n");
         if (runHandover_) robotinoQueue->jointPtp(start);
@@ -363,14 +358,13 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     }
 
     ROS_INFO(" Handover: Handover sequence finished. \n");
-    //cout<<endl;
 
     //stop arm queue
 
      robotinoQueue->stopQueue();
 
     if (!runHandover_){
-        handoverResult.result_status = "calceled";
+        handoverResult.result_status = "canceled";
         handoverServer.setAborted(handoverResult);
         ROS_INFO(" Handover: failed \n ");
         //cout<< endl;
@@ -392,47 +386,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 HandoverAction::~HandoverAction() {
 
 
-}
-
-vector<double> HandoverAction::projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma){
-    vector<double> newVec;
-    double i= vecX * (cos(beta)*cos(gamma)) + vecY *(cos(gamma)* sin(alpha)* sin(beta) - cos(alpha)*sin(gamma)) + vecZ *(cos(alpha)*cos(gamma)*sin(beta) +sin(alpha)*sin(gamma));
-    double j= vecX * (cos(beta)*sin(gamma)) + vecY *(cos(alpha)* cos(gamma) + sin(alpha)*sin(gamma)*sin(beta)) + vecZ *(-1*cos(gamma)*sin(alpha) +cos(alpha)*sin(beta)*sin(gamma));
-    double k= vecX * (-1*sin(beta)) + vecY *(cos(beta)* sin(alpha)) + vecZ *(cos(alpha)*cos(beta)); // ref: roll-x-alpha pitch-y-beta yaw-z-gamma
-    newVec.push_back(i);
-    newVec.push_back(j);
-    newVec.push_back(k);
-    return newVec;
-
-}
-std::vector<double> HandoverAction::projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose){
-    tf::Quaternion quat(currentPose.orientation.x,currentPose.orientation.y,currentPose.orientation.z,currentPose.orientation.w);
-    tf::Matrix3x3 m(quat);
-    double roll,pitch,yaw;
-    m.getRPY(roll,pitch,yaw);
-    //Fix senser miss-alignment in respect to end effector and wrong sensor roll yaw conventions!!
-    vector<double> temp1 = projectVectors(readings.at(0),readings.at(1) ,readings.at(2),0.0,0.0,SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR);
-    vector<double> temp2 = projectVectors(readings.at(3),readings.at(4) ,readings.at(5),0.0,0.0, M_PI + SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR);
-    //Project based on joint states
-    vector<double> res1 = projectVectors(temp1.at(0),temp1.at(1) ,temp1.at(2),roll,pitch,yaw);
-    vector<double> res2 = projectVectors(temp2.at(0),temp2.at(1) ,temp2.at(2),roll,pitch,yaw);
-    res1.insert(res1.end(),res2.begin(),res2.end());
-
-    return res1;
-}
-
-geometry_msgs::Pose HandoverAction::tf_stamped2pose(tf::StampedTransform tf_in){
-    geometry_msgs::Pose Emap;
-
-    Emap.position.x = tf_in.getOrigin().x();
-    Emap.position.y = tf_in.getOrigin().y();
-    Emap.position.z = tf_in.getOrigin().z();;
-    Emap.orientation.x = tf_in.getRotation().x();
-    Emap.orientation.y = tf_in.getRotation().y();
-    Emap.orientation.z = tf_in.getRotation().z();;
-    Emap.orientation.w = tf_in.getRotation().w();;
-
-    return Emap;
 }
 
 void HandoverAction::sensorReadCallbackWrist(std_msgs::Float64MultiArray msg){
@@ -514,36 +467,8 @@ bool HandoverAction::detector_take()
     //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
     //according to the data value is 2.4
 
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.8 || (f_diffs.at(1) - f_diffs.at(0)) < -0.8) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.8 || (t_diffs.at(1) - t_diffs.at(0)) < -0.8) ? true : false;
-
-    return f_good;	//return true only if force threashold is good, torque is for future use
-}
-bool HandoverAction::detector_give()
-{
-    //if we don't get what expected, fail
-    assert(force_past.size() == MIN_VALS && torque_past.size() == MIN_VALS);
-
-    std::vector<double> f_diffs;
-    std::vector<double> t_diffs;
-
-    int idx=force_past.size();
-
-    //this can be optimised in a for loop if needed
-    //NOTE here the order is reversed: v[0] is the newest - if the for loop is increasing, we will have the same order
-    f_diffs.push_back(force_past.at(idx-1) - force_past.at(idx - 2));
-    f_diffs.push_back(force_past.at(idx-2) - force_past.at(idx - 3));
-    t_diffs.push_back(torque_past.at(idx-1) - torque_past.at(idx - 2));
-    t_diffs.push_back(torque_past.at(idx-2) - torque_past.at(idx - 3));
-
-    //normally we should always have exactly 2 values, if we don't something's gone wrong
-    assert(f_diffs.size() == 2 && t_diffs.size() == 2);
-
-    //newest - oldest diffs, true if the diff of the diff is either bigger than 1 or less than -1
-    //according to the data value is 2.4
-
-    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.8 || (f_diffs.at(1) - f_diffs.at(0)) < -0.8) ? true : false;
-    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.8 || (t_diffs.at(1) - t_diffs.at(0)) < -0.8) ? true : false;
+    bool f_good = ((f_diffs.at(1) - f_diffs.at(0)) > 0.9 || (f_diffs.at(1) - f_diffs.at(0)) < -0.9) ? true : false;
+    bool t_good = ((t_diffs.at(1) - t_diffs.at(0)) > 0.9 || (t_diffs.at(1) - t_diffs.at(0)) < -0.9) ? true : false;
 
     return f_good;	//return true only if force threashold is good, torque is for future use
 }
@@ -577,9 +502,25 @@ void HandoverAction::preemptCB(){
     ROS_INFO("(handover) Canceled handover action by the high-level planner");
     cout<<endl;
     runHandover_ = false;
-    //this->finishPush();
-    //pushServer.setPreempted();
 
+}
+
+void HandoverAction::moveTilt(double val){
+    std_msgs::Float64 tilt_msg;
+    tilt_msg.data = val;
+    tiltPub.publish(tilt_msg);
+}
+
+void HandoverAction::movePan(double val){
+    std_msgs::Float64 pan_msg;
+    pan_msg.data = val;
+    panPub.publish(pan_msg);
+}
+
+void HandoverAction::resetSafety(){
+    std_msgs::Bool reset;
+    reset.data = true;
+    safety_pub_.publish(reset);
 }
 
 int main(int argc, char** argv) {

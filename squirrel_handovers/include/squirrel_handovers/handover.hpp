@@ -8,10 +8,9 @@
 #include <algorithm>
 #include <cassert>
 
-
 #include <boost/thread.hpp>
-
 #include <tf/transform_listener.h>
+#include <std_msgs/Bool.h>
 
 #include <kukadu/kukadu.hpp>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
@@ -26,10 +25,17 @@
 #include <squirrel_manipulation_msgs/HandoverActionGoal.h>
 #include <squirrel_manipulation_msgs/HandoverActionResult.h>
 
+
+
 #define HANDOVER_NAME "handover"
 #define SENSOR_TOPIC "/wrist"
 #define FINGERTIP_TOPIC "/fingertips"
 #define HAND_SERVICE "/softhand_grasp"
+#define SAFETY_TOPIC "/reset_safety"
+
+#define TILT_TOPIC "/tilt_controller/command"
+#define PAN_TOPIC "/pan_controller/command"
+
 
 enum Axes
 {
@@ -70,6 +76,10 @@ private:
 
     //subscribers
     ros::Subscriber sub_h, sub_f ;
+    //publishers
+    ros::Publisher safety_pub_;
+    ros::Publisher tiltPub;
+    ros::Publisher panPub;
 
 
 protected:
@@ -85,15 +95,16 @@ protected:
     void sensorReadCallbackWrist(std_msgs::Float64MultiArray msg);
     void sensorReadCallbackFingers(std_msgs::Float64MultiArray msg);
 
-    std::vector<double> projectReadings(std::vector<double> readings, geometry_msgs::Pose currentPose);
-    geometry_msgs::Pose tf_stamped2pose(tf::StampedTransform tf_in);
-    std::vector<double> projectVectors(double vecX,double vecY,double vecZ,double alpha,double beta,double gamma);
-
     bool record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq);
     void record_magnitude_simple(const std::vector<double>& frc, const std::vector<double>& trq);
     double getMean(const std::vector<double>& starters);
     bool detector_take();
-    bool detector_give();
+    bool detector_give(); 
+
+    void moveTilt(double val);
+    void movePan(double val);
+    void resetSafety();
+
 
     void preemptCB();
 
