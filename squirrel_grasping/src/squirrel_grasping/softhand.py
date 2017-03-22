@@ -70,6 +70,14 @@ class SoftHand(object):
         ptp_goal.pose.position.x = correct_pose.pose.position.x
         ptp_goal.pose.position.y = correct_pose.pose.position.y
         ptp_goal.pose.position.z = correct_pose.pose.position.z
+
+        '''
+           x: 0.340830731389
+        y: 0.619075146426
+        z: -0.341226694197
+    w: 0.619794093861
+
+        '''
         #do not change values below
         ptp_goal.pose.orientation.w = 0.73
         ptp_goal.pose.orientation.x = 0.0
