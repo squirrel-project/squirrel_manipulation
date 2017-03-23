@@ -19,10 +19,12 @@ class MetaHand(object):
 
         rospy.loginfo(rospy.get_caller_id() + ': starting up')
         self.metahand = actionlib.SimpleActionClient('hand_controller/actuate_hand', ActuateHandAction)
+        rospy.loginfo('Waiting for hand_controller/actuate_hand')
         self.metahand.wait_for_server()
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
+        rospy.loginfo('Waiting for cart_ptp')
         self.ptp.wait_for_server()
         self.server = actionlib.SimpleActionServer('metahand_grasp_server',
                                                     BlindGraspAction,
@@ -45,42 +47,72 @@ class MetaHand(object):
         pre_grasp = None
         correct_pose = None
         d = goal.heap_bounding_cylinder.height/2.0
+        rospy.loginfo("goal.heap_bounding_cylinder.height = " + str(goal.heap_bounding_cylinder.height))
+        rospy.loginfo("d = " + str(d))
 
         if not goal.heap_center_pose.header.frame_id == 'origin':
             goal.heap_center_pose.header.stamp = self.tf_listener.getLatestCommonTime(goal.heap_center_pose.header.frame_id, 'origin')
             correct_pose = self.tf_listener.transformPose('origin', goal.heap_center_pose)
-            correct_pose.pose.position.z+=(d+0.11)
+            correct_pose.pose.position.z += (d+0.1)
             pre_grasp = copy(correct_pose)
         else:
             correct_pose = goal.heap_center_pose
-            correct_pose.pose.position.z+=(d+0.11)
+            correct_pose.pose.position.z += (d+0.1)
             pre_grasp = copy(correct_pose)
+            
+        rospy.loginfo("correct_pose.pose.position.z = " + str(correct_pose.pose.position.z))
 
         ptp_pre_goal = PtpGoal()
-        ptp_pre_goal.pose.position.x = pre_grasp.pose.position.x
-        ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y
-        ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z+0.2
+        ptp_pre_goal.pose.position.x = pre_grasp.pose.position.x #0.472 #pre_grasp.pose.position.x
+        ptp_pre_goal.pose.position.y = pre_grasp.pose.position.y #-0.405 #pre_grasp.pose.position.y
+        ptp_pre_goal.pose.position.z = pre_grasp.pose.position.z+0.2 #0.392 #pre_grasp.pose.position.z+0.2
+        rospy.loginfo("ptp_pre_goal.pose.position.z = " + str(ptp_pre_goal.pose.position.z))
         #do not change values below
-        ptp_pre_goal.pose.orientation.w = 0.287
-        ptp_pre_goal.pose.orientation.x = 0.912
-        ptp_pre_goal.pose.orientation.y = 0.290
-        ptp_pre_goal.pose.orientation.z = 0.028
+        ptp_pre_goal.pose.orientation.w = 0.577 #0.287
+        ptp_pre_goal.pose.orientation.x = -0.710 #0.912
+        ptp_pre_goal.pose.orientation.y = -0.290 #0.290
+        ptp_pre_goal.pose.orientation.z = 0.281 #0.028
 
         ptp_goal = PtpGoal()
-        ptp_goal.pose.position.x = correct_pose.pose.position.x
-        ptp_goal.pose.position.y = correct_pose.pose.position.y
-        ptp_goal.pose.position.z = correct_pose.pose.position.z
+        ptp_goal.pose.position.x = correct_pose.pose.position.x #0.489 #correct_pose.pose.position.x
+        ptp_goal.pose.position.y = correct_pose.pose.position.y #-0.416 #correct_pose.pose.position.y
+        ptp_goal.pose.position.z = correct_pose.pose.position.z #0.180 #correct_pose.pose.position.z
+        rospy.loginfo("ptp_goal.pose.position.z = " + str(ptp_goal.pose.position.z))
         #do not change values below
-        ptp_goal.pose.orientation.w = 0.287
-        ptp_goal.pose.orientation.x = 0.912
-        ptp_goal.pose.orientation.y = 0.290
-        ptp_goal.pose.orientation.z = 0.028
-
+        ptp_goal.pose.orientation.w = 0.613 #0.287
+        ptp_goal.pose.orientation.x = -0.682 #0.912
+        ptp_goal.pose.orientation.y = -0.300 #0.290
+        ptp_goal.pose.orientation.z = 0.265 #0.028
+        
+        ptp_retract_goal = PtpGoal()
+        ptp_retract_goal.pose.position.x = 0.306
+        ptp_retract_goal.pose.position.y = -0.480
+        ptp_retract_goal.pose.position.z = 0.425
+        rospy.loginfo("ptp_retract_goal.pose.position.z = " + str(ptp_retract_goal.pose.position.z))
+        #do not change values below
+        ptp_retract_goal.pose.orientation.w = -0.348
+        ptp_retract_goal.pose.orientation.x = 0.862
+        ptp_retract_goal.pose.orientation.y = 0.309
+        ptp_retract_goal.pose.orientation.z = -0.200
+        
+        ptp_reset_goal = PtpGoal()
+        ptp_reset_goal.pose.position.x = 0.315
+        ptp_reset_goal.pose.position.y = -0.499
+        ptp_reset_goal.pose.position.z = 0.575
+        rospy.loginfo("ptp_reset_goal.pose.position.z = " + str(ptp_reset_goal.pose.position.z))
+        #do not change values below
+        ptp_reset_goal.pose.orientation.w = -0.071
+        ptp_reset_goal.pose.orientation.x = 0.944
+        ptp_reset_goal.pose.orientation.y = 0.296
+        ptp_reset_goal.pose.orientation.z = -0.127
+        
         open_hand = ActuateHandGoal()
         open_hand.command = 0
+        open_hand.force_limit = 1
         close_hand = ActuateHandGoal()
         close_hand.command = 1
         close_hand.grasp_type = 0
+        close_hand.force_limit = 1
 
         self._visualize_grasp(ptp_goal)
 
@@ -90,6 +122,7 @@ class MetaHand(object):
         self.metahand.wait_for_result()
         if self.metahand.get_state() == GoalStatus.ABORTED:
             error = 'Could not open hand.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
 
@@ -98,6 +131,7 @@ class MetaHand(object):
         ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
@@ -110,6 +144,7 @@ class MetaHand(object):
         rospy.loginfo(result.result_status)
         if result.result_status == "execution failed.":
             error = 'Approaching pre pose failed.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
 
@@ -118,6 +153,7 @@ class MetaHand(object):
         ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
@@ -130,39 +166,62 @@ class MetaHand(object):
         rospy.loginfo(result.result_status)
         if result.result_status == "execution failed.":
             error = 'Approaching grasp pose failed.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
+            
+        ##########################
+        print ptp_goal
+        ch = raw_input('Do you want to continue (y)?')
+        if ch  != 'y':
+            error = 'Aborted by user.'
+            rospy.logerr(error)
+            self.server.set_aborted(self.grasp_result, error)
+            return
+        ##########################
 
         # grasp the object
         rospy.loginfo("Grasping...")
-        self.metahand.send_goal(open_hand)
+        self.metahand.send_goal(close_hand)
         result = self.metahand.wait_for_result()
         if self.metahand.get_state() == GoalStatus.ABORTED:
             error = 'Grasping failed.'
-            self.server.set_aborted(self.grasp_result, error)
-            return
-
-        # retract the arm
-        ptp_goal.pose.position.z+=0.3
+            rospy.logerr(error)
+            #self.server.set_aborted(self.grasp_result, error)
+            #return
 
         ##########################
         print ptp_goal
         ch = raw_input('Do you want to continue (y)?')
         if ch  != 'y':
             error = 'Aborted by user.'
+            rospy.logerr(error)
             self.server.set_aborted(self.grasp_result, error)
             return
         ##########################
-
+        
+        # retract the arm
+        ptp_goal.pose.position.z+=0.25
+	print ptp_goal
         rospy.loginfo("Retracting...")
-        self.ptp.send_goal(goal)
+        self.ptp.send_goal(ptp_goal)
         self.ptp.wait_for_result()
         result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
         if result.result_status == "execution failed.":
             error = 'Retracting the arm failed.'
-            self.server.set_aborted(self.grasp_result, error)
-            return
+            rospy.logerr(error)
+            # Try retract to the approach pose
+            rospy.loginfo("Retracting to approach pose...")
+            self.ptp.send_goal(ptp_pre_goal)
+            self.ptp.wait_for_result()
+            result = self.ptp.get_result()
+            rospy.loginfo(result.result_status)
+            if result.result_status == "execution failed.":
+                error = 'Retracting the arm failed again.'
+                rospy.logerr(error)
+                self.server.set_aborted(self.grasp_result, error)
+                return
 
         # we're done
         success = 'Object grasped.'
@@ -192,4 +251,3 @@ class MetaHand(object):
         graspMarker.color.a = 1.0
         graspMarker.lifetime = rospy.Duration(secs=30)
         self.markerPub.publish(graspMarker)
-

@@ -5,7 +5,6 @@ import rospy
 from squirrel_placement import softhand
 from squirrel_placement import metahand
 
-
 if __name__ == '__main__':
     try:
         rospy.init_node('squirrel_placement_node')

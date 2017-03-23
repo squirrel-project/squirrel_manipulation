@@ -4,6 +4,7 @@ from actionlib_msgs.msg import *
 from squirrel_manipulation_msgs.msg import DropAction, DropGoal, DropResult, PutDownAction, PutDownGoal, PutDownResult, PtpAction, PtpGoal
 from kclhand_control.msg import ActuateHandAction, ActuateHandGoal
 from visualization_msgs.msg import Marker
+import tf
 
 class MetaHand(object):
     def __init__(self):
@@ -110,6 +111,18 @@ class MetaHand(object):
         success = 'Object placed and released.'
         self.put_server.set_succeeded(self.put_result, success)
         return
+
+	# Return to up position
+        ptp_goal.pose.position.z += 0.2
+        rospy.loginfo("Retracting...")
+        self.ptp.send_goal(ptp_goal)
+        self.ptp.wait_for_result()
+        result = self.ptp.get_result()
+        rospy.loginfo(result.result_status)
+        if result.result_status == "Execution failed.":
+            error = 'Retraction failed.'
+            self.put_server.set_aborted(self.put_result, error)
+            return
 
     def _visualize_put_down(self, pose):
         put_downMarker = Marker()
