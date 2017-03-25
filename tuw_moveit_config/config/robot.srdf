@@ -230,4 +230,5 @@
     <disable_collisions link1="wheel0_link" link2="wheel1_link" reason="Adjacent" />
     <disable_collisions link1="wheel0_link" link2="wheel2_link" reason="Adjacent" />
     <disable_collisions link1="wheel1_link" link2="wheel2_link" reason="Adjacent" />
+    <disable_collisions link1="base_body_link" link2="hand_middle_finger_upper_link" reason="Never" />
 </robot>
