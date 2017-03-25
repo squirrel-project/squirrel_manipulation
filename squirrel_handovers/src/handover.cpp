@@ -65,8 +65,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         releaseService.request.position = 0.0;
 
         actionlib::SimpleActionClient<kclhand_control::ActuateHandAction> kclhandGraspActionClient("hand_controller/actuate_hand", true);
+        actionlib::SimpleActionClient<squirrel_manipulation_msgs::JointPtpAction>  ptpActionClient("/joint_ptp", true);
         if (robot == tuw_robotino){
-            kclhandGraspActionClient.waitForServer();}
+            kclhandGraspActionClient.waitForServer();
+            ptpActionClient.waitForServer();
+        }
         kclhand_control::ActuateHandActionGoal graspServiceKCL;
         graspServiceKCL.goal.command = 1.0;
         graspServiceKCL.goal.force_limit = 1.0;
@@ -77,29 +80,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         sleep (0.2);
 
         //arm control
-        actionlib::SimpleActionClient<squirrel_manipulation_msgs::JointPtpAction>  ptpActionClient("/joint_ptp", true);
-
-
-        //        ROS_INFO("(handover) setting up control queue \n");
-        //        //cout <<  endl;
-        //        auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh));
-
-        //        ROS_INFO("(handover) creating moveit kinematics instance");
-        //        //cout << endl;
-        //        vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
-        //        auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh, "robotino", controlledJoints, "arm_link5");
-
-        //        robotinoQueue->setKinematics(mvKin);
-        //        robotinoQueue->setPathPlanner(mvKin);
-
-        //        ROS_INFO("(handover) starting queue \n");
-        //        //cout << endl;
-        //        auto realLqThread = robotinoQueue->startQueue();
-
-        //        if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
-        //            robotinoQueue->stopCurrentMode();
-        //            robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
-        //        }
 
         auto firstJoints = joint_values_;
 
@@ -149,8 +129,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         armStartGoal.goal.joints = data_arm;
 
         data_arm.data.clear();
-        for(int i = 0; i < start.size(); i++){
-            data_arm.data.push_back(start.at(i));
+        for(int i = 0; i < end.size(); i++){
+            data_arm.data.push_back(end.at(i));
         }
 
         squirrel_manipulation_msgs::JointPtpActionGoal armEndGoal;
@@ -179,42 +159,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             double init_magnitude = getMean(force_past);
             this->resetSafety();
 
-            //hand  should be closed
-            /*if (robot == uibk_robotino && runHandover_){
 
-                if (ros::service::call(HAND_SERVICE, graspService) ){
-                    ROS_INFO("(handover) (hand msg) HAND Closed! \n");
-                    handover_success_ = true;
-                }else{
-                    ROS_ERROR("(handover)(hand msg) FAILED to Closed! \n");
-                    handover_success_ = false;
-                    runHandover_ = false;
-                }
-            }
-            else if (robot == tuw_robotino && runHandover_){
-                kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
-                kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
-                if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-                    ROS_INFO("(handover) (hand msg) HAND Close! \n");
-                    handover_success_ = true;
-                }else{
-                    ROS_ERROR("(handover) (hand msg) FAILED to Close! \n");
-                    handover_success_ = false;
-                    handover_success_ = true; //to be removed after hand is fixed
-                    //runHandover_ = false;
-                }
-            }
-            this->resetSafety();*/
-
-
-            //ROS_INFO("(handover) going to initial pose with the open hand \n");
-
-            //if(runHandover_) robotinoQueue->jointPtp(start);
-
-
-            ROS_INFO("(handover) going to the handover pose with the closed hand \n");
-
-            //if(runHandover_)robotinoQueue->jointPtp(end);
+            ROS_INFO("(handover) going to the handover pose\n");
 
             if(runHandover_){
 
@@ -308,9 +254,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
             this->resetSafety();
 
-            //ROS_INFO("(handover) going to initial pose with the closed hand");
-
-            //if(runHandover_) robotinoQueue->jointPtp(start);
             sleep(0.2);
             ROS_INFO("(handover) checking if object is in the hand \n");
             force_past.clear();
@@ -330,17 +273,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             this->resetSafety();
         }
         else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
-
-
-            // ROS_INFO("(handover) going to the initial pose \n");
-
-            // if (runHandover_) robotinoQueue->jointPtp(start);
-
             ROS_INFO("(handover) going to the handover pose with the closed hand");
-            //stage = 6; // initial pose with the closed hand
-            //cout << "(handover) current stage "<<stage<<endl;
-
-            //if (runHandover_) robotinoQueue->jointPtp(end);
             if(runHandover_){
 
                 ptpActionClient.sendGoal(armEndGoal.goal);
@@ -428,7 +361,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             this->resetSafety();
 
             ROS_INFO("(handover) going to initial pose with the open hand \n");
-            //if (runHandover_) robotinoQueue->jointPtp(start);
             if(runHandover_){
 
                 ptpActionClient.sendGoal(armStartGoal.goal);
@@ -453,9 +385,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         ROS_INFO(" Handover: Handover sequence finished. \n");
 
-        //stop arm queue
-
-        //robotinoQueue->stopQueue();
     }
     catch (...){
         ROS_ERROR(" Handover: Exception \n ");
