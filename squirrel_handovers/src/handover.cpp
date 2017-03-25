@@ -180,7 +180,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             this->resetSafety();
 
             //hand  should be closed
-            if (robot == uibk_robotino && runHandover_){
+            /*if (robot == uibk_robotino && runHandover_){
 
                 if (ros::service::call(HAND_SERVICE, graspService) ){
                     ROS_INFO("(handover) (hand msg) HAND Closed! \n");
@@ -204,7 +204,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                     //runHandover_ = false;
                 }
             }
-            this->resetSafety();
+            this->resetSafety();*/
 
 
             //ROS_INFO("(handover) going to initial pose with the open hand \n");
