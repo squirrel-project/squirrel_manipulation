@@ -17,13 +17,21 @@
 #include <kclhand_control/ActuateHandAction.h>
 #include <kclhand_control/ActuateHandActionGoal.h>
 #include <actionlib/client/simple_action_client.h>
-
 #include <actionlib/server/simple_action_server.h>
 
 #include <squirrel_manipulation_msgs/HandoverAction.h>
 #include <squirrel_manipulation_msgs/HandoverActionFeedback.h>
 #include <squirrel_manipulation_msgs/HandoverActionGoal.h>
 #include <squirrel_manipulation_msgs/HandoverActionResult.h>
+
+#include <squirrel_manipulation_msgs/JointPtpAction.h>
+#include <squirrel_manipulation_msgs/JointPtpActionFeedback.h>
+#include <squirrel_manipulation_msgs/JointPtpActionGoal.h>
+#include <squirrel_manipulation_msgs/JointPtpActionResult.h>
+
+#include <sensor_msgs/JointState.h>
+
+
 
 
 
@@ -32,7 +40,7 @@
 #define FINGERTIP_TOPIC "/fingertips"
 #define HAND_SERVICE "/softhand_grasp"
 #define SAFETY_TOPIC "/reset_safety"
-
+#define JOINTS_TOPIC "/real/robotino/joint_control/get_state"
 #define TILT_TOPIC "/tilt_controller/command"
 #define PAN_TOPIC "/pan_controller/command"
 
@@ -59,6 +67,8 @@ private:
     std::string uibk_robotino;
     double take_threshold_;
 
+
+
     //variables
     int stage;
     bool runHandover_;
@@ -71,6 +81,7 @@ private:
     std::vector<double> current_forces_ ;
     std::vector<double> current_torques_;
     std::vector<double> fingertip_sensor_values_;
+    std::vector<double> joint_values_;
 
     //sensor
     std::vector<double> force_past;
@@ -78,6 +89,7 @@ private:
 
     //subscribers
     ros::Subscriber sub_h, sub_f ;
+    ros::Subscriber sub_joints_;
     //publishers
     ros::Publisher safety_pub_;
     ros::Publisher tiltPub;
@@ -96,6 +108,7 @@ protected:
 
     void sensorReadCallbackWrist(std_msgs::Float64MultiArray msg);
     void sensorReadCallbackFingers(std_msgs::Float64MultiArray msg);
+    void callbackJoints(sensor_msgs::JointState msg);
 
     bool record_magnitude(const std::vector<double>& frc, const std::vector<double>& trq);
     void record_magnitude_simple(const std::vector<double>& frc, const std::vector<double>& trq);
