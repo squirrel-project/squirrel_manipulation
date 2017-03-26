@@ -29,9 +29,9 @@ if __name__ == '__main__':
     grasp_goal = BlindGraspGoal()
     grasp_goal.object_id = 'test'
     grasp_goal.heap_center_pose.header.stamp = rospy.Time.now()
-    grasp_goal.heap_center_pose.header.frame_id = 'origin'
-    grasp_goal.heap_center_pose.pose.position.x = 0.489
-    grasp_goal.heap_center_pose.pose.position.y = 0.416
+    grasp_goal.heap_center_pose.header.frame_id = 'map'
+    grasp_goal.heap_center_pose.pose.position.x = -0.85
+    grasp_goal.heap_center_pose.pose.position.y = -1.13
     #grasp_goal.heap_center_pose.header.frame_id = 'map'
     #grasp_goal.heap_center_pose.pose.position.x = 2.08
     #grasp_goal.heap_center_pose.pose.position.y = 0.136

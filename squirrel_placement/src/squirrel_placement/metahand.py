@@ -81,17 +81,22 @@ class MetaHand(object):
         ptp_goal.pose.position.x = correct_pose.position.x
         ptp_goal.pose.position.y = correct_pose.position.y
         ptp_goal.pose.position.z = correct_pose.position.z
-        ptp_goal.pose.orientation.w = correct_pose.orientation.w
-        ptp_goal.pose.orientation.x = correct_pose.orientation.x
-        ptp_goal.pose.orientation.y = correct_pose.orientation.y
-        ptp_goal.pose.orientation.z = correct_pose.orientation.z
+        #ptp_goal.pose.orientation.w = correct_pose.orientation.w
+        #ptp_goal.pose.orientation.x = correct_pose.orientation.x
+        #ptp_goal.pose.orientation.y = correct_pose.orientation.y
+        #ptp_goal.pose.orientation.z = correct_pose.orientation.z
+
+	goal.destPoseSE2.pose.orientation.w = -0.408
+        goal.destPoseSE2.pose.orientation.x = 0.896
+        goal.destPoseSE2.pose.orientation.y = 0.154
+        goal.destPoseSE2.pose.orientation.z = 0.088
 
         rospy.loginfo("Approaching placement pose...")
         self.ptp.send_goal(ptp_goal)
         self.ptp.wait_for_result()
         result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
-        if result.result_status == "Execution failed.":
+        if result.result_status == "execution failed.":
             error = 'Approaching placement pose failed.'
             self.put_server.set_aborted(self.put_result, error)
             return
@@ -119,7 +124,7 @@ class MetaHand(object):
         self.ptp.wait_for_result()
         result = self.ptp.get_result()
         rospy.loginfo(result.result_status)
-        if result.result_status == "Execution failed.":
+        if result.result_status == "execution failed.":
             error = 'Retraction failed.'
             self.put_server.set_aborted(self.put_result, error)
             return
