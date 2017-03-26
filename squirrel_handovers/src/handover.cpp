@@ -28,10 +28,10 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     current_torques_ = temp;
 
     sub_h = nh.subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
-    sub_joints_ = nh.subscribe(JOINTS_TOPIC, 1, &HandoverAction::callbackJoints,this);
     tiltPub = nh.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
     panPub = nh.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
     safety_pub_ = nh.advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
+
 
     if(robot == tuw_robotino){
         sub_f = nh.subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
@@ -56,32 +56,50 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     ROS_INFO("(Handover) action type %s \n", goal->action_type.c_str());
     ROS_INFO("(Handover) robot: %s \n", robot.c_str());
 
+    //hand
+    squirrel_manipulation_msgs::SoftHandGrasp graspService;
+    graspService.request.position = 0.9;
+    squirrel_manipulation_msgs::SoftHandGrasp releaseService;
+    releaseService.request.position = 0.0;
+
+    actionlib::SimpleActionClient<kclhand_control::ActuateHandAction> kclhandGraspActionClient("hand_controller/actuate_hand", true);
+    if (robot == tuw_robotino){
+        kclhandGraspActionClient.waitForServer();}
+    kclhand_control::ActuateHandActionGoal graspServiceKCL;
+    graspServiceKCL.goal.command = 1.0;
+    graspServiceKCL.goal.force_limit = 1.0;
+    kclhand_control::ActuateHandActionGoal releaseServiceKCL;
+    releaseServiceKCL.goal.command = 0.0;
+    releaseServiceKCL.goal.force_limit = 1.0;
+
+    sleep (0.2);
+
+    //arm control
+
+    ROS_INFO("(handover) setting up control queue \n");
+    //cout <<  endl;
+    auto robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh));
 
     try{
-        //hand
-        squirrel_manipulation_msgs::SoftHandGrasp graspService;
-        graspService.request.position = 0.9;
-        squirrel_manipulation_msgs::SoftHandGrasp releaseService;
-        releaseService.request.position = 0.0;
 
-        actionlib::SimpleActionClient<kclhand_control::ActuateHandAction> kclhandGraspActionClient("hand_controller/actuate_hand", true);
-        actionlib::SimpleActionClient<squirrel_manipulation_msgs::JointPtpAction>  ptpActionClient("/joint_ptp", true);
-        if (robot == tuw_robotino){
-            kclhandGraspActionClient.waitForServer();
-            ptpActionClient.waitForServer();
+        ROS_INFO("(handover) creating moveit kinematics instance");
+        //cout << endl;
+        vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+        auto mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh, "robotino", controlledJoints, "arm_link5");
+
+        robotinoQueue->setKinematics(mvKin);
+        robotinoQueue->setPathPlanner(mvKin);
+
+        ROS_INFO("(handover) starting queue \n");
+        //cout << endl;
+        auto realLqThread = robotinoQueue->startQueue();
+
+        if(robotinoQueue->getCurrentMode() != KukieControlQueue::KUKA_JNT_POS_MODE) {
+            robotinoQueue->stopCurrentMode();
+            robotinoQueue->switchMode(KukieControlQueue::KUKA_JNT_POS_MODE);
         }
-        kclhand_control::ActuateHandActionGoal graspServiceKCL;
-        graspServiceKCL.goal.command = 1.0;
-        graspServiceKCL.goal.force_limit = 1.0;
-        kclhand_control::ActuateHandActionGoal releaseServiceKCL;
-        releaseServiceKCL.goal.command = 0.0;
-        releaseServiceKCL.goal.force_limit = 1.0;
 
-        sleep (0.2);
-
-        //arm control
-
-        auto firstJoints = joint_values_;
+        auto firstJoints = robotinoQueue->getCurrentJoints().joints;
 
         auto start = stdToArmadilloVec({0.0, 0.0, 0.0, 1.0, -0.5, 1.4, 1.0, 1.6});
         auto end = stdToArmadilloVec({0.0, 0.0, 0.0, 0.7, 0.7, 1.4, 1.0, 1.6});
@@ -119,22 +137,6 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             copy(start_vienna.begin() + 3, start_vienna.end(), start.begin() + 3);
             copy(handover_vienna.begin() + 3, handover_vienna.end(), end.begin() + 3);
         }
-        std_msgs::Float64MultiArray data_arm;
-
-        for(int i = 0; i < start.size(); i++){
-            data_arm.data.push_back(start.at(i));
-        }
-
-        squirrel_manipulation_msgs::JointPtpActionGoal armStartGoal;
-        armStartGoal.goal.joints = data_arm;
-
-        data_arm.data.clear();
-        for(int i = 0; i < end.size(); i++){
-            data_arm.data.push_back(end.at(i));
-        }
-
-        squirrel_manipulation_msgs::JointPtpActionGoal armEndGoal;
-        armEndGoal.goal.joints = data_arm;
 
 
         stage = 0;
@@ -159,22 +161,42 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             double init_magnitude = getMean(force_past);
             this->resetSafety();
 
+            //hand  should be closed
+            if (robot == uibk_robotino && runHandover_){
 
-            ROS_INFO("(handover) going to the handover pose\n");
-
-            if(runHandover_){
-
-                ptpActionClient.sendGoal(armEndGoal.goal);
-                ptpActionClient.waitForResult(ros::Duration(30.0));
-                if (ptpActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-                    ROS_INFO("(handover) Arm moved \n");
+                if (ros::service::call(HAND_SERVICE, graspService) ){
+                    ROS_INFO("(handover) (hand msg) HAND Closed! \n");
                     handover_success_ = true;
                 }else{
-                    ROS_ERROR("(handover) Arm FAILED to move! \n");
+                    ROS_ERROR("(handover)(hand msg) FAILED to Closed! \n");
                     handover_success_ = false;
                     runHandover_ = false;
                 }
             }
+            else if (robot == tuw_robotino && runHandover_){
+                kclhandGraspActionClient.sendGoal(graspServiceKCL.goal);
+                kclhandGraspActionClient.waitForResult(ros::Duration(5.0));
+                if (kclhandGraspActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+                    ROS_INFO("(handover) (hand msg) HAND Close! \n");
+                    handover_success_ = true;
+                }else{
+                    ROS_ERROR("(handover) (hand msg) FAILED to Close! \n");
+                    handover_success_ = false;
+                    handover_success_ = true; //to be removed after hand is fixed
+                    //runHandover_ = false;
+                }
+            }
+            this->resetSafety();
+
+
+            //ROS_INFO("(handover) going to initial pose with the open hand \n");
+
+            //if(runHandover_) robotinoQueue->jointPtp(start);
+
+
+            ROS_INFO("(handover) going to the handover pose with the closed hand \n");
+
+            if(runHandover_)robotinoQueue->jointPtp(end);
 
             //hand  should be open
             if (robot == uibk_robotino && runHandover_){
@@ -254,6 +276,9 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
             this->resetSafety();
 
+            //ROS_INFO("(handover) going to initial pose with the closed hand");
+
+            //if(runHandover_) robotinoQueue->jointPtp(start);
             sleep(0.2);
             ROS_INFO("(handover) checking if object is in the hand \n");
             force_past.clear();
@@ -273,21 +298,17 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             this->resetSafety();
         }
         else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
+
+
+            // ROS_INFO("(handover) going to the initial pose \n");
+
+            // if (runHandover_) robotinoQueue->jointPtp(start);
+
             ROS_INFO("(handover) going to the handover pose with the closed hand");
-            if(runHandover_){
+            //stage = 6; // initial pose with the closed hand
+            //cout << "(handover) current stage "<<stage<<endl;
 
-                ptpActionClient.sendGoal(armEndGoal.goal);
-                ptpActionClient.waitForResult(ros::Duration(30.0));
-                if (ptpActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-                    ROS_INFO("(handover) Arm moved \n");
-                    handover_success_ = true;
-                }else{
-                    ROS_ERROR("(handover) Arm FAILED to move! \n");
-                    handover_success_ = false;
-                    runHandover_ = false;
-                }
-            }
-
+            if (runHandover_) robotinoQueue->jointPtp(end);
             sleep(2.0);
 
             ROS_INFO("(handover) waiting to release the object \n");
@@ -361,20 +382,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             this->resetSafety();
 
             ROS_INFO("(handover) going to initial pose with the open hand \n");
-            if(runHandover_){
-
-                ptpActionClient.sendGoal(armStartGoal.goal);
-                ptpActionClient.waitForResult(ros::Duration(30.0));
-                if (ptpActionClient.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-                    ROS_INFO("(handover) Arm moved \n");
-                    handover_success_ = true;
-                }else{
-                    ROS_ERROR("(handover) Arm FAILED to move! \n");
-                    handover_success_ = false;
-                    runHandover_ = false;
-                }
-            }
-
+            if (runHandover_) robotinoQueue->jointPtp(start);
 
         }
         else{
@@ -385,13 +393,16 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         ROS_INFO(" Handover: Handover sequence finished. \n");
 
+        //stop arm queue
     }
-    catch (...){
-        ROS_ERROR(" Handover: Exception \n ");
-        runHandover_ = false;
+    catch(...){
+        ROS_ERROR(" Handover: Handover exception \n");
+        //cout<<endl;
         handover_success_ = false;
-
     }
+
+
+    robotinoQueue->stopQueue();
 
     if (!runHandover_){
         handoverResult.result_status = "cancelled";
@@ -422,11 +433,6 @@ void HandoverAction::sensorReadCallbackWrist(std_msgs::Float64MultiArray msg){
     wrist_sensor_values_ = msg.data;
     copy( wrist_sensor_values_.begin(), wrist_sensor_values_.begin() + 3, current_forces_.begin());
     copy( wrist_sensor_values_.begin() + 3, wrist_sensor_values_.end(), current_torques_.begin());
-
-}
-
-void HandoverAction::callbackJoints(sensor_msgs::JointState msg){
-    joint_values_ = msg.position;
 
 }
 
