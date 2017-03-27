@@ -11,6 +11,7 @@
 #include <boost/thread.hpp>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 
 #include <kukadu/kukadu.hpp>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
@@ -35,7 +36,7 @@
 
 #define TILT_TOPIC "/tilt_controller/command"
 #define PAN_TOPIC "/pan_controller/command"
-
+#define EXPRESSION_TOPIC "/expression"
 
 enum Axes
 {
@@ -82,6 +83,7 @@ private:
     ros::Publisher safety_pub_;
     ros::Publisher tiltPub;
     ros::Publisher panPub;
+    ros::Publisher expressionPub;
 
 
 protected:

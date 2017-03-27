@@ -31,6 +31,7 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     tiltPub = nh.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
     panPub = nh.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
     safety_pub_ = nh.advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
+    expressionPub = nh.advertise<std_msgs::String>(EXPRESSION_TOPIC,1);
 
 
     if(robot == tuw_robotino){
@@ -52,6 +53,9 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     runHandover_ = true;
     ros::Rate lRate(handover_frequency_);
     bool handover_success_ = false;
+
+    std_msgs::String expression_msg;
+    expression_msg.data = "OK";
 
     ROS_INFO("(Handover) action type %s \n", goal->action_type.c_str());
     ROS_INFO("(Handover) robot: %s \n", robot.c_str());
@@ -229,6 +233,9 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             sleep(1.0);
             ROS_INFO("(handover) waiting to grasp the object \n");
             sleep(2.0);
+            expressionPub.publish(expression_msg);
+
+
 
             bool grasp_value = false; //detect object
 
@@ -316,6 +323,8 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
             bool release = false;
             torque_past.clear();
             force_past.clear();
+            expressionPub.publish(expression_msg);
+
 
             double mean=0;
             bool ref = false;
@@ -372,6 +381,9 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
                         ROS_INFO("(handover) HAND Released!");
                         handover_success_ = true;
                     }else{
+                        expression_msg.data = "OH_NO";
+                        expressionPub.publish(expression_msg);
+
                         ROS_ERROR("*handover) FAILED to Release!");
                         handover_success_ = false;
                         handover_success_ = true; //to be removed after hadn is fixed
