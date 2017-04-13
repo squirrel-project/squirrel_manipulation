@@ -121,10 +121,10 @@ public:
       }
       robotinoQueue->stopCurrentMode();
       if(succeded) {
-	      jptpresult_.result_status = "execution done";
+	      jptpresult_.result_status = "execution done.";
         jointPtpAs_.setSucceeded(jptpresult_);
       } else {
-        jptpresult_.result_status = "execution failed";
+        jptpresult_.result_status = "execution failed.";
         jointPtpAs_.setSucceeded(jptpresult_);
       }
     } else {

@@ -3,6 +3,7 @@
 
   <node pkg="squirrel_handovers" type="handover" name="handover" cwd="node" required="true" output="screen">
   <param name="robot" type="string" value="$(arg robot)"/>
+  <param name="take_threshold" type="double" value="0.97"/>
   </node>
 
 </launch>

@@ -1,9 +1,11 @@
 import rospy
 import actionlib
 from actionlib_msgs.msg import *
-from squirrel_manipulation_msgs.msg import DropAction, DropGoal, DropResult, PutDownAction, PutDownGoal, PutDownResult, PtpAction, PtpGoal
+from squirrel_manipulation_msgs.msg import DropAction, DropGoal, DropResult, PutDownAction, PutDownGoal, PutDownResult
+from squirrel_manipulation_msgs.msg import PtpAction, PtpGoal, JointPtpAction, JointPtpGoal
 from kclhand_control.msg import ActuateHandAction, ActuateHandGoal
 from visualization_msgs.msg import Marker
+from sensor_msgs.msg import JointState
 import tf
 
 class MetaHand(object):
@@ -18,6 +20,9 @@ class MetaHand(object):
         self.metahand.wait_for_server()
         self.ptp = actionlib.SimpleActionClient('cart_ptp', PtpAction)
         self.ptp.wait_for_server()
+	self.joint_ptp = actionlib.SimpleActionClient('joint_ptp', JointPtpAction)
+        self.joint_ptp.wait_for_server()
+	rospy.Subscriber("/real/robotino/joint_control/get_state", JointState, self._joints_callback)
         self.drop_server = actionlib.SimpleActionServer('metahand_drop_server',
                                                         DropAction,
                                                         execute_cb=self._execute_drop,
@@ -35,6 +40,9 @@ class MetaHand(object):
         rospy.loginfo(rospy.get_caller_id() + ': started')
 
 
+    def _joints_callback(self, data):
+	self.joint_state = data
+    
     def _execute_drop(self, goal):
         rospy.loginfo(rospy.get_caller_id() + ': called')
 
@@ -81,25 +89,40 @@ class MetaHand(object):
         ptp_goal.pose.position.x = correct_pose.position.x
         ptp_goal.pose.position.y = correct_pose.position.y
         ptp_goal.pose.position.z = correct_pose.position.z
+	if ptp_goal.pose.position.z < 0.2:
+		ptp_goal.pose.position.z = 0.2
         #ptp_goal.pose.orientation.w = correct_pose.orientation.w
         #ptp_goal.pose.orientation.x = correct_pose.orientation.x
         #ptp_goal.pose.orientation.y = correct_pose.orientation.y
         #ptp_goal.pose.orientation.z = correct_pose.orientation.z
 
-	goal.destPoseSE2.pose.orientation.w = -0.408
-        goal.destPoseSE2.pose.orientation.x = 0.896
-        goal.destPoseSE2.pose.orientation.y = 0.154
-        goal.destPoseSE2.pose.orientation.z = 0.088
+	goal.destPoseSE2.pose.orientation.w = -0.072 #-0.408
+        goal.destPoseSE2.pose.orientation.x = -0.300 #0.896
+        goal.destPoseSE2.pose.orientation.y = -0.451 #0.154
+        goal.destPoseSE2.pose.orientation.z = 0.838 #0.088
 
         rospy.loginfo("Approaching placement pose...")
-        self.ptp.send_goal(ptp_goal)
-        self.ptp.wait_for_result()
-        result = self.ptp.get_result()
-        rospy.loginfo(result.result_status)
-        if result.result_status == "execution failed.":
-            error = 'Approaching placement pose failed.'
-            self.put_server.set_aborted(self.put_result, error)
-            return
+        #self.ptp.send_goal(ptp_goal)
+        #self.ptp.wait_for_result()
+        #result = self.ptp.get_result()
+	joint_ptp_goal = JointPtpGoal()
+	base_z = self.joint_state.position[2] + 0.75 # add 80 degree rotation to the put down
+	if base_z > 3.14:
+		base_z = 3.14
+		#base_z = self.joint_state.position[2]
+	rospy.loginfo('Adjusted z rotation from ' + str(self.joint_state.position[2]) + ' to' + str(base_z))
+	# [x,y,z, 1.0685184933389604, 1.0723638027469542, -0.48548916231515227, 0.74918607207707, -0.15201119653169812]
+	#joint_ptp_goal.joints.data = (self.joint_state.position[0], self.joint_state.position[1], base_z, 1.069, 1.072, -0.485, 1.072, -0.485, 0.749, -0.152)
+	joint_ptp_goal.joints.data = (self.joint_state.position[0], self.joint_state.position[1], base_z, 1.069, 1.072, -0.485, 0.749, -0.152)
+	print joint_ptp_goal
+	self.joint_ptp.send_goal(joint_ptp_goal)
+	self.joint_ptp.wait_for_result()
+	result = self.joint_ptp.get_result()
+        #rospy.loginfo(result.result_status)
+        #if result.result_status == "execution failed.":
+        #    error = 'Approaching placement pose failed.'
+            #self.put_server.set_aborted(self.put_result, error)
+            #return
 
         # open hand
         open_hand = ActuateHandGoal()
@@ -109,25 +132,34 @@ class MetaHand(object):
         self.metahand.wait_for_result()
         if self.metahand.get_state() == GoalStatus.ABORTED:
             error = 'Could not open hand.'
-            self.drop_server.set_aborted(self.drop_result, error)
-            return
+	    rospy.logerr(error)
+            #self.drop_server.set_aborted(self.drop_result, error)
+            #return
 
         # we're done
         success = 'Object placed and released.'
         self.put_server.set_succeeded(self.put_result, success)
-        return
 
 	# Return to up position
         ptp_goal.pose.position.z += 0.2
         rospy.loginfo("Retracting...")
-        self.ptp.send_goal(ptp_goal)
-        self.ptp.wait_for_result()
-        result = self.ptp.get_result()
+        #self.ptp.send_goal(ptp_goal)
+        #self.ptp.wait_for_result()
+        #result = self.ptp.get_result()
+        #rospy.loginfo(result.result_status)
+        #if result.result_status == "execution failed.":
+        #    error = 'Retraction failed.'
+        #    self.put_server.set_aborted(self.put_result, error)
+        #    return
+	joint_ptp_goal = JointPtpGoal()
+        joint_ptp_goal.joints.data = [self.joint_state.position[0], self.joint_state.position[1], self.joint_state.position[2], 0.7, 1.6, 0.00, -1.7, -1.8]
+        rospy.loginfo("Retracting...")
+        self.joint_ptp.send_goal(joint_ptp_goal)
+        self.joint_ptp.wait_for_result()
+        result = self.joint_ptp.get_result()
         rospy.loginfo(result.result_status)
-        if result.result_status == "execution failed.":
-            error = 'Retraction failed.'
-            self.put_server.set_aborted(self.put_result, error)
-            return
+	return
+	
 
     def _visualize_put_down(self, pose):
         put_downMarker = Marker()
