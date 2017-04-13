@@ -67,5 +67,6 @@
     <param name="planning_scene_monitor/publish_transforms_updates" value="$(arg publish_monitored_planning_scene)" />
   </node>
 
-  <node name="squirrel_moveit_utils_ground_emulation" pkg="squirrel_moveit_utils" type="ground_emulation.py" output="screen"/>
+  <!--node name="add_ground" pkg="squirrel_moveit_utils" type="add_ground" output="screen" respawn="true"/-->
+  <!--node name="add_case" pkg="squirrel_moveit_utils" type="add_case" output="screen" respawn="true"/-->
 </launch>
