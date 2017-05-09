@@ -28,6 +28,7 @@ protected:
   actionlib::SimpleActionServer<squirrel_manipulation_msgs::JointPtpAction> jointPtpAs_;
   std::string action_name_;
   std::string jointPtpName;
+  std::string tip_link_;
   // create messages that are used to published feedback/result
   squirrel_manipulation_msgs::PtpFeedback cptpfeedback_;
   squirrel_manipulation_msgs::PtpResult cptpresult_;
@@ -52,13 +53,15 @@ public:
     cartPtpRunning = false;
     jointPtpRunning = false;
 
-    ROS_INFO("setting up control queue");
-    robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh_));
+    this->tip_link_ = tip_link;
 
-    ROS_INFO("creating moveit kinematics instance");
-    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+    //ROS_INFO("setting up control queue");
+    //robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh_));
+
+    //ROS_INFO("creating moveit kinematics instance");
+    //vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
     //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
-    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 4, 2.0);
+    //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, tip_link, false, 4, 2.0);
 
 
     //auto komoAll = make_shared<KomoPlanner>(robotinoQueue,
@@ -67,13 +70,13 @@ public:
     //	        "");
 
 
-    robotinoQueue->setKinematics(mvKin);
-    robotinoQueue->setPathPlanner(mvKin);
+    //robotinoQueue->setKinematics(mvKin);
+    //robotinoQueue->setPathPlanner(mvKin);
     //robotinoQueue->setPathPlanner(komoAll);
     //robotinoQueue->setKinematics(komoAll);
 
-    ROS_INFO("starting queue");
-    realLqThread = robotinoQueue->startQueue();
+    //ROS_INFO("starting queue");
+    //realLqThread = robotinoQueue->startQueue();
 
     cartPtpAs_.start();
     jointPtpAs_.start();
@@ -84,6 +87,19 @@ public:
   }
 
   void executeJointPtp(const squirrel_manipulation_msgs::JointPtpGoalConstPtr& goal) {
+
+    ROS_INFO("setting up control queue");
+    robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh_));
+
+    ROS_INFO("creating moveit kinematics instance");
+    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+    //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
+    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, this->tip_link_, false, 4, 2.0);
+    robotinoQueue->setKinematics(mvKin);
+    robotinoQueue->setPathPlanner(mvKin);
+    ROS_INFO("starting queue");
+    realLqThread = robotinoQueue->startQueue();
+
 
     jointPtpRunning = true;
 
@@ -105,10 +121,10 @@ public:
       }
       robotinoQueue->stopCurrentMode();
       if(succeded) {
-	      jptpresult_.result_status = "execution done";
+	      jptpresult_.result_status = "execution done.";
         jointPtpAs_.setSucceeded(jptpresult_);
       } else {
-        jptpresult_.result_status = "execution failed";
+        jptpresult_.result_status = "execution failed.";
         jointPtpAs_.setSucceeded(jptpresult_);
       }
     } else {
@@ -120,9 +136,23 @@ public:
 
     jointPtpRunning = false;
 
+    robotinoQueue->stopQueue();
+
   }
 
   void executeCB(const squirrel_manipulation_msgs::PtpGoalConstPtr &goal) {
+
+    ROS_INFO("setting up control queue");
+    robotinoQueue = KUKADU_SHARED_PTR<KukieControlQueue>(new KukieControlQueue("real", "robotino", nh_));
+
+    ROS_INFO("creating moveit kinematics instance");
+    vector<string> controlledJoints{"base_jointx", "base_jointy", "base_jointz", "arm_joint1", "arm_joint2", "arm_joint3", "arm_joint4", "arm_joint5"};
+    //mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, "arm_link5", false, 10, 2.0);
+    mvKin = make_shared<MoveItKinematics>(robotinoQueue, nh_, "robotino", controlledJoints, this->tip_link_, false, 4, 2.0);
+    robotinoQueue->setKinematics(mvKin);
+    robotinoQueue->setPathPlanner(mvKin);
+    ROS_INFO("starting queue");
+    realLqThread = robotinoQueue->startQueue();
 
     cartPtpRunning = true;
 
@@ -157,6 +187,8 @@ public:
 
     cartPtpRunning = false;
 
+    robotinoQueue->stopQueue();
+
   }
 
 };
@@ -170,6 +202,10 @@ int main(int argc, char** argv) {
   std::string tip_link;
   ros::param::param<std::string>("tip_link", tip_link, "hand_base_link");
   PtpAction ptp("cart_ptp", "joint_ptp", tip_link);
+
+  while(ros::ok()){
+      sleep(1);
+  }
 
   getchar();
 

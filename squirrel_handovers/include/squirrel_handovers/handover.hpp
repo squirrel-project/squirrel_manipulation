@@ -11,6 +11,7 @@
 #include <boost/thread.hpp>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 
 #include <kukadu/kukadu.hpp>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
@@ -35,7 +36,7 @@
 
 #define TILT_TOPIC "/tilt_controller/command"
 #define PAN_TOPIC "/pan_controller/command"
-
+#define EXPRESSION_TOPIC "/expression"
 
 enum Axes
 {
@@ -65,7 +66,7 @@ private:
     double handover_frequency_;
 
     boost::mutex sensor_mutex_;
-		
+
     std::vector<double> robot_joints_;
     std::vector<double> wrist_sensor_values_;
     std::vector<double> current_forces_ ;
@@ -82,6 +83,7 @@ private:
     ros::Publisher safety_pub_;
     ros::Publisher tiltPub;
     ros::Publisher panPub;
+    ros::Publisher expressionPub;
 
 
 protected:
@@ -101,7 +103,7 @@ protected:
     void record_magnitude_simple(const std::vector<double>& frc, const std::vector<double>& trq);
     double getMean(const std::vector<double>& starters);
     bool detector_take();
-    bool detector_give(); 
+    bool detector_give();
 
     void moveTilt(double val);
     void movePan(double val);
