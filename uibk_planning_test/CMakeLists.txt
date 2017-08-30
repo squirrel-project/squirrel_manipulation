@@ -17,12 +17,11 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
   kukadu
   roscpp
-  uibk_robot_driver
 )
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES uibk_planning_test
-   CATKIN_DEPENDS kukadu roscpp  uibk_robot_driver
+   CATKIN_DEPENDS kukadu roscpp
 #  DEPENDS system_lib
 )
 

@@ -24,7 +24,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   kukadu
-  uibk_robot_driver
 )
 
 ## System dependencies are found with CMake's conventions
