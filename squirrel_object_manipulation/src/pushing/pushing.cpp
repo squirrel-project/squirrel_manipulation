@@ -39,18 +39,18 @@ PushAction::PushAction(const std::string std_PushServerActionName) :
     private_nh.param("corridor_width", corridor_width_ , 1.6);
 
 
-    private_nh.param("clearance_nav", clearance_nav_, false);
+    private_nh.param("clearance_nav", clearance_nav_, true);
     private_nh.param("check_collisions", check_collisions_, false);
-    private_nh.param("navigation_", nav_, false);
-    private_nh.param("artag_", artag_, true);
+    private_nh.param("navigation_", nav_, true);
+    private_nh.param("artag_", artag_, false);
     private_nh.param("sim_", sim_, false);
-    private_nh.param("save_data", save_data_, true);
+    private_nh.param("save_data", save_data_, false);
     private_nh.param("tracker_tf", tracker_tf_, std::string("/tf1"));
     private_nh.param("demo_path", demo_path, 7);
-    private_nh.param("static_paths_", static_paths_,true);
-    private_nh.param("fixed_lookahead_", fixed_, true);
+    private_nh.param("static_paths_", static_paths_,false);
+    private_nh.param("fixed_lookahead_", fixed_, false);
     private_nh.param("lookahead", lookahead_, 0.10);
-    private_nh.param("relaxation_", relaxation_, false);
+    private_nh.param("relaxation_", relaxation_, true);
 
 
 
