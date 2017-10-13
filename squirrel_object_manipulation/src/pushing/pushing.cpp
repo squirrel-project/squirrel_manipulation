@@ -461,9 +461,9 @@ bool PushAction::getPushPath(){
             srvPlan.request.sleep = ros::Duration(0.1);
 
 
-            if ( ros::service::call("/move_base/global_costmap/navigation_layer/clearObjectFromCostmap", srvPlan) ) {
+            if ( ros::service::call("/move_base/global_costmap/ObstaclesLayer/clearCostmapRegion", srvPlan) ) {
             } else {
-                ROS_ERROR("(Push) unable to communicate with move_base/global_costmap/navigation_layer/clearObjectFromCostmap");
+                ROS_ERROR("(Push) unable to communicate with move_base/global_costmap/ObstaclesLayer/clearCostmapRegion");
                 return false;
             }
             ROS_INFO("(Push) Object cleared from the costmap \n");
@@ -520,13 +520,13 @@ bool PushAction::getPushPath(){
                 ClearSrv.request.plan = getPlanSrv.response.plan;
 
 
-                if (ros::service::call("/move_base/global_costmap/ObstaclesLayer/clearCostmapRegion", ClearSrv) ) {
+                if (ros::service::call("/move_base/global_costmap/ObstaclesLayer/getPathClearance", ClearSrv) ) {
                     if ( ClearSrv.response.proximities.empty() ) {
                         ROS_WARN("(Push) Got an empty clearance");
                         return false;
                     }
                 } else {
-                    ROS_ERROR("(Push) unable to communicate with /move_base/global_costmap/ObstaclesLayer/clearCostmapRegion");
+                    ROS_ERROR("(Push) unable to communicate with /move_base/global_costmap/ObstaclesLayer/getPathClearance");
                     return false;
                 }
                 ROS_INFO("(Push) Got clearance \n");
