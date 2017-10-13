@@ -454,10 +454,10 @@ bool PushAction::getPushPath(){
 
             // Make request
 
-            srvPlan.request.object.points.push_back(p1);
-            srvPlan.request.object.points.push_back(p2);
-            srvPlan.request.object.points.push_back(p3);
-            srvPlan.request.object.points.push_back(p4);
+            srvPlan.request.region.points.push_back(p1);
+            srvPlan.request.region.points.push_back(p2);
+            srvPlan.request.region.points.push_back(p3);
+            srvPlan.request.region.points.push_back(p4);
             srvPlan.request.sleep = ros::Duration(0.1);
 
 
