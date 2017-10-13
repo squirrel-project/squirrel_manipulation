@@ -430,7 +430,7 @@ bool PushAction::getPushPath(){
         if (!static_paths_){
 
             //clear costmap
-            squirrel_navigation::clear_object_from_costmap srvPlan;
+            squirrel_navigation_msgs::ClearCostmapRegion srvPlan;
 
             geometry_msgs::PoseStamped start_m;
             try {
@@ -515,7 +515,7 @@ bool PushAction::getPushPath(){
             if(clearance_nav_){
                 corridor_width_ = -1.0;
 
-                squirrel_navigation::get_path_clearance ClearSrv;
+                squirrel_navigation_msgs::GetPathClearance ClearSrv;
 
                 ClearSrv.request.plan = getPlanSrv.response.plan;
 
