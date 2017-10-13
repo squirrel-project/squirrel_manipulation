@@ -12,6 +12,10 @@
 #include <tf/transform_listener.h>
 
 #include <squirrel_rgbd_mapping_msgs/GetPushingPlan.h>
+#include <squirrel_navigation/clear_object_from_costmap.h>
+#include <nav_msgs/GetPlan.h>
+#include <squirrel_navigation/get_path_clearance.h>
+
 #include <squirrel_manipulation_msgs/PushAction.h>
 #include <squirrel_manipulation_msgs/PushActionFeedback.h>
 #include <squirrel_manipulation_msgs/PushActionGoal.h>
