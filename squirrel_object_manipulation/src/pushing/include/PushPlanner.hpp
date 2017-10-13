@@ -15,6 +15,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 
@@ -51,6 +52,7 @@ private:
     bool rel_;
 
     ros::Publisher vis_corridor_;
+    ros::Publisher vis_object_corridor_;
     ros::Publisher marker_target_c_;
     ros::Publisher marker_object_c_;
     ros::Publisher marker_robot_c_;
@@ -63,11 +65,14 @@ private:
 protected:
 
     bool state_machine_;
+    bool fixed_, relaxation_, push_point_;
 
     PushState push_state_;
     ros::NodeHandle  private_nh;
-    ros::Publisher pushing_plan_pub_;
+    ros::Publisher pushing_plan_pub_, pushing_edge_p_pub_, pushing_edge_n_pub_, object_edge_p_pub_, object_edge_n_pub_ ;
     double object_diameter_, robot_diameter_, corridor_width_;
+    std::vector<double>corridor_width_array_;
+    std::vector<double>corridor_object_width_array_;
 
     bool visualise_;
 
@@ -81,6 +86,8 @@ protected:
     double aO2P, aR2O, aR2P, aORP;
     double dO2P, dR2O, dRlOT;
     double zeta;
+    bool  sim_;
+    bool pushpoint_;
 
     string experimentName;
 
@@ -88,7 +95,8 @@ protected:
     geometry_msgs::Pose2D pose_robot_;
     geometry_msgs::PoseStamped pose_object_, previous_pose_object_;
     geometry_msgs::PoseStamped current_target_, previous_target_;
-
+    int current_target_ind_;
+    int previous_target_ind_;
 
     arma::mat pose_robot_vec_;
     arma::mat pose_object_vec_;
@@ -102,12 +110,25 @@ protected:
 
     geometry_msgs::PoseStamped goal_;
     nav_msgs::Path pushing_path_;
+    nav_msgs::Path edge_push_corridor_p_;
+    nav_msgs::Path edge_push_corridor_n_;
+    nav_msgs::Path edge_object_corridor_p_;
+    nav_msgs::Path edge_object_corridor_n_;
 
     geometry_msgs::PoseStamped getLookaheadPoint();
     geometry_msgs::PoseStamped getLookaheadPoint(geometry_msgs::PoseStamped pose_object_);
 
     geometry_msgs::PoseStamped getLookaheadPointDynamic();
     geometry_msgs::PoseStamped getLookaheadPointDynamic(geometry_msgs::PoseStamped pose_object_);
+
+    geometry_msgs::PoseStamped getLookaheadPointFixedDistance();
+    geometry_msgs::PoseStamped getLookaheadPointFixedDistance(geometry_msgs::PoseStamped pose_object_);
+
+    geometry_msgs::PoseStamped getLookaheadPointDynamicFlex();
+    geometry_msgs::PoseStamped getLookaheadPointDynamicFlex(geometry_msgs::PoseStamped pose_object_);
+
+    geometry_msgs::PoseStamped getLookaheadPointDynamicFlexApprox();
+    geometry_msgs::PoseStamped getLookaheadPointDynamicFlexApprox(geometry_msgs::PoseStamped pose_object_);
 
     ros::NodeHandle nh;
 
@@ -120,8 +141,8 @@ public:
     bool push_active_;
 
     PushPlanner();
-    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_,  double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_);
-    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_);
+    PushPlanner(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_,  double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_, vector<double> corridor_width_array_,  bool approximate_, bool relaxation_);
+    void initialize(string local_frame_, string global_frame_, geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_, nav_msgs::Path pushing_path_, double lookahead_, double goal_toll_, bool state_machine_, double controller_frequency_, double object_diameter_, double robot_diameter_, double corridor_width_, vector<double> corridor_width_array_,  bool approximate_, bool relaxation_);
 
     virtual void updatePushPlanner(geometry_msgs::Pose2D pose_robot_, geometry_msgs::PoseStamped pose_object_);
     virtual geometry_msgs::Twist getVelocities() = 0;
@@ -146,9 +167,11 @@ public:
     void publishMarkerObjectCurrent(geometry_msgs::PoseStamped t_pose);
     void publishMarkerRobotCurrent(geometry_msgs::Pose2D t_pose);
     void publishPoint(geometry_msgs::PoseStamped t_pose);
+    void publishPoint(geometry_msgs::PoseStamped t_pose, int id);
     void publishPoint(arma::vec t);
     void publishCorridor();
     void deleteMarkers();
+    void setSim();
 
     void saveData(string path);
     virtual void saveDataChild(string path) = 0;

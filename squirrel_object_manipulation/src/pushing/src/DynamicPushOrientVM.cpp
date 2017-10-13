@@ -1,14 +1,14 @@
-#include "../include/DynamicPush.hpp"
+#include "../include/DynamicPushOrientVM.hpp"
 
 
 using namespace std;
 using namespace arma;
 
-DynamicPush::DynamicPush():
+DynamicPushOrientVM::DynamicPushOrientVM():
     PushPlanner()
 {
     private_nh.param("push/velocity_angular_max", vel_ang_max_ , 0.3);
-    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.1); //0.15
+    private_nh.param("push/velocity_linear_max", vel_lin_max_ , 0.3); //0.15
     private_nh.param("push/velocity_linear_min", vel_lin_min_ , 0.08); //0.08
 
     private_nh.param("push/proportional_alpha", p_alpha_, 0.6);
@@ -34,7 +34,7 @@ DynamicPush::DynamicPush():
     private_nh.param("push/integral_ff", i_ff_max_, 0.1);
     private_nh.param("push/integral_ff", i_ff_min_, -0.1);
 
-
+    private_nh.param("push/precision_object", object_precision_, 10);
 
 
     velocity_pub_ = nh.advertise<std_msgs::Float64>("/push_action/velocity", 100);
@@ -48,7 +48,7 @@ DynamicPush::DynamicPush():
     compensate_pub_ = nh.advertise<geometry_msgs::Pose2D>("/push_action/compensate_direction", 100);
 }
 
-void DynamicPush::initChild() {
+void DynamicPushOrientVM::initChild() {
     
 
     pid_alpha_.initPid(p_alpha_, i_alpha_, d_alpha_, i_alpha_max_, i_alpha_min_);
@@ -66,7 +66,7 @@ void DynamicPush::initChild() {
     mi_posterior_pred = M_PI;
     sigma_posterior_pred = M_PI / 4;
     //sigma_alpha = 1.0;
-    count_dr = 100;
+    count_dr = 20;
     sum_alpha = count_dr * mi_alpha;
 
     aPORp = aPOR;
@@ -75,13 +75,62 @@ void DynamicPush::initChild() {
     alpha_vec.resize(1);
     gamma_vec.resize(1);
 
+    param_VM_vec.resize(2, object_precision_);
+
+    param_VM.resize(2);
+    param_VM(0)= 0.0;
+    param_VM(1) = 3.0;
+
+    //generate prior
+    alpha_g_vec = sampleVM(param_VM,count_dr);
+    w_mat = ones(count_dr, object_precision_);
+
+    aPOR_vec.resize(object_precision_);
+    aPORp_vec.resize(object_precision_);
+    mi_alpha_vec.resize(object_precision_);
+    sigma_alpha_vec.resize(object_precision_);
+    mi_posterior_vec.resize(object_precision_);
+    sigma_posterior_vec.resize(object_precision_);
+    mi_posterior_pred_vec.resize(object_precision_);
+    sigma_posterior_pred_vec.resize(object_precision_);
+    mi_prior_vec.resize(object_precision_);
+    sigma_prior_vec.resize(object_precision_);
+    sum_alpha_vec.resize(object_precision_);
+    model_orient_vec.resize(object_precision_);
+    like_w_.resize(object_precision_);
+    psi_push_vec.resize(object_precision_);
+    count_all_vec.resize(object_precision_);
+    count_dr_vec.resize(object_precision_);
+
+    for (int i =0; i<object_precision_; i++){
+
+        mi_alpha_vec(i) = mi_alpha;
+        sigma_alpha_vec(i) = sigma_alpha;
+        mi_posterior_vec(i) = mi_posterior;
+        sigma_posterior_vec(i) = sigma_posterior;
+        mi_posterior_pred_vec(i) = mi_posterior_pred;
+        sigma_posterior_pred_vec(i) = sigma_posterior_pred;
+        mi_prior_vec(i) = mi_prior;
+        sigma_prior_vec(i) = sigma_prior;
+        sum_alpha_vec(i) = sum_alpha;
+        model_orient_vec(i)= i * 2 * M_PI / object_precision_;
+        like_w_(i) = 1;
+        count_all_vec(i) = count_all;
+        count_dr_vec(i) = count_dr;
+        param_VM_vec(0,i) = 0.0;
+        param_VM_vec(1,i) = 3.0;
+
+
+    }
+
 
     if(sim_) vel_lin_max_ = 0.3;
 
     data_cont_mat_.set_size(pushing_path_.poses.size(), 11);
+    param_VM_mat.set_size(1, object_precision_ );
 }
 
-void DynamicPush::updateChild() {
+void DynamicPushOrientVM::updateChild() {
     
     
     //the angle object-robot-target
@@ -89,6 +138,7 @@ void DynamicPush::updateChild() {
     if(aPOR < 0) aPOR = 2 * M_PI + aPOR;
     alpha_vec(alpha_vec.n_elem - 1) = aPOR;
     alpha_vec.resize(alpha_vec.n_elem  + 1);
+
 
     //update only if there was change in the object movement
     if (distancePoints(pose_object_.pose.position.x, pose_object_.pose.position.y, previous_pose_object_.pose.position.x, previous_pose_object_.pose.position.y) > 0.00){
@@ -98,34 +148,72 @@ void DynamicPush::updateChild() {
 
         previous_pose_object_ = pose_object_;
 
-        count_all ++;
+
+        //count_all_vec = count_all_vec + like_w_;
+
+        gamma = expected_dir - executed_dir;
+        if(gamma > 2*M_PI) gamma = gamma - 2*M_PI;
+        if(gamma < -2*M_PI) gamma = gamma + 2*M_PI;
 
         double tempA = mi_gamma;
         mi_gamma = mi_gamma + (gamma - mi_gamma) / count_all;
         sigma_gamma = ((count_all - 1) * sigma_gamma + (gamma - tempA) * (gamma - mi_gamma)) / count_all;
 
-        gamma = expected_dir - executed_dir;
-        if(gamma > 2*M_PI) gamma = gamma - 2*M_PI;
-        if(gamma < -2*M_PI) gamma = gamma + 2*M_PI;
 
         //cout<<" gamma_old "<<gamma_old<<" gamma "<<gamma<<" diff "<<gamma - gamma_old<<endl;
 
         if(((abs(gamma) - abs(gamma_old))< -0.01)){
 
             //cout<<"here"<<endl;
-            count_dr ++;
+            //count_dr_vec = count_dr_vec + like_w_;
+            //vec aPORp_vec(object_precision_);  aPORp_vec.fill(aPORp);
 
-            double tempT = mi_alpha;
-            mi_alpha = mi_alpha + (aPORp - mi_alpha) / count_dr;
-            sigma_alpha = ((count_dr - 1) * sigma_alpha + (aPORp - tempT)*(aPORp - mi_alpha)) / count_dr;
-            sum_alpha = sum_alpha + aPORp;
-            mi_prior = mi_posterior;
-            sigma_prior = sigma_posterior;
-            mi_posterior = (sigma_alpha * mi_prior/ count_dr+ sigma_prior*sum_alpha/count_dr)/(sigma_alpha/count_dr + sigma_prior);
-            sigma_posterior = 1/(count_dr/sigma_alpha + 1/sigma_prior);
-            mi_posterior_pred = mi_posterior;
-            sigma_posterior_pred = sigma_posterior + sigma_alpha;
+            /*    arma::vec tempT = mi_alpha_vec;
+            mi_alpha_vec = mi_alpha_vec + like_w_ % (aPORp_vec - mi_alpha_vec) / count_dr_vec;
+            sigma_alpha_vec = ((count_dr_vec - like_w_) % sigma_alpha_vec + like_w_ % (aPORp_vec - tempT)%(aPORp_vec - mi_alpha_vec)) / count_dr_vec;
+            sum_alpha_vec = sum_alpha_vec + like_w_ % aPORp_vec;
+            mi_prior_vec = mi_posterior_vec;
+            sigma_prior_vec = sigma_posterior_vec;
+            mi_posterior_vec = (sigma_alpha_vec % mi_prior_vec / count_dr_vec + sigma_prior_vec % sum_alpha_vec / count_dr_vec) / (sigma_alpha_vec / count_dr_vec + sigma_prior_vec);
+            vec sp_vec(object_precision_);  sp_vec.fill(1.0);
+            sigma_posterior_vec = sp_vec / (count_dr_vec / sigma_alpha_vec + sp_vec / sigma_prior_vec);
+            mi_posterior_pred_vec = mi_posterior_vec;
+            sigma_posterior_pred_vec = sigma_posterior_vec + sigma_alpha_vec;
+
+            cout<<mi_posterior_pred_vec<<endl;
+            cout <<sigma_posterior_pred_vec<<endl;*/
+            //cout<<"here3"<<endl;
+
+            alpha_g_vec.resize(alpha_g_vec.n_elem +1);
+            w_mat.insert_rows(w_mat.n_rows, like_w_.t());
+            //cout <<"here 2"<<endl;
+            //cout <<"here lrows w_"<<w_mat.n_rows<< " col " <<w_mat.n_cols<<endl;
+            alpha_g_vec(alpha_g_vec.size() - 1) = aPORp - M_PI;
+            //w_vec(alpha_vec.size() - 1) = 1.0;
+            for (int i = 0; i < object_precision_; i++){
+                param_VM_vec.col(i) = getVMParam(alpha_g_vec,  w_mat.col(i));
+            }
+            // cout<<param_VM_vec<<endl;
+            //param_VM_mat = getVMParam(alpha_vec,  w_vec);
         }
+
+
+        //calculate weights
+        //cout<<endl<<endl<<endl;
+        for (int i = 0; i < object_precision_; i++){
+            like_w_(i) = abs(model_orient_vec(i) - M_PI - tf::getYaw(pose_object_.pose.orientation));
+            if(like_w_(i) > M_PI) like_w_(i) = like_w_(i) - M_PI;
+            //cout<<"like "<<like_w_(i)<<"   ";
+            sleep(0.5);
+            like_w_(i) = getGaussianVal(like_w_(i), M_PI/2, 0.0);
+            //cout<<"like "<<like_w_(i)<<endl;
+            sleep(0.5);
+        }
+
+        arma::vec sumW(object_precision_); sumW.fill(sum(like_w_));
+        like_w_ = like_w_ / sumW;
+
+
         gamma_vec.resize(gamma_vec.n_elem  + 1);
         gamma_vec(gamma_vec.n_elem - 1) = gamma;
 
@@ -135,12 +223,20 @@ void DynamicPush::updateChild() {
     aPORp = aPOR;
 
     //cout<<"alpha sigma: "<<sigma_alpha<<" mi_alpha "<<mi_alpha<<" sig post "<<sigma_posterior<<"mi post "<<mi_posterior<<" sig post  pred"<<sigma_posterior_pred<<"mi post pred"<<mi_posterior_pred<<endl;
-    psi_push_ = getGaussianVal(aPOR, sigma_posterior_pred, mi_posterior_pred);
-    if (psi_push_ > abs(cos(aPOR))){
-        //psi_push_ = abs(cos(aPOR));
-        cout << "filter psi "<< psi_push_<<" cos "<<cos(aPOR)<< endl;
-        psi_push_ = abs(cos(aPOR));
+    for(int i=0; i<object_precision_; i++){
+        // psi_push_vec(i) = like_w_(i) * getGaussianVal(aPOR, sigma_posterior_pred_vec(i), mi_posterior_pred_vec(i));
+        psi_push_vec(i) = like_w_(i) * getVMval(aPOR - M_PI, param_VM_vec.col(i))/getVMval(param_VM_vec(0,i), param_VM_vec.col(i));
+
     }
+
+    //psi_push_ = sum(psi_push_vec) / sum(like_w_);
+    psi_push_ = sum(psi_push_vec);
+
+    //    if (psi_push_ > abs(cos(aPOR))){
+    //        //psi_push_ = abs(cos(aPOR));
+    //        cout << "filter psi "<< psi_push_<<" cos "<<cos(aPOR)<< endl;
+    //        psi_push_ = abs(cos(aPOR));
+    //    }
     psi_rel_ = sqrt(1 - psi_push_*psi_push_);
     filt_com = 1.0;
     if(dR2O >robot_diameter_/2 + object_diameter_/2+ 0.10){
@@ -153,20 +249,21 @@ void DynamicPush::updateChild() {
     //        psi_push_  = - psi_push_;
     //        cout<<"(push dynamic) alpha"<<endl;
     //    }
-    else if( (cos(aPOR)>0)){
-        psi_push_  = - psi_push_;
-        cout<<"(push dynamic) alpha"<<endl;
-    }
-    else if (sim_ && (dR2O >robot_diameter_/2 + object_diameter_/2+ 0.05)){
-        psi_rel_ = 0;
-        filt_com = 0;
-        psi_push_ = 1;
-        cout<<"(push dynamic) dR2O >robot_diameter_ n"<<endl;
+//    else if (sim_ && (dR2O >robot_diameter_/2 + object_diameter_/2+ 0.05)){
+//        psi_rel_ = 0;
+//        filt_com = 0;
+//        psi_push_ = 1;
+//        cout<<"(push dynamic) dR2O >robot_diameter_ n"<<endl;
 
-    }
-    else if (sim_ && (abs(aPOR - M_PI) > 0.4)&& (cos(aPOR)<0)) { //0.3 bilo
-        psi_push_ = 0;
-        cout<<"(push dynamic) alpha big"<<endl;
+//    }
+//    else if (sim_ && (abs(aPOR - M_PI) > 0.4)&& (cos(aPOR)<0)) { //0.3 bilo
+//        psi_push_ = 0;
+//        cout<<"(push dynamic) alpha big"<<endl;
+//    }
+
+    if( (cos(aPOR)>0)){ //sign change
+        psi_push_  = - psi_push_;
+        //cout<<"(push dynamic) alpha"<<endl;
     }
 
 
@@ -184,11 +281,12 @@ void DynamicPush::updateChild() {
     data_cont_mat_(elem_count_, 9) = executed_dir;
     data_cont_mat_(elem_count_, 10) = gamma;
     if (elem_count_ == data_cont_mat_.n_rows - 1) data_cont_mat_.resize(data_cont_mat_.n_rows + pushing_path_.poses.size(), data_cont_mat_.n_cols);
+    param_VM_mat.insert_rows(param_VM_mat.n_rows, param_VM_vec);
 
 
 }
 
-void DynamicPush::saveDataChild(string path){
+void DynamicPushOrientVM::saveDataChild(string path){
 
     std::ofstream rFile;
 
@@ -203,9 +301,52 @@ void DynamicPush::saveDataChild(string path){
 
     }
     rFile.close();
+
+    std::ofstream vmFile;
+
+    //saving history of VM parameters
+
+    string nameVM = path + experimentName + "_VM_hist_data.txt";
+    vmFile.open(nameVM.c_str());
+
+    for (int i = 0; i < param_VM_mat.n_rows; i ++){
+        for(int j = 0; j <param_VM_mat.n_cols; j++){
+            vmFile << param_VM_mat(i, j) << "\t";
+        }
+        vmFile << endl;
+
+    }
+    vmFile.close();
+
+
+
+    nameVM = path + experimentName + "_weights_data.txt";
+    vmFile.open(nameVM.c_str());
+
+    for (int i = 0; i < w_mat.n_rows; i ++){
+        for(int j = 0; j <w_mat.n_cols; j++){
+            vmFile << w_mat(i, j) << "\t";
+        }
+        vmFile << endl;
+
+    }
+    vmFile.close();
+
+
+
+    nameVM = path + experimentName + "_alpha_g_vec.txt";
+    vmFile.open(nameVM.c_str());
+
+    for (int i = 0; i < alpha_g_vec.n_elem; i ++){
+
+        vmFile << alpha_g_vec(i) << "\t";
+        vmFile << endl;
+
+    }
+    vmFile.close();
 }
 
-geometry_msgs::Twist DynamicPush::getVelocities(){
+geometry_msgs::Twist DynamicPushOrientVM::getVelocities(){
 
     //initialize value
     cmd = getNullTwist();
@@ -213,8 +354,8 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
 
     if(!sim_){
         // ovo radi za pravog robota
-//        double K1 = 0.05; double K2 = 0.1;
-//        aPOR = aPOR -filt_com*K1*mi_gamma -  filt_com*K2*gamma;
+        //        double K1 = 0.05; double K2 = 0.1;
+        //        aPOR = aPOR -filt_com*K1*mi_gamma -  filt_com*K2*gamma;
 
         //double theta_v = getVectorAngle(sign(cos(aPOR)) * cos(aPOR),sign(cos(aPOR)) * sin(aPOR));
         double theta_v = getVectorAngle(cos(aPOR), sin(aPOR));
@@ -272,7 +413,6 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
 
 
         theta_v = theta_v - sign(sin(aPOR)) * (M_PI /2 + M_PI /5); //M_PI/3 bilo
-
 
 
         vx_push = psi_push_ * sign(cos(aPOR)) * cos(aPOR);
@@ -342,50 +482,50 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     //-----------------------------------------------------------------------
     // centroid alignment
 
-//        double sigma_gc = 0.2;
-//        double sigma_c = 0.4;
+    //    double sigma_gc = 0.2;
+    //    double sigma_c = 0.4;
 
-//        //initialize value
-//        geometry_msgs::Twist cmd = getNullTwist();
+    //    //initialize value
+    //    geometry_msgs::Twist cmd = getNullTwist();
 
-//        // error object-target
-//        vec object_error_(2), object_goal_(2);
-//        object_error_(0) = current_target_.pose.position.x - pose_object_.pose.position.x;
-//        object_error_(1) = current_target_.pose.position.y - pose_object_.pose.position.y;
+    //    // error object-target
+    //    vec object_error_(2), object_goal_(2);
+    //    object_error_(0) = current_target_.pose.position.x - pose_object_.pose.position.x;
+    //    object_error_(1) = current_target_.pose.position.y - pose_object_.pose.position.y;
 
-//        object_goal_(0) = goal_.pose.position.x - pose_object_.pose.position.x;
-//        object_goal_(1) = goal_.pose.position.y - pose_object_.pose.position.y;
+    //    object_goal_(0) = goal_.pose.position.x - pose_object_.pose.position.x;
+    //    object_goal_(1) = goal_.pose.position.y - pose_object_.pose.position.y;
 
-//        if(getNorm(object_goal_)> 0.2){
-//             object_error_(0) = 0.2 *  object_error_(0) / (getNorm(object_error_));
-//             object_error_(1) = 0.2 *  object_error_(0) / (getNorm(object_error_));
-//        }
+    //    if(getNorm(object_goal_)> 0.2){
+    //         object_error_(0) = 0.2 *  object_error_(0) / (getNorm(object_error_));
+    //         object_error_(1) = 0.2 *  object_error_(0) / (getNorm(object_error_));
+    //    }
 
-//        //robot displacement from line object-target
-//        vec displacement_point_ = closestPointOnLine(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
+    //    //robot displacement from line object-target
+    //    vec displacement_point_ = closestPointOnLine(pose_robot_.x, pose_robot_.y, pose_object_.pose.position.x, pose_object_.pose.position.y, current_target_.pose.position.x, current_target_.pose.position.y);
 
-//        vec robot_displacement_(2);
-//        robot_displacement_(0) = displacement_point_(0) - pose_robot_.x;
-//        robot_displacement_(1) = displacement_point_(1) - pose_robot_.y;
+    //    vec robot_displacement_(2);
+    //    robot_displacement_(0) = displacement_point_(0) - pose_robot_.x;
+    //    robot_displacement_(1) = displacement_point_(1) - pose_robot_.y;
 
-//        // robot_error_vector = vector sum
-//        vec u_(2);
-//        u_(0) = sigma_c * robot_displacement_(0) +  sigma_gc * object_error_(0);
-//        u_(1) = sigma_c * robot_displacement_(1) +  sigma_gc * object_error_(1);
+    //    // robot_error_vector = vector sum
+    //    vec u_(2);
+    //    u_(0) = sigma_c * robot_displacement_(0) +  sigma_gc * object_error_(0);
+    //    u_(1) = sigma_c * robot_displacement_(1) +  sigma_gc * object_error_(1);
 
-//        // transform to robot frame
-//        vec u_R_ = rotate2DVector(u_, -pose_robot_.theta);
+    //    // transform to robot frame
+    //    vec u_R_ = rotate2DVector(u_, -pose_robot_.theta);
 
-//        cmd.linear.x = 2*u_R_(0);
-//        cmd.linear.y = 2*u_R_(1);
+    //    cmd.linear.x = u_R_(0);
+    //    cmd.linear.y = u_R_(1);
 
 
-//        double orient_error = rotationDifference(aR2O,pose_robot_.theta);
-//        if(orient_error > 0.3){
-//            cmd.linear.x = 0;
-//            cmd.linear.y = 0;
+    //    double orient_error = rotationDifference(aR2O,pose_robot_.theta);
+    //    if(orient_error > 0.3){
+    //        cmd.linear.x = 0;
+    //        cmd.linear.y = 0;
 
-//        }
+    //    }
     //    cmd.angular.z = pid_alpha_.computeCommand(orient_error, ros::Duration(time_step_));
 
 
@@ -395,30 +535,30 @@ geometry_msgs::Twist DynamicPush::getVelocities(){
     // dipole field  method
 
 
-    double vx =  cos(2*aPOR);
-    double vy =  sin(2*aPOR);
+    //    double vx =  cos(2*aPOR);
+    //    double vy =  sin(2*aPOR);
 
 
-    vec v = rotate2DVector(vx, vy, rotationDifference(aO2P, pose_robot_.theta));
+    //    vec v = rotate2DVector(vx, vy, rotationDifference(aO2P, pose_robot_.theta));
 
-    V = vel_lin_max_;
+    //    V = vel_lin_max_;
 
-    double rx = V * v(0) / getNorm(v);
-    double ry = V * v(1) / getNorm(v);
+    //    double rx = V * v(0) / getNorm(v);
+    //    double ry = V * v(1) / getNorm(v);
 
-    double orient_error = rotationDifference(aR2O,pose_robot_.theta);
-    if(orient_error > 0.3){
-        cmd.linear.x = 0;
-        cmd.linear.y = 0;
+    //    double orient_error = rotationDifference(aR2O,pose_robot_.theta);
+    //    if(orient_error > 0.3){
+    //        cmd.linear.x = 0;
+    //        cmd.linear.y = 0;
 
-        rx = 0;
-        ry = 0;
+    //        rx = 0;
+    //        ry = 0;
 
-    }
-    cmd.angular.z = pid_alpha_.computeCommand(orient_error, ros::Duration(time_step_));
+    //    }
+    //    cmd.angular.z = pid_alpha_.computeCommand(orient_error, ros::Duration(time_step_));
 
-    cmd.linear.x = rx;
-    cmd.linear.y = ry;
+    //    cmd.linear.x = rx;
+    //    cmd.linear.y = ry;
 
 
     return cmd;

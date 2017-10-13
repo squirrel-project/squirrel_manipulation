@@ -1,12 +1,12 @@
-#ifndef DYNAMICPUSH_H
-#define DYNAMICPUSH_H
+#ifndef DYNAMICPUSHVM_H
+#define DYNAMICPUSHVM_H
 
 #include "PushPlanner.hpp"
 
 #include <control_toolbox/pid.h>
 #include <std_msgs/Float64.h>
 
-class DynamicPush : public PushPlanner {
+class DynamicPushVM : public PushPlanner {
 
 private:
 
@@ -41,7 +41,7 @@ private:
     double expected_dir, executed_dir, result_dir;
 
     arma::mat data_cont_mat_;
-    arma::vec alpha_vec, gamma_vec;
+    arma::vec alpha_vec, gamma_vec, w_vec, param_VM;
 
 
 
@@ -51,7 +51,7 @@ protected:
 
 public:
 
-    DynamicPush();
+    DynamicPushVM();
     geometry_msgs::Twist getVelocities();
     void saveDataChild(string path);
 
@@ -59,4 +59,4 @@ public:
 };
 
 
-#endif // DynamicPush_H
+#endif // DynamicPushVM_H
