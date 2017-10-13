@@ -29,8 +29,8 @@
 #define ROBOTINO_CAMERAINFO_TOPIC "/webcam/camera_info"
 #define ROBOTINO_IMAGERAW_TOPIC "/webcam/image_raw"
 #define ROBOTINO_IMAGECOMPRESSED_TOPIC "/webcam/image_raw/compressed"
-#define TILT_TOPIC "/tilt_controller/command"
-#define PAN_TOPIC "/pan_controller/command"
+#define TILT_TOPIC "/neck_tilt_controller/command"
+#define PAN_TOPIC "/neck_pan_controller/command"
 
 class RobotinoControl {
 
