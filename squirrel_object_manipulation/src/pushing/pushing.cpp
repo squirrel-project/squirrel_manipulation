@@ -461,13 +461,13 @@ bool PushAction::getPushPath(){
             srvPlan.request.sleep = ros::Duration(0.1);
 
 
-            if ( ros::service::call("/move_base/global_costmap/ObstaclesLayer/clearCostmapRegion", srvPlan) ) {
+           /* if ( ros::service::call("/move_base/global_costmap/ObstaclesLayer/clearCostmapRegion", srvPlan) ) {
             } else {
                 ROS_ERROR("(Push) unable to communicate with move_base/global_costmap/ObstaclesLayer/clearCostmapRegion");
                 return false;
             }
             ROS_INFO("(Push) Object cleared from the costmap \n");
-
+        */
             //get plan
             nav_msgs::GetPlan getPlanSrv;
 
