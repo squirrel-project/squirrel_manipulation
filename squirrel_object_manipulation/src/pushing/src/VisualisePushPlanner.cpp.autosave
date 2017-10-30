@@ -144,8 +144,8 @@ void PushPlanner::publishCorridor(){
             marker.scale.y = corridor_width_ ;
         }
         else {
-            marker.scale.x = corridor_width_array_.at(i);
-            marker.scale.y = corridor_width_array_.at(i);
+            marker.scale.x = 1.05*corridor_width_array_.at(i);
+            marker.scale.y = 1.05*corridor_width_array_.at(i);
         }
         marker.scale.z = 0.05;
         marker.color.a = 0.3;

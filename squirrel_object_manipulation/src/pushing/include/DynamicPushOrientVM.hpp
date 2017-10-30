@@ -1,12 +1,11 @@
-#ifndef DYNAMICPUSH_H
-#define DYNAMICPUSH_H
-
+#ifndef DYNAMICPUSHORIENTVM_H
+#define DYNAMICPUSHORIENTVM_H
 #include "PushPlanner.hpp"
 
 #include <control_toolbox/pid.h>
 #include <std_msgs/Float64.h>
 
-class DynamicPush : public PushPlanner {
+class DynamicPushOrientVM : public PushPlanner {
 
 private:
 
@@ -34,15 +33,22 @@ private:
 
     double filt_com;
     double aPOR, mi_alpha, sigma_alpha, aPORp, mi_posterior, sigma_posterior,mi_posterior_pred, sigma_posterior_pred, mi_prior, sigma_prior, sum_alpha;
+    arma::vec aPOR_vec, mi_alpha_vec, sigma_alpha_vec, aPORp_vec, mi_posterior_vec, sigma_posterior_vec, mi_posterior_pred_vec, sigma_posterior_pred_vec, mi_prior_vec, sigma_prior_vec, sum_alpha_vec;
+    arma::vec model_orient_vec;
     double gamma, gamma_old, mi_gamma, sigma_gamma;
     double beta, beta_old, mi_beta, sigma_beta;
     int count_dr, count_all;
+    arma::vec count_dr_vec, count_all_vec;
     double psi_push_, psi_rel_;
     double expected_dir, executed_dir, result_dir;
 
-    arma::mat data_cont_mat_;
-    arma::vec alpha_vec, gamma_vec;
+    arma::mat data_cont_mat_,param_VM_vec, w_mat, param_VM_mat;
+    arma::vec alpha_vec, gamma_vec, param_VM;
+    arma::vec psi_push_vec, alpha_g_vec, w_vec;
 
+    arma::vec like_w_;
+
+    int object_precision_;
 
 
 protected:
@@ -51,7 +57,7 @@ protected:
 
 public:
 
-    DynamicPush();
+    DynamicPushOrientVM();
     geometry_msgs::Twist getVelocities();
     void saveDataChild(string path);
 
@@ -59,4 +65,4 @@ public:
 };
 
 
-#endif // DynamicPush_H
+#endif // DynamicPushOrientVM_H
