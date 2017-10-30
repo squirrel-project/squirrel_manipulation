@@ -24,7 +24,7 @@ Planning over the ros interface
 	- cartesian_ptp: planning in Cartesian space (currently not working because of an overloaded urdf model)
 	- joint_ptp: planning in 8-dof joint space (x y theta joint1 joint2 joint3 joint4 joint5)
 
-Installation prerequisites for kukadu
+Installation prerequisites for kukadu (old)
 ----------------------------------------
 There is dependency for kukadu package. 
 To install kukadu package:
