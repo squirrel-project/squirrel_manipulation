@@ -1,10 +1,13 @@
 #ifndef SQUIRREL_GRASP_SERVER_H_
 #define SQUIRREL_GRASP_SERVER_H_
 
+#include <math.h>
+
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
+#include <control_msgs/JointTrajectoryControllerState.h>
 #include <squirrel_manipulation_msgs/BlindGraspAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
@@ -59,6 +62,9 @@ private:
   // Messages to publish feedback and result
   squirrel_manipulation_msgs::BlindGraspFeedback feedback_;
   squirrel_manipulation_msgs::BlindGraspResult result_;
+  // Joint callback
+  ros::Subscriber joints_sub_;
+  std::vector<double> current_joints_;
 
   // Services
   ros::ServiceClient *arm_unfold_client_;
@@ -84,8 +90,16 @@ private:
 
   bool softhandCallBack ( const geometry_msgs::PoseStamped &goal );
 
+  void jointsCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints );
+
   bool transformPose ( const std::string &origin_frame, const std::string &target_frame,
-                      geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out );
+                      geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const;
+
+  std::vector<double> poseDiff ( const std::vector<double> &pose1, const std::vector<double> &pose2 ) const;
+
+  bool armIsFolded () const;
+
+  bool armIsUnfolded () const;
 
 };
 

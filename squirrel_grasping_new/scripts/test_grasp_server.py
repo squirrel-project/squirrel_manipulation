@@ -20,8 +20,7 @@ if __name__ == '__main__':
     grasp_goal.heap_center_pose.header.frame_id = 'map'
     grasp_goal.heap_center_pose.pose.position.x = 1.78
     grasp_goal.heap_center_pose.pose.position.y = 0.369
-
-    grasp_goal.heap_center_pose.pose.position.z = 0.0
+    grasp_goal.heap_center_pose.pose.position.z = 0.5
     grasp_goal.heap_center_pose.pose.orientation.x = 0.0 #0.0
     grasp_goal.heap_center_pose.pose.orientation.y = 0.0 #0.0
     grasp_goal.heap_center_pose.pose.orientation.z = 0.0 #0.0
@@ -32,8 +31,7 @@ if __name__ == '__main__':
     grasp_goal.heap_center_pose_static.header.frame_id = 'map'
     grasp_goal.heap_center_pose_static.pose.position.x = grasp_goal.heap_center_pose.pose.position.x + 0.1
     grasp_goal.heap_center_pose_static.pose.position.y = grasp_goal.heap_center_pose.pose.position.y + 0.1
-
-    grasp_goal.heap_center_pose_static.pose.position.z = 0.0
+    grasp_goal.heap_center_pose_static.pose.position.z = 0.5
     grasp_goal.heap_center_pose_static.pose.orientation.x = 0.0 #0.0
     grasp_goal.heap_center_pose_static.pose.orientation.y = 0.0 #0.0
     grasp_goal.heap_center_pose_static.pose.orientation.z = 0.0 #0.0
@@ -42,7 +40,7 @@ if __name__ == '__main__':
     grasp_goal.heap_bounding_cylinder.diameter = 0.2
     grasp_goal.heap_bounding_cylinder.height = 0.08
 
-    rospy.loginfo('Sending grasp goal:\n{0}'.format(grasp_goal))
+    #rospy.loginfo('Sending grasp goal:\n{0}'.format(grasp_goal))
     client.send_goal(grasp_goal)
     rospy.loginfo('Waiting for completion...')
     client.wait_for_result()

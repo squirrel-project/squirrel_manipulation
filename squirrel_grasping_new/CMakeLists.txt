@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   tf
   geometry_msgs
+  control_msgs
   visualization_msgs
 )
 
@@ -25,6 +26,7 @@ catkin_package(
   actionlib_msgs
   tf
   geometry_msgs
+  control_msgs
   visualization_msgs
 )
 

@@ -66,12 +66,18 @@ bool SquirrelGraspServer::initialize ( const std::string &hand_name )
     unfolded_pose[2] = loaded_poses[num_vals-3];
     unfolded_pose[3] = loaded_poses[num_vals-2];
     unfolded_pose[4] = loaded_poses[num_vals-1];
+
+    cout << "Unfolded position: " << unfolded_pose[0] << " " << unfolded_pose[1] << " "
+         << unfolded_pose[2] << " " << unfolded_pose[3] << " " << unfolded_pose[4] << endl;
   }
   else
   {
     ROS_ERROR ( "[SquirrelGraspServer::initialize] Parameter list 'trajectory_folding_arm' is not divisible by 5, folding arm trajectory has not been loaded" );
     return false;
   }
+
+  current_joints_.resize ( 8 );  // 5 for arm and 3 for base
+  joints_sub_ = n_->subscribe ( "/arm_controller/joint_trajectory_controller/state", 1, &SquirrelGraspServer::jointsCallBack, this );
 
   return true;
 }
@@ -87,7 +93,7 @@ void SquirrelGraspServer::graspCallBack ( const squirrel_manipulation_msgs::Blin
   geometry_msgs::PoseStamped transformed_goal;
   string goal_frame = goal->heap_center_pose.header.frame_id;
   geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
-  //transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, transformed_goal );
+  transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, transformed_goal );
 
   if ( hand_type_ == SquirrelGraspServer::METAHAND )
     success = metahandCallBack ( transformed_goal );
@@ -117,17 +123,93 @@ bool SquirrelGraspServer::metahandCallBack ( const geometry_msgs::PoseStamped &g
   feedback_.current_phase = "unfolding";
   feedback_.current_status = "starting";
   as_.publishFeedback ( feedback_ );
-  unfold_goal_.request.check_octomap_collision = true;
-  unfold_goal_.request.check_self_collision = true;
-  if ( !arm_unfold_client_->call(unfold_goal_) )
+  // If the arm is folded then use the unfolding service
+  if ( armIsFolded() )
   {
-    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to unfold the arm using unfolding service" );
-    // Set the result to something here
-    feedback_.current_status = "failed";
-    return false;
+    unfold_goal_.request.check_octomap_collision = true;
+    unfold_goal_.request.check_self_collision = true;
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Unfolding arm" );
+    if ( !arm_unfold_client_->call(unfold_goal_) )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to unfold the arm using unfolding service" );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    if ( unfold_goal_.response.result != 0 )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Unfold service returned with result %i", unfold_goal_.response.result  );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    else
+    {
+      ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Unfolding service returned with 0" );
+    }
+    ros::Duration(2.0).sleep();
   }
-  // If in folded position, then use unfold service
-  // Otherwise plan to unfolded position
+  // Otherwise use the joint planner
+  else
+  {
+    vector<double> goal_joints ( 8 );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
+    goal_joints[0] = current_joints_[0];
+    goal_joints[1] = current_joints_[1];
+    goal_joints[2] = current_joints_[2];
+    goal_joints[3] = unfolded_pose[0];
+    goal_joints[4] = unfolded_pose[1];
+    goal_joints[5] = unfolded_pose[2];
+    goal_joints[6] = unfolded_pose[3];
+    goal_joints[7] = unfolded_pose[4];
+    pose_goal_.request.joints = goal_joints;
+    pose_goal_.request.max_planning_time = 3.0;
+    pose_goal_.request.check_octomap_collision = true;
+    pose_goal_.request.check_self_collision = true;
+    pose_goal_.request.fold_arm = false;
+    pose_goal_.request.min_distance_before_folding = 0.0;
+    if ( !arm_pose_planner_client_->call(pose_goal_) )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to plan to unfolded position [%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f]",
+                 goal_joints[0], goal_joints[1], goal_joints[2], goal_joints[3],
+          goal_joints[4], goal_joints[5], goal_joints[6], goal_joints[7] );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    if ( pose_goal_.response.result != 0 )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Planning to unfolded position returned with result %i", pose_goal_.response.result  );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    else
+    {
+      ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Planning to unfolded position returned with 0" );
+    }
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Moving to unfolded position" );
+    if ( !arm_send_trajectory_client_->call(cmd_goal_) )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to send command to unfold" );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    // Sleep
+    ros::Duration(2.0).sleep();
+    if ( cmd_goal_.response.result != 0 )
+    {
+      ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Sending command to move to unfolded position returned with result %i", cmd_goal_.response.result  );
+      // Set the result to something here
+      feedback_.current_status = "failed";
+      return false;
+    }
+    else
+    {
+      ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Sending command to move to unfolded position returned with 0" );
+    }
+  }
+  // Publish feedback
   feedback_.current_status = "success";
   as_.publishFeedback ( feedback_ );
 
@@ -149,13 +231,45 @@ bool SquirrelGraspServer::metahandCallBack ( const geometry_msgs::PoseStamped &g
   end_eff_goal_.request.check_self_collision = true;
   end_eff_goal_.request.fold_arm = false;
   end_eff_goal_.request.min_distance_before_folding = 0.0;
-  if ( !arm_unfold_client_->call(unfold_goal_) )
+  if ( !arm_end_eff_planner_client_->call(end_eff_goal_) )
   {
     ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to find a plan to pose [%.2f %.2f %.2f %.2f %.2f %.2f]",
                goal.pose.position.x, goal.pose.position.y, goal.pose.position.z, 0.0, 0.0, 0.0 );
     // Set the result to something here
     feedback_.current_status = "failed";
     return false;
+  }
+  if ( end_eff_goal_.response.result != 0 )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Planning to pose returned with result %i", end_eff_goal_.response.result  );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  else
+  {
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Planning to pose returned with 0" );
+  }
+  ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Moving to pose" );
+  if ( !arm_send_trajectory_client_->call(cmd_goal_) )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to send command to pose" );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  // Sleep
+  ros::Duration(2.0).sleep();
+  if ( cmd_goal_.response.result != 0 )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Sending command to move to pose returned with result %i", cmd_goal_.response.result  );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  else
+  {
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Sending command to move to pose returned with 0" );
   }
   feedback_.current_status = "success";
   as_.publishFeedback ( feedback_ );
@@ -168,7 +282,64 @@ bool SquirrelGraspServer::metahandCallBack ( const geometry_msgs::PoseStamped &g
   feedback_.current_status = "success";
   as_.publishFeedback ( feedback_ );
 
-  // Plan arm to safe position
+  // Plan arm to unfolded position
+  vector<double> goal_joints ( 8 );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
+  goal_joints[0] = current_joints_[0];
+  goal_joints[1] = current_joints_[1];
+  goal_joints[2] = current_joints_[2];
+  goal_joints[3] = unfolded_pose[0];
+  goal_joints[4] = unfolded_pose[1];
+  goal_joints[5] = unfolded_pose[2];
+  goal_joints[6] = unfolded_pose[3];
+  goal_joints[7] = unfolded_pose[4];
+  pose_goal_.request.joints = goal_joints;
+  pose_goal_.request.max_planning_time = 3.0;
+  pose_goal_.request.check_octomap_collision = true;
+  pose_goal_.request.check_self_collision = true;
+  pose_goal_.request.fold_arm = false;
+  pose_goal_.request.min_distance_before_folding = 0.0;
+  if ( !arm_pose_planner_client_->call(pose_goal_) )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to return arm to unfolded position [%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f]",
+               goal_joints[0], goal_joints[1], goal_joints[2], goal_joints[3],
+        goal_joints[4], goal_joints[5], goal_joints[6], goal_joints[7] );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  if ( pose_goal_.response.result != 0 )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Planning to return to arm to unfolded position returned with result %i", pose_goal_.response.result  );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  else
+  {
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Planning to return arm to unfolded position returned with 0" );
+  }
+  ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Returning to unfolded position" );
+  if ( !arm_send_trajectory_client_->call(cmd_goal_) )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Failed to send command to return arm" );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  // Sleep
+  ros::Duration(2.0).sleep();
+  if ( cmd_goal_.response.result != 0 )
+  {
+    ROS_WARN ( "[SquirrelGraspServer::metahandCallBack] Sending command to return arm to unfolded position returned with result %i", cmd_goal_.response.result  );
+    // Set the result to something here
+    feedback_.current_status = "failed";
+    return false;
+  }
+  else
+  {
+    ROS_INFO ( "[SquirrelGraspServer::metahandCallBack] Sending command to return arm to unfolded position returned with 0" );
+  }
+
   return true;
 }
 
@@ -181,8 +352,36 @@ bool SquirrelGraspServer::softhandCallBack ( const geometry_msgs::PoseStamped &g
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SquirrelGraspServer::jointsCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints )
+{
+  // ROS_INFO ( "[SquirrelGraspServer::jointsCallBack] Message received" );
+  std::vector<std::string>::const_iterator found;
+  int idx;
+  for ( size_t i = 0; i < joints->joint_names.size(); ++i )
+  {
+    if ( joints->joint_names[i].compare("base_x") == 0 )
+      current_joints_[0] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("base_y") == 0 )
+      current_joints_[1] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("base_z") == 0 )
+      current_joints_[2] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("arm_joint1") == 0 )
+      current_joints_[3] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("arm_joint2") == 0 )
+      current_joints_[4] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("arm_joint3") == 0 )
+      current_joints_[5] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("arm_joint4") == 0 )
+      current_joints_[6] = joints->actual.positions[i];
+    else if ( joints->joint_names[i].compare("arm_joint5") == 0 )
+      current_joints_[7] = joints->actual.positions[i];
+  }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelGraspServer::transformPose ( const string &origin_frame, const string &target_frame,
-                                          geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out )
+                                          geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const
 {
   // Set the frames
   in.header.frame_id = origin_frame;
@@ -203,6 +402,77 @@ bool SquirrelGraspServer::transformPose ( const string &origin_frame, const stri
   ROS_INFO ( "[SquirrelGraspServer::transformPose] Transformed from: \n[%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f] to [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
              in.pose.position.x, in.pose.position.y, in.pose.position.z, in.pose.orientation.x, in.pose.orientation.y, in.pose.orientation.z, in.pose.orientation.w,
              out.pose.position.x, out.pose.position.y, out.pose.position.z, out.pose.orientation.x, out.pose.orientation.y, out.pose.orientation.z, out.pose.orientation.w );
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+vector<double> SquirrelGraspServer::poseDiff ( const vector<double> &pose1, const vector<double> &pose2 ) const
+{
+  vector<double> diff;
+  // Cannot compare if pose vectors are not the same size
+  if ( pose1.size() != pose2.size() )
+  {
+    ROS_ERROR ( "[SquirrelGraspServer::poseDiff] Cannot compare inputs with different sizes, %lu %lu", pose1.size(), pose2.size() );
+    return diff;
+  }
+
+  // Take the absolute difference between the elements
+  diff.resize ( pose1.size() );
+  for ( size_t i = 0; i < diff.size(); ++i )
+    diff[i] = fabs ( pose1[i] - pose2[i] );
+
+  return diff;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelGraspServer::armIsFolded () const
+{
+  // Get the pose diff of the current joints and the folded pose
+  vector<double> current_arm_joints ( 5 );
+  current_arm_joints[0] = current_joints_[3];
+  current_arm_joints[1] = current_joints_[4];
+  current_arm_joints[2] = current_joints_[5];
+  current_arm_joints[3] = current_joints_[6];
+  current_arm_joints[4] = current_joints_[7];
+  vector<double> diff = poseDiff ( current_arm_joints, folded_pose );
+  // If returned 0 values then return false
+  if ( diff.size() == 0 )
+    return false;
+  // Otherwise check that all values are below the threshold
+  double threshold = 0.139626; // 8 degrees
+  for ( size_t i = 0; i < diff.size(); ++i )
+  {
+    // If one joint is above the threshold then arm is not in the pose
+    if ( diff[i] > threshold )
+      return false;
+  }
+  // All joints are near
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelGraspServer::armIsUnfolded () const
+{
+  // Get the pose diff of the current joints and the unfolded pose
+  vector<double> current_arm_joints ( 5 );
+  current_arm_joints[0] = current_joints_[3];
+  current_arm_joints[1] = current_joints_[4];
+  current_arm_joints[2] = current_joints_[5];
+  current_arm_joints[3] = current_joints_[6];
+  current_arm_joints[4] = current_joints_[7];
+  vector<double> diff = poseDiff ( current_arm_joints, unfolded_pose );
+  // If returned 0 values then return false
+  if ( diff.size() == 0 )
+    return false;
+  // Otherwise check that all values are below the threshold
+  double threshold = 0.139626; // 8 degrees
+  for ( size_t i = 0; i < diff.size(); ++i )
+  {
+    // If one joint is above the threshold then arm is not in the pose
+    if ( diff[i] > threshold )
+      return false;
+  }
+  // All joints are near
   return true;
 }
 
