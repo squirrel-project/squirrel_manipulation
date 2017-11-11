@@ -2,11 +2,12 @@
 <launch>
 
   <!-- Parameters -->
-  <arg name="hostname" default="localhost" />
+  <arg name="robot" default="tuw-robotino2"/>
   <arg name="action_name" default="squirrel_grasp_server" />
   <arg name="hand" default="metahand" />
 
 	<node name="squirrel_grasp_server" pkg="squirrel_grasping_new" type="squirrel_grasp_server" output="screen">
+    <rosparam command="load" file="$(find squirrel_8dof_planner)/config/folding_poses_$(arg robot).yaml" />
     <param name="action_name" type="string" value="$(arg action_name)"/>
 	  <param name="hand" type="string" value="$(arg hand)"/>
 	</node>
