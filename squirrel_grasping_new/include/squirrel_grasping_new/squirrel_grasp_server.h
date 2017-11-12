@@ -8,6 +8,8 @@
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <visualization_msgs/Marker.h>
 #include <squirrel_manipulation_msgs/BlindGraspAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
@@ -17,6 +19,8 @@
 #define METAHAND_STRING_ "metahand"
 #define SOFTHAND_STRING_ "softhand"
 #define PLANNING_FRAME_ "map"
+#define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0
+#define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
 
 /**
  * \brief Grasp server
@@ -62,21 +66,27 @@ private:
   // Messages to publish feedback and result
   squirrel_manipulation_msgs::BlindGraspFeedback feedback_;
   squirrel_manipulation_msgs::BlindGraspResult result_;
-  // Joint callback
-  ros::Subscriber joints_sub_;
-  std::vector<double> current_joints_;
-
   // Services
   ros::ServiceClient *arm_unfold_client_;
   ros::ServiceClient *arm_end_eff_planner_client_;
   ros::ServiceClient *arm_pose_planner_client_;
   ros::ServiceClient *arm_send_trajectory_client_;
   ros::ServiceClient *hand_client_;
-
+  // Messages
   squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
   squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
   squirrel_motion_planner_msgs::PlanPose pose_goal_;
   squirrel_motion_planner_msgs::SendControlCommand cmd_goal_;
+  // Marker publisher
+  ros::Publisher grasp_point_pub_;
+  visualization_msgs::Marker grasp_marker_;
+  // Joint callback
+  ros::Subscriber joints_state_sub_;
+  std::vector<double> current_joints_;
+  std::vector<double> error_joints_;
+  // Joints command callback
+  ros::Subscriber joints_command_sub_;
+  std::vector<double> current_cmd_;
 
   // Transform
   tf::TransformListener tf_listener_;
@@ -90,7 +100,9 @@ private:
 
   bool softhandCallBack ( const geometry_msgs::PoseStamped &goal );
 
-  void jointsCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints );
+  void jointsStateCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints );
+
+  void jointsCommandCallBack ( const trajectory_msgs::JointTrajectoryConstPtr &cmd );
 
   bool transformPose ( const std::string &origin_frame, const std::string &target_frame,
                       geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const;
@@ -100,6 +112,10 @@ private:
   bool armIsFolded () const;
 
   bool armIsUnfolded () const;
+
+  bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_);
+
+  void publishGraspMarker ( const std::vector<double> &pose );
 
 };
 

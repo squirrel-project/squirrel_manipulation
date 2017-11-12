@@ -18,13 +18,18 @@ if __name__ == '__main__':
     grasp_goal.object_id = 'test'
     grasp_goal.heap_center_pose.header.stamp = rospy.Time.now()
     grasp_goal.heap_center_pose.header.frame_id = 'map'
-    grasp_goal.heap_center_pose.pose.position.x = 1.78
-    grasp_goal.heap_center_pose.pose.position.y = 0.369
-    grasp_goal.heap_center_pose.pose.position.z = 0.5
-    grasp_goal.heap_center_pose.pose.orientation.x = 0.0 #0.0
-    grasp_goal.heap_center_pose.pose.orientation.y = 0.0 #0.0
-    grasp_goal.heap_center_pose.pose.orientation.z = 0.0 #0.0
-    grasp_goal.heap_center_pose.pose.orientation.w = 1.0 #1.0
+    
+    # Facing down
+    grasp_goal.heap_center_pose.pose.position.x = 0.38
+    grasp_goal.heap_center_pose.pose.position.y = 0.17
+    grasp_goal.heap_center_pose.pose.position.z = 0.3
+    grasp_goal.heap_center_pose.pose.orientation.x = -0.707
+    grasp_goal.heap_center_pose.pose.orientation.y = 0.00
+    grasp_goal.heap_center_pose.pose.orientation.z = 0.00
+    grasp_goal.heap_center_pose.pose.orientation.w = 0.707
+    # http://quaternions.online/
+    # Euler: x = -90, y = 0, z = 0
+    # Adjust z (-ve direction to not be exactly straight with axis)
 
     #alternate pose
     grasp_goal.heap_center_pose_static.header.stamp = rospy.Time.now()

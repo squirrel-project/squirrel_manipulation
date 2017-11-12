@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   geometry_msgs
   control_msgs
+  trajectory_msgs
   visualization_msgs
 )
 
@@ -27,6 +28,7 @@ catkin_package(
   tf
   geometry_msgs
   control_msgs
+  trajectory_msgs
   visualization_msgs
 )
 
