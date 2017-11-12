@@ -7,8 +7,8 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
-#include <control_msgs/JointTrajectoryControllerState.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <sensor_msgs/JointState.h>
 #include <visualization_msgs/Marker.h>
 #include <squirrel_manipulation_msgs/BlindGraspAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
@@ -83,7 +83,6 @@ private:
   // Joint callback
   ros::Subscriber joints_state_sub_;
   std::vector<double> current_joints_;
-  std::vector<double> error_joints_;
   // Joints command callback
   ros::Subscriber joints_command_sub_;
   std::vector<double> current_cmd_;
@@ -100,7 +99,7 @@ private:
 
   bool softhandCallBack ( const geometry_msgs::PoseStamped &goal );
 
-  void jointsStateCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints );
+  void jointsStateCallBack ( const sensor_msgs::JointStateConstPtr &joints );
 
   void jointsCommandCallBack ( const trajectory_msgs::JointTrajectoryConstPtr &cmd );
 

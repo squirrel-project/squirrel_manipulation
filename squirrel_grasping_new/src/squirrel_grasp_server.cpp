@@ -76,7 +76,7 @@ bool SquirrelGraspServer::initialize ( const std::string &hand_name )
     return false;
   }
 
-  grasp_point_pub_ = n_->advertise<visualization_msgs::Marker> ( "/grasp_point", 3, this );
+  grasp_point_pub_ = n_->advertise<visualization_msgs::Marker> ( "/squirrel_grasping/grasp_point", 3, this );
   grasp_marker_.header.frame_id = PLANNING_FRAME_;
   grasp_marker_.ns = "grasp_vector";
   grasp_marker_.id = 0;
@@ -92,9 +92,8 @@ bool SquirrelGraspServer::initialize ( const std::string &hand_name )
   grasp_marker_.scale.z = 0.1;  // head length
 
   current_joints_.resize ( 8 );  // 5 for arm and 3 for base
-  error_joints_.resize ( 8 );
   current_cmd_.resize ( 8 );
-  joints_state_sub_ = n_->subscribe ( "/arm_controller/joint_trajectory_controller/state", 1, &SquirrelGraspServer::jointsStateCallBack, this );
+  joints_state_sub_ = n_->subscribe ( "/joint_states", 1, &SquirrelGraspServer::jointsStateCallBack, this );
   joints_command_sub_ = n_->subscribe ( "/arm_controller/joint_trajectory_controller/command", 1, &SquirrelGraspServer::jointsCommandCallBack, this );
 
   return true;
@@ -456,50 +455,42 @@ bool SquirrelGraspServer::softhandCallBack ( const geometry_msgs::PoseStamped &g
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SquirrelGraspServer::jointsStateCallBack ( const control_msgs::JointTrajectoryControllerStateConstPtr &joints )
+void SquirrelGraspServer::jointsStateCallBack ( const sensor_msgs::JointStateConstPtr &joints )
 {
   //ROS_INFO ( "[SquirrelGraspServer::jointsStateCallBack] Message received" );
-  for ( size_t i = 0; i < joints->joint_names.size(); ++i )
+  for ( size_t i = 0; i < joints->name.size(); ++i )
   {
-    if ( joints->joint_names[i].compare("base_x") == 0 )
+    if ( joints->name[i].compare("base_jointx") == 0 )
     {
-      current_joints_[0] = joints->actual.positions[i];
-      error_joints_[0] = joints->error.positions[i];
+      current_joints_[0] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("base_y") == 0 )
+    else if ( joints->name[i].compare("base_jointy") == 0 )
     {
-      current_joints_[1] = joints->actual.positions[i];
-      error_joints_[1] = joints->error.positions[i];
+      current_joints_[1] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("base_z") == 0 )
+    else if ( joints->name[i].compare("base_jointz") == 0 )
     {
-      current_joints_[2] = joints->actual.positions[i];
-      error_joints_[2] = joints->error.positions[i];
+      current_joints_[2] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("arm_joint1") == 0 )
+    else if ( joints->name[i].compare("arm_joint1") == 0 )
     {
-      current_joints_[3] = joints->actual.positions[i];
-      error_joints_[3] = joints->error.positions[i];
+      current_joints_[3] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("arm_joint2") == 0 )
+    else if ( joints->name[i].compare("arm_joint2") == 0 )
     {
-      current_joints_[4] = joints->actual.positions[i];
-      error_joints_[4] = joints->error.positions[i];
+      current_joints_[4] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("arm_joint3") == 0 )
+    else if ( joints->name[i].compare("arm_joint3") == 0 )
     {
-      current_joints_[5] = joints->actual.positions[i];
-      error_joints_[5] = joints->error.positions[i];
+      current_joints_[5] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("arm_joint4") == 0 )
+    else if ( joints->name[i].compare("arm_joint4") == 0 )
     {
-      current_joints_[6] = joints->actual.positions[i];
-      error_joints_[6] = joints->error.positions[i];
+      current_joints_[6] = joints->position[i];
     }
-    else if ( joints->joint_names[i].compare("arm_joint5") == 0 )
+    else if ( joints->name[i].compare("arm_joint5") == 0 )
     {
-      current_joints_[7] = joints->actual.positions[i];
-      error_joints_[7] = joints->error.positions[i];
+      current_joints_[7] = joints->position[i];
     }
   }
   ROS_INFO ( "[SquirrelGraspServer::jointsStateCallBack] %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
@@ -515,15 +506,15 @@ void SquirrelGraspServer::jointsCommandCallBack ( const trajectory_msgs::JointTr
   int trajectory_length = cmd->points.size();
   for ( size_t i = 0; i < cmd->points[trajectory_length-1].positions.size(); ++i )
   {
-    if ( cmd->joint_names[i].compare("base_x") == 0 )
+    if ( cmd->joint_names[i].compare("base_jointx") == 0 )
     {
       current_cmd_[0] = cmd->points[trajectory_length-1].positions[i];
     }
-    else if ( cmd->joint_names[i].compare("base_y") == 0 )
+    else if ( cmd->joint_names[i].compare("base_jointy") == 0 )
     {
       current_cmd_[1] = cmd->points[trajectory_length-1].positions[i];
     }
-    else if ( cmd->joint_names[i].compare("base_z") == 0 )
+    else if ( cmd->joint_names[i].compare("base_jointz") == 0 )
     {
       current_cmd_[2] = cmd->points[trajectory_length-1].positions[i];
     }
