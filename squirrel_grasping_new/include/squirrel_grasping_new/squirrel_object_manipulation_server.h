@@ -1,5 +1,5 @@
-#ifndef SQUIRREL_GRASP_SERVER_H_
-#define SQUIRREL_GRASP_SERVER_H_
+#ifndef SQUIRREL_OBJECT_MANIPULATION_SERVER_H_
+#define SQUIRREL_OBJECT_MANIPULATION_SERVER_H_
 
 #include <math.h>
 
@@ -15,7 +15,10 @@
 #include <squirrel_motion_planner_msgs/PlanPose.h>
 #include <squirrel_motion_planner_msgs/SendControlCommand.h>
 #include <squirrel_motion_planner_msgs/UnfoldArm.h>
+#include <kclhand_control/HandOperationMode.h>
 
+
+#define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
 #define SOFTHAND_STRING_ "softhand"
 #define PLANNING_FRAME_ "map"
@@ -23,30 +26,51 @@
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
 
 /**
- * \brief Grasp server
+ * \brief Object Manipulation server to perform grasping, placing, hand opening and closing
  * \author Tim Patten (patten@acin.tuwien.ac.at)
  */
-class SquirrelGraspServer
+class SquirrelObjectManipulationServer
 {
 public:
 
   enum HandType
   {
-    UNKNOWN = 0,
+    UNKNOWN_HAND = 0,
     METAHAND = 1,
     SOFTHAND = 2
+  };
+
+  enum ActionType
+  {
+    UNKNOWN_ACTION = 0,
+    OPEN_HAND_ACTION = 1,
+    CLOSE_HAND_ACTION = 2,
+    GRASP = 3,
+    PLACE = 4
+  };
+
+  enum MetahandActuations
+  {
+    DISABLE_MOTORS = 0,
+    ENABLE_MOTORS = 1,
+    CLOSE_METAHAND = 2,
+    OPEN_METAHAND = 3,
+    TO_LOWER = 4,
+    TO_UPPER = 5,
+    PRINT_STATE = 6,
+    FOLD_METAHAND = 9
   };
 
   /**
    * \brief Constructor with ros node handle
    */
-  SquirrelGraspServer ( ros::NodeHandle &n, const std::string &action_name );
+  SquirrelObjectManipulationServer ( ros::NodeHandle &n, const std::string &action_name );
 
   /**
    * \brief Destructor
    */
   virtual
-  ~SquirrelGraspServer ();
+  ~SquirrelObjectManipulationServer ();
 
   /**
    * \brief Initialize the server with hand type and find servers and topics
@@ -63,6 +87,10 @@ private:
   std::string action_name_;
   // Hand type
   HandType hand_type_;
+  // Action type
+  ActionType action_type_;
+  // Hand available (only available with real robot)
+  bool hand_available_;
   // Messages to publish feedback and result
   squirrel_manipulation_msgs::BlindGraspFeedback feedback_;
   squirrel_manipulation_msgs::BlindGraspResult result_;
@@ -77,9 +105,10 @@ private:
   squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
   squirrel_motion_planner_msgs::PlanPose pose_goal_;
   squirrel_motion_planner_msgs::SendControlCommand cmd_goal_;
+  kclhand_control::HandOperationMode hand_goal_;
   // Marker publisher
-  ros::Publisher grasp_point_pub_;
-  visualization_msgs::Marker grasp_marker_;
+  ros::Publisher goal_pose_pub_;
+  visualization_msgs::Marker goal_marker_;
   // Joint callback
   ros::Subscriber joints_state_sub_;
   std::vector<double> current_joints_;
@@ -90,14 +119,29 @@ private:
   // Transform
   tf::TransformListener tf_listener_;
 
+  // Important poses
   std::vector<double> folded_pose;
   std::vector<double> unfolded_pose;
 
-  void graspCallBack ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
+  void actionServerCallBack ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
 
-  bool metahandCallBack ( const geometry_msgs::PoseStamped &goal );
+  bool handActuate ();
 
-  bool softhandCallBack ( const geometry_msgs::PoseStamped &goal );
+  bool metahandActuate ( const MetahandActuations &methand_action );
+
+  bool softhandActuate ();
+
+  bool grasp ( const geometry_msgs::PoseStamped &goal );
+
+  bool metahandGrasp ( const geometry_msgs::PoseStamped &goal );
+
+  bool softhandGrasp ( const geometry_msgs::PoseStamped &goal );
+
+  bool place ( const geometry_msgs::PoseStamped &goal );
+
+  bool metahandPlace ( const geometry_msgs::PoseStamped &goal );
+
+  bool softhandPlace ( const geometry_msgs::PoseStamped &goal );
 
   void jointsStateCallBack ( const sensor_msgs::JointStateConstPtr &joints );
 
@@ -114,9 +158,11 @@ private:
 
   bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_);
 
-  void publishGraspMarker ( const std::vector<double> &pose );
+  void publishGoalMarker ( const std::vector<double> &pose );
 
 };
+
+std::string addNodeName ( const std::string &str );
 
 #endif
 

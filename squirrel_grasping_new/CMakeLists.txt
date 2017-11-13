@@ -4,7 +4,6 @@ project(squirrel_grasping_new)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  squirrel_manipulation_msgs
   actionlib
   actionlib_msgs
   tf
@@ -12,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   trajectory_msgs
   visualization_msgs
+  squirrel_manipulation_msgs
+  kclhand_control
 )
 
 #catkin_python_setup()
@@ -22,7 +23,6 @@ catkin_package(
   CATKIN_DEPENDS
   roscpp
   rospy
-  squirrel_manipulation_msgs
   actionlib
   actionlib_msgs
   tf
@@ -30,13 +30,15 @@ catkin_package(
   sensor_msgs
   trajectory_msgs
   visualization_msgs
+  squirrel_manipulation_msgs
+  kclhand_control
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(squirrel_grasp_server src/squirrel_grasp_server.cpp)
-target_link_libraries(squirrel_grasp_server ${catkin_LIBRARIES})
-add_dependencies(squirrel_grasp_server ${catkin_EXPORTED_TARGETS})
+add_executable(squirrel_object_manipulation_server src/squirrel_object_manipulation_server.cpp)
+target_link_libraries(squirrel_object_manipulation_server ${catkin_LIBRARIES})
+add_dependencies(squirrel_object_manipulation_server ${catkin_EXPORTED_TARGETS})
 
 #install(PROGRAMS
 #   scripts/squirrel_grasping_node.py
