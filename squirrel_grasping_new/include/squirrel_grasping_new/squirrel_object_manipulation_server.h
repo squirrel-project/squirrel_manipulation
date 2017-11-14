@@ -21,9 +21,11 @@
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
 #define SOFTHAND_STRING_ "softhand"
+#define MAP_FRAME_ "map"
 #define PLANNING_FRAME_ "map"
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
+#define APPROACH_HEIGHT_ 0.15  // 15 cm
 
 /**
  * \brief Object Manipulation server to perform grasping, placing, hand opening and closing
@@ -131,17 +133,29 @@ private:
 
   bool softhandActuate ();
 
-  bool grasp ( const geometry_msgs::PoseStamped &goal );
+  bool grasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
 
-  bool metahandGrasp ( const geometry_msgs::PoseStamped &goal );
+  bool metahandGrasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
 
-  bool softhandGrasp ( const geometry_msgs::PoseStamped &goal );
+  bool softhandGrasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
 
-  bool place ( const geometry_msgs::PoseStamped &goal );
+  bool place ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal);
 
-  bool metahandPlace ( const geometry_msgs::PoseStamped &goal );
+  bool metahandPlace ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
 
-  bool softhandPlace ( const geometry_msgs::PoseStamped &goal );
+  bool softhandPlace ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
+
+  bool moveArmPTP ( const double &x, const double &y, const double &z,
+                    const double &roll, const double &pitch, const double &yaw,
+                    const std::string &message = "" );
+
+  bool moveArmPTP ( const double &x, const double &y, const double &z,
+                    const double &xx, const double &yy, const double &zz, const double ww,
+                    const std::string &message = "" );
+
+  bool moveArmPTP ( const geometry_msgs::PoseStamped &goal, const std::string &message = "" );
+
+  bool moveArmJoints ( const std::vector<double> &joint_values, const std::string &message = "" );
 
   void jointsStateCallBack ( const sensor_msgs::JointStateConstPtr &joints );
 
