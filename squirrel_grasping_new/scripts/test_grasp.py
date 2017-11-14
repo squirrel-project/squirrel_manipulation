@@ -17,11 +17,13 @@ if __name__ == '__main__':
     client.wait_for_server()
 
     grasp_goal = BlindGraspGoal()
+    # !!! Currently using this string to change the command type (open, close, grasp, place)
+    # Need to update message definition
     grasp_goal.object_id = 'grasp'
     grasp_goal.heap_center_pose.header.stamp = rospy.Time.now()
-    grasp_goal.heap_center_pose.header.frame_id = 'map'
+    grasp_goal.heap_center_pose.header.frame_id = 'map'  # Always plan in map frame??
     
-    # Facing down
+    # Facing down (orientation works for KCL hand...not sure about Innsbruck hand)
     grasp_goal.heap_center_pose.pose.position.x = 0.38
     grasp_goal.heap_center_pose.pose.position.y = 0.17
     grasp_goal.heap_center_pose.pose.position.z = 0.25
@@ -57,9 +59,3 @@ if __name__ == '__main__':
     rospy.loginfo('Returned state: ' + str(client.get_state()))
     
     rospy.loginfo('Done.')
-
-
-
-
-
-    
