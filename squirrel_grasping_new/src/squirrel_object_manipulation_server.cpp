@@ -476,7 +476,7 @@ bool SquirrelObjectManipulationServer::metahandGrasp ( const geometry_msgs::Pose
   as_.publishFeedback ( feedback_ );
 
   // TODO wait for base error to be fixed, otherwise base moves undesirably after this point
-  return true;
+  //return true;
 
   // Plan arm to unfolded position
   pose_goal_.request.joints.resize ( 8 );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
