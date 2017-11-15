@@ -1,6 +1,0 @@
-<launch>
-  <arg name="robot" default="robotino"/>
-  <!-- start rviz -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find squirrel_object_manipulation)/config/pushrviz.rviz" />
- 
-</launch>

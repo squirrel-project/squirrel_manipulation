@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<node name="squirrel_placement_node" pkg="squirrel_placement" type="squirrel_placement_node.py" output="screen">
-	  <param name="hand" value="softhand" type="string"/>
-	</node>
-</launch>

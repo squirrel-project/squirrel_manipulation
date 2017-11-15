@@ -2,82 +2,51 @@ cmake_minimum_required(VERSION 2.8.3)
 project(squirrel_object_manipulation)
 
 find_package(catkin REQUIRED COMPONENTS
-  tf
   roscpp
-  std_msgs
-  nav_msgs
+  rospy
   actionlib
-  sensor_msgs
+  actionlib_msgs
+  tf
   geometry_msgs
-  control_toolbox
-  cmake_modules
-  costmap_2d
-  mongodb_store
-  robotino_msgs
+  sensor_msgs
+  trajectory_msgs
+  visualization_msgs
   squirrel_manipulation_msgs
-  squirrel_rgbd_mapping_msgs
-  squirrel_object_perception_msgs
+  kclhand_control
 )
 
-
-find_package(Boost REQUIRED COMPONENTS
-filesystem
-)
+#catkin_python_setup()
 
 catkin_package(
-    CATKIN_DEPENDS tf roscpp std_msgs nav_msgs actionlib sensor_msgs geometry_msgs robotino_msgs control_toolbox cmake_modules costmap_2d mongodb_store squirrel_manipulation_msgs squirrel_rgbd_mapping_msgs squirrel_object_perception_msgs
+  INCLUDE_DIRS
+  include
+  CATKIN_DEPENDS
+  roscpp
+  rospy
+  actionlib
+  actionlib_msgs
+  tf
+  geometry_msgs
+  sensor_msgs
+  trajectory_msgs
+  visualization_msgs
+  squirrel_manipulation_msgs
+  kclhand_control
 )
 
-include_directories(${ARMADILLO_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS})
 
-include_directories(
-        include
-        /src/pushing/include
-        ${catkin_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
+add_executable(squirrel_object_manipulation_server src/squirrel_object_manipulation_server.cpp)
+target_link_libraries(squirrel_object_manipulation_server ${catkin_LIBRARIES})
+add_dependencies(squirrel_object_manipulation_server ${catkin_EXPORTED_TARGETS})
 
-)
+#install(PROGRAMS
+#   scripts/squirrel_grasping_node.py
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
-catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
-target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} kukadu_utils  ${ARMADILLO_LIBRARIES})
-
-add_library(robotino
-   src/RobotinoControl.cpp
-   src/RobotinoBaseControl.cpp
-)
-
-add_library(pushlib
-   src/pushing/src/PushPlanner.cpp
-   src/pushing/src/VisualisePushPlanner.cpp
-   src/pushing/src/SimplePathFollowing.cpp
-   src/pushing/src/PIDPathFollowing.cpp
-   src/pushing/src/SimplePush.cpp
-   src/pushing/src/BangBangPush.cpp
-   src/pushing/src/PIDSimplePush.cpp
-   src/pushing/src/PIDPush.cpp
-   src/pushing/src/PIDObjectPush.cpp
-   src/pushing/src/DipoleField.cpp
-   src/pushing/src/CentroidAlignment.cpp
-   src/pushing/src/DynamicPush.cpp
-)
-
-add_library(kukadu_utils
-   src/utils/conversion_utils.cpp
-   src/utils/math_utils.cpp
-   src/utils/gnuplot-cpp/gnuplot_i.cpp
-)
-
-target_link_libraries(robotino kukadu_utils)
-target_link_libraries(pushlib kukadu_utils)
-
-add_executable(ardemo src/ARDemo.cpp)
-target_link_libraries(ardemo robotino kukadu_utils ${catkin_LIBRARIES})
-
-add_executable(push src/pushing/pushing.cpp)
-target_link_libraries(push robotino kukadu_utils pushlib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-
-add_executable(smash src/smash.cpp)
-target_link_libraries(smash robotino kukadu_utils ${catkin_LIBRARIES})
-
-add_executable(test_base src/test_move_base.cpp)
-target_link_libraries(test_base robotino ${catkin_LIBRARIES})
+#install(FILES
+#   launch/squirrel_grasping_metahand.launch
+#   launch/squirrel_grasping_softhand.launch
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
