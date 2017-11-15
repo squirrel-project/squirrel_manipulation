@@ -25,14 +25,14 @@ if __name__ == '__main__':
     grasp_goal.heap_center_pose.header.stamp = rospy.Time.now()
     grasp_goal.heap_center_pose.header.frame_id = 'map'  # Always plan in map frame??
     
-    # Facing down (orientation works for KCL hand...not sure about Innsbruck hand)
+    # Facing down (orientation works for Innsbruck hand)
     grasp_goal.heap_center_pose.pose.position.x = 0.38
     grasp_goal.heap_center_pose.pose.position.y = 0.17
     grasp_goal.heap_center_pose.pose.position.z = 0.25
-    grasp_goal.heap_center_pose.pose.orientation.x = -0.707
-    grasp_goal.heap_center_pose.pose.orientation.y = 0.00
-    grasp_goal.heap_center_pose.pose.orientation.z = 0.00
-    grasp_goal.heap_center_pose.pose.orientation.w = 0.707
+    grasp_goal.heap_center_pose.pose.orientation.x = -0.5
+    grasp_goal.heap_center_pose.pose.orientation.y = -0.5
+    grasp_goal.heap_center_pose.pose.orientation.z = -0.5
+    grasp_goal.heap_center_pose.pose.orientation.w = 0.5
     # http://quaternions.online/
     # Euler: x = -90, y = 0, z = 0
     # Adjust z (-ve direction to not be exactly straight with axis)
