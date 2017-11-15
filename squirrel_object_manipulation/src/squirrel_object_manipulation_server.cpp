@@ -272,29 +272,29 @@ bool SquirrelObjectManipulationServer::softhandActuate ( const SofthandActuation
 
 	if ( hand_available_ )
 	{
-		if ( softhand_action == 0 )
+		if ( softhand_action == SquirrelObjectManipulationServer::OPEN_SOFTHAND )
 		{ 
-			hand_goal_softhand_.request.position = 0.9;			
+			hand_goal_softhand_.request.position = 0.0;			
 		} else 
 		{
-			hand_goal_softhand_.request.position = 0.0;			
+			hand_goal_softhand_.request.position = 0.9;			
 		}
 		feedback_.current_status = "commanding";
 		if ( !hand_client_->call(hand_goal_softhand_) )
 		{
-			ROS_WARN ( "[SquirrelObjectManipulationServer::metahandActuate] Failed to actuate hand" );
+			ROS_WARN ( "[SquirrelObjectManipulationServer::softhandActuate] Failed to actuate hand" );
 			feedback_.current_status = "failed";
 			return false;
 		}		
 	}
 	else
 	{
-		ROS_WARN ( "[SquirrelObjectManipulationServer::metahandActuate] Cannot actuate hand because service is unavailable" );
+		ROS_WARN ( "[SquirrelObjectManipulationServer::softhandActuate] Cannot actuate hand because service is unavailable" );
 		feedback_.current_status = "failed";
 	}
 
 	// Successfully actuated the metahand
-	ROS_WARN ( "[SquirrelObjectManipulationServer::metahandActuate] Success!");
+	ROS_WARN ( "[SquirrelObjectManipulationServer::softhandActuate] Success!");
 	feedback_.current_status = "success";
 	as_.publishFeedback ( feedback_ );
 	return true;
@@ -414,10 +414,100 @@ bool SquirrelObjectManipulationServer::metahandGrasp ( const squirrel_manipulati
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::softhandGrasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal )
 {
-	ROS_INFO ( "[SquirrelObjectManipulationServer::softhandActuate] Started" );
+	ROS_INFO ( "[SquirrelObjectManipulationServer::softhandGrasp] Started" );
 
-	// TODO Philipp Zech
+	// Compute approach pose (15 cm above input pose in the map frame)
+	string goal_frame = goal->heap_center_pose.header.frame_id;
+	geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
+	// Transform to map frame
+	geometry_msgs::PoseStamped map_goal;
+	transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+	// Add height
+	map_goal.pose.position.z += APPROACH_HEIGHT_;
+	map_goal.header.frame_id = MAP_FRAME_;
 
+	// Transform to planning frame (also map but could be different!)
+	geometry_msgs::PoseStamped grasp_goal;
+	transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, grasp_goal );
+	grasp_goal.header.frame_id = PLANNING_FRAME_;
+	geometry_msgs::PoseStamped approach_goal;
+	transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
+	approach_goal.header.frame_id = PLANNING_FRAME_;
+
+	// Publish the goal end effector pose
+	vector<double> grasp_positions ( 6 ); // [x y z roll pitch yaw]
+	grasp_positions[0] = grasp_goal.pose.position.x;
+	grasp_positions[1] = grasp_goal.pose.position.y;
+	grasp_positions[2] = grasp_goal.pose.position.z;
+	tf::Matrix3x3 mat ( tf::Quaternion(grasp_goal.pose.orientation.x,
+				grasp_goal.pose.orientation.y,
+				grasp_goal.pose.orientation.z,
+				grasp_goal.pose.orientation.w) );
+	double roll, pitch, yaw;
+	mat.getEulerYPR ( yaw, pitch, roll );
+	grasp_positions[3] = roll;
+	grasp_positions[4] = pitch;
+	grasp_positions[5] = yaw;
+	// Publish marker
+	publishGoalMarker ( grasp_positions );
+
+
+	// ***
+	// Open hand
+	// ***
+	if ( !softhandActuate(SquirrelObjectManipulationServer::OPEN_SOFTHAND) )
+	{
+		ROS_WARN ( "[SquirrelGraspServer::softhandGrasp] Failed to open hand" );
+		// return false;
+	}
+
+	// ***
+	// Approach
+	// ***
+	if ( !moveArmPTP(approach_goal, "approach") )
+	{
+		ROS_WARN ( "[SquirrelObjectManipulationServer::softhandGrasp] Failed to reach approach pose");
+		return false;
+	}
+
+	// ***
+	// Grasp
+	// ***
+	if ( !moveArmPTP(grasp_goal, "grasp") )
+	{
+		ROS_WARN ( "[SquirrelObjectManipulationServer::softhandGrasp] Failed to reach grasp pose");
+		return false;
+	}
+
+	// ***
+	// Close hand
+	// ***
+	if ( !softhandActuate(SquirrelObjectManipulationServer::CLOSE_SOFTHAND) )
+	{
+		ROS_WARN ( "[SquirrelGraspServer::softhandGrasp] Failed to close hand" );
+		// return false;
+	}
+
+	// ***
+	// Retract to unfolded position for carrying
+	// ***
+	vector<double> retract_joint_values ( 8 ); // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
+	retract_joint_values[0] = current_joints_[0];
+	retract_joint_values[1] = current_joints_[1];
+	retract_joint_values[2] = current_joints_[2];
+	retract_joint_values[3] = unfolded_pose[0];
+	retract_joint_values[4] = unfolded_pose[1];
+	retract_joint_values[5] = unfolded_pose[2];
+	retract_joint_values[6] = unfolded_pose[3];
+	retract_joint_values[7] = unfolded_pose[4];
+	if ( !moveArmJoints(retract_joint_values, "retract") )
+	{
+		ROS_WARN ( "[SquirrelObjectManipulationServer::softhandGrasp] Failed to reach retract position");
+		return false;
+	}
+
+	// Successfully grasped object!
+	ROS_INFO ( "[SquirrelObjectManipulationServer::softhandGrasp] Success!");
 	return true;
 }
 

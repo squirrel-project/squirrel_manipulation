@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # Facing down (orientation works for Innsbruck hand)
     grasp_goal.heap_center_pose.pose.position.x = 0.38
     grasp_goal.heap_center_pose.pose.position.y = 0.17
-    grasp_goal.heap_center_pose.pose.position.z = 0.15
+    grasp_goal.heap_center_pose.pose.position.z = 0.17
     grasp_goal.heap_center_pose.pose.orientation.x = 0.5
     grasp_goal.heap_center_pose.pose.orientation.y = 0.5
     grasp_goal.heap_center_pose.pose.orientation.z = -0.5
