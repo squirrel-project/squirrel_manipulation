@@ -1,4 +1,0 @@
-<launch>
-  <node name="squirrel_ptp_server" pkg="squirrel_ptp_server" type="squirrel_ptp" respawn="true" />
-    <param name='tip_link' value='hand_palm_link' type='string'/>
-</launch>

@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<node name="squirrel_grasping_node" pkg="squirrel_grasping" type="squirrel_grasping_node.py" output="screen">
-	  <param name="hand" value="softhand" type="string"/>	  
-	</node>
-</launch>

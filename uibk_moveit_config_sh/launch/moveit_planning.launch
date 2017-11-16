@@ -1,9 +1,0 @@
-<launch>
-
-  <include file="$(find uibk_moveit_config_sh)/launch/move_group.launch" />
-
-  <include file="$(find uibk_moveit_config_sh)/launch/moveit_rviz.launch" >
-    <arg name="config" value="true"/>
-  </include>
-
-</launch>

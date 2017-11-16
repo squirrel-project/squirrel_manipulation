@@ -1,20 +1,8 @@
 - git:
-    uri: 'https://github.com/squirrel-project/squirrel_common.git'
-    local-name: squirrel_common
-    version: indigo_dev
-- git:
-    uri: 'https://github.com/squirrel-project/squirrel_robotino.git'
-    local-name: squirrel_robotino
-    version: indigo_dev
-- git:
     uri: 'https://github.com/squirrel-project/squirrel_driver.git'
     local-name: squirrel_driver
     version: indigo_dev
 - git:
-    uri: 'https://github.com/squirrel-project/kukadu.git'
-    local-name: kukadu
-    version:  master
-- git:
-    uri: 'https://github.com/squirrel-project/uibk_moveit_tools.git'
-    local-name: uibk_moveit_tools
-    version: master
+    uri: 'https://github.com/squirrel-project/squirrel_common.git'
+    local-name: squirrel_common
+    version: indigo_dev
