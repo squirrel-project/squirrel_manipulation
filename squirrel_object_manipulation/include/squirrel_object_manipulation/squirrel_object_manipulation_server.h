@@ -37,8 +37,8 @@
 #define OPEN_METAHAND_OPERATION_MODE 3
 
 // See softhand
-#define CLOSE_SOFTHAND_VALUE 0.0
-#define OPEN_SOFTHAND_VALUE 0.9
+#define CLOSE_SOFTHAND_VALUE 0.9
+#define OPEN_SOFTHAND_VALUE 0.0
 
 /**
  * \brief Object Manipulation server to perform grasping, placing, hand opening and closing
