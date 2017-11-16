@@ -25,12 +25,12 @@
 #define PLANNING_FRAME_ "map"
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
-#define PLANNING_TIME_ 3.0
-#define PLAN_WITH_OCTOMAP_COLLISIONS_ true
-#define PLAN_WITH_SELF_COLLISIONS_ true
+#define DEFAULT_PLANNING_TIME_ 3.0
+#define DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_ true
+#define DEFAULT_PLAN_WITH_SELF_COLLISIONS_ true
+#define DEFAULT_APPROACH_HEIGHT_ 0.15  // cm
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define APPROACH_HEIGHT_ 0.15  // cm
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -94,11 +94,10 @@ class SquirrelObjectManipulationServer
     virtual ~SquirrelObjectManipulationServer ();
 
     /**
-    * \brief Initialize the server with hand type
-    * \param[in] hand_name The name of the hand to operate with
+    * \brief Initialize the server with parameters
     * \returns True if hand_type is reconized and if trajectory_folding_arm is found on the ros parameter server
     */
-    bool initialize ( const std::string &hand_name );
+    bool initialize ();
 
     private:
 
@@ -144,6 +143,11 @@ class SquirrelObjectManipulationServer
     // Important poses
     std::vector<double> folded_pose;
     std::vector<double> unfolded_pose;
+    // Planning parameters
+    double planning_time_;
+    double plan_with_octomap_collisions_;
+    double plan_with_self_collisions_;
+    double approach_height_;
 
     /**
      * \brief The main action server callback function
