@@ -145,8 +145,8 @@ class SquirrelObjectManipulationServer
     std::vector<double> unfolded_pose;
     // Planning parameters
     double planning_time_;
-    double plan_with_octomap_collisions_;
-    double plan_with_self_collisions_;
+    bool plan_with_octomap_collisions_;
+    bool plan_with_self_collisions_;
     double approach_height_;
 
     /**
