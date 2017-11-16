@@ -1,4 +1,8 @@
 - git:
+    uri: 'https://github.com/squirrel-project/squirrel_driver.git'
+    local-name: squirrel_driver
+    version: indigo_dev
+- git:
     uri: 'https://github.com/squirrel-project/squirrel_common.git'
     local-name: squirrel_common
     version: indigo_dev
