@@ -31,6 +31,7 @@ catkin_package(
   trajectory_msgs
   visualization_msgs
   squirrel_manipulation_msgs
+  squirrel_motion_planner_msgs
   kclhand_control
 )
 
