@@ -1,4 +1,4 @@
-#include "squirrel_object_manipulation/squirrel_object_manipulation_server.h"
+﻿#include "squirrel_object_manipulation/squirrel_object_manipulation_server.h"
 
 using namespace std;
 
@@ -16,8 +16,12 @@ SquirrelObjectManipulationServer::~SquirrelObjectManipulationServer ()
 {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool SquirrelObjectManipulationServer::initialize ( const std::string &hand_name )
+bool SquirrelObjectManipulationServer::initialize ()
 {
+    // Read the hand name
+    string hand_name = METAHAND_STRING_;
+    if ( !n_->getParam(addNodeName("hand"), hand_name) )
+        ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] No input hand name, using default '%s'", hand_name.c_str() );
     if ( hand_name.compare(METAHAND_STRING_) == 0 )
     {
         hand_type_ = SquirrelObjectManipulationServer::METAHAND;
@@ -34,6 +38,39 @@ bool SquirrelObjectManipulationServer::initialize ( const std::string &hand_name
         ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] Unknown hand name '%s'", hand_name.c_str() );
         return false;
     }
+    // Read the planning parameters
+    planning_time_ = DEFAULT_PLANNING_TIME_;
+    if ( !n_->getParam(addNodeName("planning_time"), planning_time_) )
+        ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning time not given, using default value %.2f",
+                    DEFAULT_PLANNING_TIME_ );
+    plan_with_octomap_collisions_ = DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_;
+    if ( !n_->getParam(addNodeName("plan_with_octomap_collisions"), plan_with_octomap_collisions_) )
+    {
+        if ( DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_ )
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collisions not given, using default value TRUE" );
+        else
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collision not given, using default value TRUE" );
+    }
+    plan_with_self_collisions_ = DEFAULT_PLAN_WITH_SELF_COLLISIONS_;
+    if ( !n_->getParam(addNodeName("plan_with_self_collisions"), plan_with_self_collisions_) )
+    {
+        if ( DEFAULT_PLAN_WITH_SELF_COLLISIONS_ )
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collision not given, using default value TRUE" );
+        else
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collision not given, using default value TRUE" );
+    }
+    approach_height_ = DEFAULT_APPROACH_HEIGHT_;
+    if ( !n_->getParam(addNodeName("approach_height"), approach_height_) )
+        ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Approach not given, using default value %.2f",
+                    DEFAULT_APPROACH_HEIGHT_ );
+
+    ROS_INFO ( "[SquirrelObjectManipulationServer::initialize] Started with parameters:" );
+    cout << "action_name = " << action_name_ << "\n"
+         << "hand_name = " << hand_name << "\n"
+         << "planning_time = " << planning_time_ << "\n"
+         << "plan_with_octomap_collisions = " << plan_with_octomap_collisions_ << "\n"
+         << "plan_with_self_collisions = " << plan_with_self_collisions_ << "\n"
+         << "approach_height = " << approach_height_ << endl;
 
     arm_unfold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/unfold_arm") );
     arm_end_eff_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanEndEffector>("/squirrel_8dof_planning/find_plan_end_effector") );
@@ -116,18 +153,14 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     ROS_INFO ( "[SquirrelObjectManipulationServer::actionServerCallBack] Started" );
 
     // Checking the command (TODO: change the action definition to have action type as input, right now can exploit the obejct_id field)
-    action_type_ = SquirrelObjectManipulationServer::UNKNOWN_ACTION;
     feedback_.current_phase = "checking input command";
     feedback_.current_status = "started";
     as_.publishFeedback ( feedback_ );
-    if ( goal->object_id.compare("open") == 0 || goal->object_id.compare("open hand") == 0 )
-        action_type_ = SquirrelObjectManipulationServer::OPEN_HAND_ACTION;
-    else if ( goal->object_id.compare("close") == 0 || goal->object_id.compare("close hand") == 0 )
-        action_type_ = SquirrelObjectManipulationServer::CLOSE_HAND_ACTION;
-    else if ( goal->object_id.compare("grasp") == 0 || goal->object_id.compare("grasp object") == 0 )
-        action_type_ = SquirrelObjectManipulationServer::GRASP;
-    else if ( goal->object_id.compare("place") == 0 || goal->object_id.compare("place object") == 0 )
-        action_type_ = SquirrelObjectManipulationServer::PLACE;
+    action_type_ = SquirrelObjectManipulationServer::UNKNOWN_ACTION;
+    if ( goal->object_id.compare("open") == 0 || goal->object_id.compare("open hand") == 0 ) action_type_ = SquirrelObjectManipulationServer::OPEN_HAND_ACTION;
+    else if ( goal->object_id.compare("close") == 0 || goal->object_id.compare("close hand") == 0 ) action_type_ = SquirrelObjectManipulationServer::CLOSE_HAND_ACTION;
+    else if ( goal->object_id.compare("grasp") == 0 || goal->object_id.compare("grasp object") == 0 ) action_type_ = SquirrelObjectManipulationServer::GRASP;
+    else if ( goal->object_id.compare("place") == 0 || goal->object_id.compare("place object") == 0 ) action_type_ = SquirrelObjectManipulationServer::PLACE;
     if ( action_type_ == SquirrelObjectManipulationServer::UNKNOWN_ACTION )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Could not interpret input command '%s'", goal->object_id.c_str() );
@@ -156,22 +189,10 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
 
     // Call the appropriate action
     bool success = false;
-    if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION )
-    {
-        success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
-    }
-    else if ( action_type_ == SquirrelObjectManipulationServer::CLOSE_HAND_ACTION )
-    {
-        success = actuateHand ( SquirrelObjectManipulationServer::CLOSE );
-    }
-    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP )
-    {
-        success = grasp ( goal );
-    }
-    else if ( action_type_ == SquirrelObjectManipulationServer::PLACE )
-    {
-        success = place ( goal );
-    }
+    if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
+    else if ( action_type_ == SquirrelObjectManipulationServer::CLOSE_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::CLOSE );
+    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::PLACE ) success = place ( goal );
 
     if ( success )
     {
@@ -190,19 +211,12 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::actuateHand ( const HandActuation &hand_actuation )
 {
-    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-    {
-        return actuateMetahand ( hand_actuation );
-    }
-    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-    {
-        return actuateSofthand ( hand_actuation);
-    }
-    else
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::actuateHand] Unrecognized hand type" );
-        return false;
-    }
+    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND ) return actuateMetahand ( hand_actuation );
+    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND ) return actuateSofthand ( hand_actuation);
+    else ROS_ERROR ( "[SquirrelObjectManipulationServer::actuateHand] Unrecognized hand type" );
+
+    // If made it here then did not reconize the actuation type
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -322,14 +336,14 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
 
     ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Started" );
 
-    // Compute approach pose (15 cm above input pose in the map frame)
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     string goal_frame = goal->heap_center_pose.header.frame_id;
     geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
     // Transform to map frame
     geometry_msgs::PoseStamped map_goal;
     transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
     // Add height
-    map_goal.pose.position.z += APPROACH_HEIGHT_;
+    map_goal.pose.position.z += approach_height_;
     map_goal.header.frame_id = MAP_FRAME_;
 
     // Transform to planning frame (also map but could be different!)
@@ -430,14 +444,14 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
 
     ROS_INFO ( "[SquirrelObjectManipulationServer::place] Started" );
 
-    // Compute approach pose (15 cm above input pose in the map frame)
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     string goal_frame = goal->heap_center_pose.header.frame_id;
     geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
     // Transform to map frame
     geometry_msgs::PoseStamped map_goal;
     transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
     // Add height
-    map_goal.pose.position.z += APPROACH_HEIGHT_;
+    map_goal.pose.position.z += approach_height_;
     map_goal.header.frame_id = MAP_FRAME_;
 
     // Transform to planning frame (also map but could be different!)
@@ -534,9 +548,9 @@ bool SquirrelObjectManipulationServer::moveArmPTP ( const double &x, const doubl
     end_eff_goal_.request.positions[3] = roll;
     end_eff_goal_.request.positions[4] = pitch;
     end_eff_goal_.request.positions[5] = yaw;
-    end_eff_goal_.request.max_planning_time = PLANNING_TIME_;
-    end_eff_goal_.request.check_octomap_collision = PLAN_WITH_OCTOMAP_COLLISIONS_;
-    end_eff_goal_.request.check_self_collision = PLAN_WITH_SELF_COLLISIONS_;
+    end_eff_goal_.request.max_planning_time = planning_time_;
+    end_eff_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
+    end_eff_goal_.request.check_self_collision = plan_with_self_collisions_;
     end_eff_goal_.request.fold_arm = false;
     end_eff_goal_.request.min_distance_before_folding = 0.0;
     feedback_.current_status = "planning";
@@ -618,9 +632,9 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     // Set the joint values in the message to the motion planner
     pose_goal_.request.joints.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
     pose_goal_.request.joints = joint_values;
-    pose_goal_.request.max_planning_time = PLANNING_TIME_;
-    pose_goal_.request.check_octomap_collision = PLAN_WITH_OCTOMAP_COLLISIONS_;
-    pose_goal_.request.check_self_collision = PLAN_WITH_SELF_COLLISIONS_;
+    pose_goal_.request.max_planning_time = planning_time_;
+    pose_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
+    pose_goal_.request.check_self_collision = plan_with_self_collisions_;
     pose_goal_.request.fold_arm = false;
     pose_goal_.request.min_distance_before_folding = 0.0;
     feedback_.current_status = "planning";
@@ -700,7 +714,7 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     }
 
     ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Sending command to move to '%s' returned with 0",
-    message.c_str());
+               message.c_str());
 
     // Successfully commanded the arm
     return true;
@@ -895,16 +909,10 @@ int main ( int argc, char **argv )
     string action_name = NODE_NAME_;
     if ( !n.getParam(addNodeName("action_name"), action_name) )
     ROS_WARN ( "[SquirrelObjectManipulationServer] No input action name, using default '%s'", action_name.c_str() );
-    string hand_name = "metahand";
-    if ( !n.getParam(addNodeName("hand"), hand_name) )
-        ROS_WARN ( "[SquirrelObjectManipulationServer] No input hand name, using default '%s'", hand_name.c_str() );
-
-    ROS_INFO ( "[SquirrelObjectManipulationServer] Started with parameters: action_name = %s, hand_name = %s",
-               action_name.c_str(), hand_name.c_str() );
 
     // Create the server
     SquirrelObjectManipulationServer object_manipulation_server ( n, action_name );
-    if ( !object_manipulation_server.initialize (hand_name) )
+    if ( !object_manipulation_server.initialize() )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer] Could not initialize" );
         ros::shutdown ;
