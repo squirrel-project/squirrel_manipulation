@@ -9,9 +9,7 @@
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  
-  <run_depend>squirrel_grasping_new</run_depend>
-  <run_depend>squirrel_manipulation_waypoint</run_depend>
+
   <run_depend>squirrel_object_manipulation</run_depend>
 
   <export>
