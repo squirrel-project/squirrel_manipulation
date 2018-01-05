@@ -330,6 +330,8 @@ bool SquirrelObjectManipulationServer::actuateSofthand ( const HandActuation &ha
 bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal )
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Started" );
+    
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     string goal_frame = goal->heap_center_pose.header.frame_id;
     geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
     // Transform to map frame
