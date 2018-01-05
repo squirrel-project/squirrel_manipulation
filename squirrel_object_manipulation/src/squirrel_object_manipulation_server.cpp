@@ -76,10 +76,19 @@ bool SquirrelObjectManipulationServer::initialize ()
     arm_end_eff_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanEndEffector>("/squirrel_8dof_planning/find_plan_end_effector") );
     arm_pose_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanPose>("/squirrel_8dof_planning/find_plan_pose") );
     arm_send_trajectory_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::SendControlCommand>("/squirrel_8dof_planning/send_trajectory_controller") );
+    /*
+    reset_arm_client_ = new ros::ServiceClient ( n_->serviceClient<std_srvs::SetBool>("/squirrel_control/reset_controllers") );
+    if ( !reset_arm_client_->waitForExistence(ros::Duration(3.0)) )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] Could not find service to reset arm controller, aborting because it is too dangerous to continue..." );
+        return false;
+    }
+    reload_controller_client_ = new ros::ServiceClient ( n_->serviceClient<controller_manager_msgs::SwitchController>("/arm_controller/controller_manager/switch_controller") );
+    */
     hand_available_ = false;
     if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
     {
-        hand_client_ = new ros::ServiceClient ( n_->serviceClient<kclhand_control::HandOperationMode>("/hand_operation_mode") );
+        hand_client_ = new ros::ServiceClient ( n_->serviceClient<kclhand_control::HandOperationMode>("/hand_controller/hand_operation_mode") );
         hand_available_ = hand_client_->waitForExistence ( ros::Duration(3.0) );
         if ( !hand_available_ )
             ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] KCL hand operation service unavailable, are you running in simulation?" );
@@ -187,6 +196,35 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
+    // Reset the arm controller if the arm has to move
+    /*
+    if ( action_type_ == SquirrelObjectManipulationServer::GRASP ||
+         action_type_ == SquirrelObjectManipulationServer::PLACE )
+    {
+        // Reset the arm controller
+        feedback_.current_phase = "resetting arm controller";
+        feedback_.current_status = "started";
+        as_.publishFeedback ( feedback_ );
+        reset_arm_flag_.request.data = true;
+        ROS_INFO ( "Resetting arm controllers" );
+        if ( !reset_arm_client_->call(reset_arm_flag_) )
+        {
+            ROS_ERROR ( "[SquirrelObjectManipulationServer::actionServerCallBack] Failed to reset arm controller" );
+            feedback_.current_status = "failed";
+            as_.setAborted ( result_ );
+            return;
+        }
+        ros::Duration(5.0).sleep();
+        reset_arm_flag_.request.data = false;
+        if ( !reset_arm_client_->call(reset_arm_flag_) )
+        {
+            ROS_ERROR ( "[SquirrelObjectManipulationServer::actionServerCallBack] Failed to reactivate arm controller" );
+            feedback_.current_status = "failed";
+            as_.setAborted ( result_ );
+            return;
+        }
+    }
+    */
     // Call the appropriate action
     bool success = false;
     if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
@@ -325,18 +363,7 @@ bool SquirrelObjectManipulationServer::actuateSofthand ( const HandActuation &ha
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal )
 {
-    /*
-    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-    return metahandGrasp ( goal );
-    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-    return softhandGrasp ( goal );
-    else
-    return false;
-    */
-
     ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Started" );
-
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     string goal_frame = goal->heap_center_pose.header.frame_id;
     geometry_msgs::PoseStamped goal_pose = goal->heap_center_pose;
     // Transform to map frame
@@ -403,6 +430,7 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // ***
     // Close hand
     // ***
+    ros::Duration(2.0).sleep();
     if ( !actuateHand(SquirrelObjectManipulationServer::CLOSE) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::grasp] Failed to close hand" );
@@ -412,16 +440,10 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // ***
     // Retract to unfolded position for carrying
     // ***
-    // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
-    vector<double> retract_joint_values ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );
-    int i = 0;
-    for ( ; i < NUM_BASE_JOINTS_; ++i )
-        retract_joint_values[i] = current_joints_[i];
-    for ( size_t j = 0; j < NUM_ARM_JOINTS_; ++j, ++i )
-        retract_joint_values[i] = unfolded_pose[j];
-    if ( !moveArmJoints(retract_joint_values, "retract") )
+    ros::Duration(1.0).sleep();
+    if ( !moveArmPTP(approach_goal, "retract") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach retract position");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach retract pose");
         return false;
     }
 
@@ -433,15 +455,6 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal )
 {
-    /*
-    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-    return metahandPlace ( goal );
-    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-    return softhandPlace ( goal );
-    else
-    return false;
-    */
-
     ROS_INFO ( "[SquirrelObjectManipulationServer::place] Started" );
 
     // Compute approach pose (approach_height_ cm above input pose in the map frame)
@@ -502,6 +515,7 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // ***
     // Open hand
     // ***
+    ros::Duration(0.5).sleep();
     if ( !actuateHand(SquirrelObjectManipulationServer::OPEN) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::place] Failed to open hand" );
@@ -511,16 +525,10 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // ***
     // Retract to unfolded position
     // ***
-    // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
-    vector<double> retract_joint_values ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );
-    int i = 0;
-    for ( ; i < NUM_BASE_JOINTS_; ++i )
-        retract_joint_values[i] = current_joints_[i];
-    for ( size_t j = 0; j < NUM_ARM_JOINTS_; ++j, ++i )
-        retract_joint_values[i] = unfolded_pose[j];
-    if ( !moveArmJoints(retract_joint_values, "retract") )
+    ros::Duration(1.0).sleep();
+    if ( !moveArmPTP(approach_goal, "retract") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach retract position");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach retract pose");
         return false;
     }
 
@@ -715,7 +723,8 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
 
     ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Sending command to move to '%s' returned with 0",
                message.c_str());
-
+    
+    //ros::Duration(3.0).sleep();
     // Successfully commanded the arm
     return true;
 }
@@ -763,8 +772,12 @@ bool SquirrelObjectManipulationServer::transformPose ( const string &origin_fram
     in.header.frame_id = origin_frame;
     out.header.frame_id = target_frame;
     // Transform using the listerner
+    ros::Time common_time;
+    std::string* error;
     try
     {
+        tf_listener_.getLatestCommonTime ( origin_frame, target_frame, common_time, error );
+        in.header.stamp = common_time;
         tf_listener_.transformPose ( target_frame, in, out );
     }
     catch ( tf::TransformException ex )
