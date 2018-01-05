@@ -72,19 +72,13 @@ bool SquirrelObjectManipulationServer::initialize ()
          << "plan_with_self_collisions = " << plan_with_self_collisions_ << "\n"
          << "approach_height = " << approach_height_ << endl;
 
+    // Setup service clients
     arm_unfold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/unfold_arm") );
     arm_end_eff_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanEndEffector>("/squirrel_8dof_planning/find_plan_end_effector") );
     arm_pose_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanPose>("/squirrel_8dof_planning/find_plan_pose") );
     arm_send_trajectory_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::SendControlCommand>("/squirrel_8dof_planning/send_trajectory_controller") );
-    /*
-    reset_arm_client_ = new ros::ServiceClient ( n_->serviceClient<std_srvs::SetBool>("/squirrel_control/reset_controllers") );
-    if ( !reset_arm_client_->waitForExistence(ros::Duration(3.0)) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] Could not find service to reset arm controller, aborting because it is too dangerous to continue..." );
-        return false;
-    }
-    reload_controller_client_ = new ros::ServiceClient ( n_->serviceClient<controller_manager_msgs::SwitchController>("/arm_controller/controller_manager/switch_controller") );
-    */
+    
+    // Check that the hand is available
     hand_available_ = false;
     if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
     {
@@ -148,6 +142,7 @@ bool SquirrelObjectManipulationServer::initialize ()
     goal_marker_.scale.y = 0.1;
     goal_marker_.scale.z = 0.1;
 
+    // To store the joint states and the trajectory command
     current_joints_.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );  // 5 for arm and 3 for base
     current_cmd_.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );
     joints_state_sub_ = n_->subscribe ( "/joint_states", 1, &SquirrelObjectManipulationServer::jointsStateCallBack, this );
@@ -196,35 +191,6 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
-    // Reset the arm controller if the arm has to move
-    /*
-    if ( action_type_ == SquirrelObjectManipulationServer::GRASP ||
-         action_type_ == SquirrelObjectManipulationServer::PLACE )
-    {
-        // Reset the arm controller
-        feedback_.current_phase = "resetting arm controller";
-        feedback_.current_status = "started";
-        as_.publishFeedback ( feedback_ );
-        reset_arm_flag_.request.data = true;
-        ROS_INFO ( "Resetting arm controllers" );
-        if ( !reset_arm_client_->call(reset_arm_flag_) )
-        {
-            ROS_ERROR ( "[SquirrelObjectManipulationServer::actionServerCallBack] Failed to reset arm controller" );
-            feedback_.current_status = "failed";
-            as_.setAborted ( result_ );
-            return;
-        }
-        ros::Duration(5.0).sleep();
-        reset_arm_flag_.request.data = false;
-        if ( !reset_arm_client_->call(reset_arm_flag_) )
-        {
-            ROS_ERROR ( "[SquirrelObjectManipulationServer::actionServerCallBack] Failed to reactivate arm controller" );
-            feedback_.current_status = "failed";
-            as_.setAborted ( result_ );
-            return;
-        }
-    }
-    */
     // Call the appropriate action
     bool success = false;
     if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
@@ -724,7 +690,6 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Sending command to move to '%s' returned with 0",
                message.c_str());
     
-    //ros::Duration(3.0).sleep();
     // Successfully commanded the arm
     return true;
 }

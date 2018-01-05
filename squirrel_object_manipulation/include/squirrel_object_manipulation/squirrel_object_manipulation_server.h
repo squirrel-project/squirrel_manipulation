@@ -10,7 +10,6 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/Marker.h>
-#include <std_srvs/SetBool.h>
 #include <squirrel_manipulation_msgs/BlindGraspAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
@@ -18,7 +17,6 @@
 #include <squirrel_motion_planner_msgs/UnfoldArm.h>
 #include <kclhand_control/HandOperationMode.h>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
-#include <controller_manager_msgs/SwitchController.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -124,8 +122,6 @@ class SquirrelObjectManipulationServer
     ros::ServiceClient *arm_pose_planner_client_;
     ros::ServiceClient *arm_send_trajectory_client_;
     ros::ServiceClient *hand_client_;
-    //ros::ServiceClient *reset_arm_client_;
-    //ros::ServiceClient *reload_controller_client_;
     // Messages
     squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
     squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
@@ -133,8 +129,6 @@ class SquirrelObjectManipulationServer
     squirrel_motion_planner_msgs::SendControlCommand cmd_goal_;
     kclhand_control::HandOperationMode metahand_goal_;
     squirrel_manipulation_msgs::SoftHandGrasp softhand_goal_;
-    //std_srvs::SetBool reset_arm_flag_;
-    //controller_manager_msgs::SwitchController reload_controller_msg_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
