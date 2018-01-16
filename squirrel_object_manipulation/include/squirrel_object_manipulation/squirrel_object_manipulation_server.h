@@ -10,7 +10,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/Marker.h>
-#include <squirrel_manipulation_msgs/BlindGraspAction.h>
+#include <squirrel_manipulation_msgs/ManipulationAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
 #include <squirrel_motion_planner_msgs/SendControlCommand.h>
@@ -104,7 +104,7 @@ class SquirrelObjectManipulationServer
     // Node handle
     ros::NodeHandle *n_;
     // Action server
-    actionlib::SimpleActionServer<squirrel_manipulation_msgs::BlindGraspAction> as_;
+    actionlib::SimpleActionServer<squirrel_manipulation_msgs::ManipulationAction> as_;
     // Action name
     std::string action_name_;
     // Hand type
@@ -114,8 +114,8 @@ class SquirrelObjectManipulationServer
     // Hand available (only available with real robot)
     bool hand_available_;
     // Messages to publish feedback and result
-    squirrel_manipulation_msgs::BlindGraspFeedback feedback_;
-    squirrel_manipulation_msgs::BlindGraspResult result_;
+    squirrel_manipulation_msgs::ManipulationFeedback feedback_;
+    squirrel_manipulation_msgs::ManipulationResult result_;
     // Services
     ros::ServiceClient *arm_unfold_client_;
     ros::ServiceClient *arm_end_eff_planner_client_;
@@ -151,9 +151,9 @@ class SquirrelObjectManipulationServer
 
     /**
      * \brief The main action server callback function
-     * \param[in] goal A pointer to BlindGrasp action goal
+     * \param[in] goal A pointer to Manipulation action goal
      */
-    void actionServerCallBack ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
+    void actionServerCallBack ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
      * \brief Dispatches the hand actuation call to either metahand or softhand actuation
@@ -182,7 +182,7 @@ class SquirrelObjectManipulationServer
      * \param[in] goal The goal grasp pose
      * \returns True if all actions are performed successfully
      */
-    bool grasp ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
+    bool grasp ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
      * \brief Series of actions to place an object given a goal place pose
@@ -190,7 +190,7 @@ class SquirrelObjectManipulationServer
      * \param[in] goal The goal place pose
      * \returns True if all actions are performed successfully
      */
-    bool place ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal);
+    bool place ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal);
 
     /**
      * \brief Moves the end effector to a 6DOF pose in the map frame
@@ -203,9 +203,9 @@ class SquirrelObjectManipulationServer
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
      * \returns True if end effectors is successfully moved to goal pose
      */
-    bool moveArmPTP ( const double &x, const double &y, const double &z,
-                      const double &roll, const double &pitch, const double &yaw,
-                      const std::string &message = "" );
+    bool moveArmCartesian ( const double &x, const double &y, const double &z,
+                            const double &roll, const double &pitch, const double &yaw,
+                            const std::string &message = "" );
 
     /**
      * \brief Moves the end effector to a pose in the map frame specified by a position and orientation (quaternion)
@@ -219,9 +219,9 @@ class SquirrelObjectManipulationServer
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
      * \returns True if end effectors is successfully moved to goal pose
      */
-    bool moveArmPTP ( const double &x, const double &y, const double &z,
-                      const double &xx, const double &yy, const double &zz, const double ww,
-                      const std::string &message = "" );
+    bool moveArmCartesian ( const double &x, const double &y, const double &z,
+                            const double &xx, const double &yy, const double &zz, const double ww,
+                            const std::string &message = "" );
 
     /**
      * \brief Moves the end effector to a pose in the map frame
@@ -229,7 +229,7 @@ class SquirrelObjectManipulationServer
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
      * \returns True if end effectors is successfully moved to goal pose
      */
-    bool moveArmPTP ( const geometry_msgs::PoseStamped &goal, const std::string &message = "" );
+    bool moveArmCartesian ( const geometry_msgs::PoseStamped &goal, const std::string &message = "" );
 
     /**
      * \brief Moves the base and arm to an 8DOF joint configuration
