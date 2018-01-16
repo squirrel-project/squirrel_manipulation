@@ -69,7 +69,9 @@ class SquirrelObjectManipulationServer
         OPEN_HAND_ACTION = 1,
         CLOSE_HAND_ACTION = 2,
         GRASP = 3,
-        PLACE = 4
+        PLACE = 4,
+        JOINTS = 5,
+        CARTESIAN = 6
     };
 
     /**
