@@ -4,9 +4,10 @@
 using namespace std;
 
 HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
-	handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
-	runHandover_ (true),
-	private_nh("~")
+    handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
+    manipulation_client("squirrel_manipulation_server", true),
+    runHandover_ (true),
+    private_nh("~")
 {
 
 	private_nh.param("base_frame", base_frame_, std::string("/base_link"));
@@ -35,7 +36,7 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
 	}
 
 	//arm control
-	manipulation_client = new actionlib::SimpleActionClient("squirrel_manipulation_server", true);
+    //manipulation_client("squirrel_manipulation_server", true);
 	manipulation_client.waitForServer();
 
 	handoverServer.start();
@@ -515,7 +516,7 @@ bool HandoverAction::moveArm(vector<double> joints) {
 
 	bool finished_before_timeout = manipulation_client.waitForResult(ros::Duration(30.0));
 	if (finished_before_timeout) {
-		actionlib::SimpleClientGoalState state = ac.getState();
+        actionlib::SimpleClientGoalState state = manipulation_client.getState();
 		ROS_INFO("Action finished: %s",state.toString().c_str());
 		return true;
 	}

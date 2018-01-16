@@ -409,7 +409,7 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // Retract to unfolded position for carrying
     // ***
     ros::Duration(1.0).sleep();
-    if ( !moveArmPTP(approach_goal, "retract") )
+    if ( !moveArmCartesian(approach_goal, "retract") )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach retract pose");
         return false;
@@ -494,7 +494,7 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // Retract to unfolded position
     // ***
     ros::Duration(1.0).sleep();
-    if ( !moveArmPTP(approach_goal, "retract") )
+    if ( !moveArmCartesian(approach_goal, "retract") )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach retract pose");
         return false;
@@ -846,6 +846,8 @@ bool SquirrelObjectManipulationServer::waitForTrajectoryCompletion ( const doubl
         // If not joint flagged as out of position, then trajectory is completed
         if ( all_joints_in_position )
             return true;
+        // Sleep
+        ros::Duration(0.1).sleep();
     }
 
     // If finished while loop without exiting then trajectory did not finish in time

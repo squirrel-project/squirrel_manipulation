@@ -151,9 +151,9 @@ class SquirrelObjectManipulationServer
 
     /**
      * \brief The main action server callback function
-     * \param[in] goal A pointer to BlindGrasp action goal
+     * \param[in] goal A pointer to Manipulation action goal
      */
-    void actionServerCallBack ( const squirrel_manipulation_msgs::BlindGraspGoalConstPtr &goal );
+    void actionServerCallBack ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
      * \brief Dispatches the hand actuation call to either metahand or softhand actuation
