@@ -4,7 +4,7 @@ Squirrel_manipulation
 =====================
 
 Technical Maintainer: lokalmatador (Philipp Zech, University of Innsbruck)
-[never commit to the main repository. Instead send pull request to the technical maintainer --> shangl/manipulation]
+[never commit to the main repository. Instead send pull request to the technical maintainer --> lokalmatador/squirrel_manipulation]
 
 Repository for manipulation related SQUIRREL packages.
 
