@@ -165,6 +165,7 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     else if ( goal->manipulation_type.compare("close") == 0 || goal->manipulation_type.compare("close hand") == 0 ) action_type_ = SquirrelObjectManipulationServer::CLOSE_HAND_ACTION;
     else if ( goal->manipulation_type.compare("grasp") == 0 || goal->manipulation_type.compare("grasp object") == 0 ) action_type_ = SquirrelObjectManipulationServer::GRASP;
     else if ( goal->manipulation_type.compare("place") == 0 || goal->manipulation_type.compare("place object") == 0 ) action_type_ = SquirrelObjectManipulationServer::PLACE;
+    else if ( goal->manipulation_type.compare("joints") == 0 || goal->manipulation_type.compare("move joints") == 0 ) action_type_ = SquirrelObjectManipulationServer::JOINTS;
     if ( action_type_ == SquirrelObjectManipulationServer::UNKNOWN_ACTION )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Could not interpret input command '%s'", goal->object_id.c_str() );
@@ -197,6 +198,7 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     else if ( action_type_ == SquirrelObjectManipulationServer::CLOSE_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::CLOSE );
     else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::PLACE ) success = place ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::JOINTS ) success = moveArmJoints ( goal->joints, "action request" );
 
     if ( success )
     {
@@ -606,6 +608,7 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     }
 
     // Set the joint values in the message to the motion planner
+    pose_goal_.request.frame_id = "odom";
     pose_goal_.request.joints.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
     pose_goal_.request.joints = joint_values;
     pose_goal_.request.max_planning_time = planning_time_;

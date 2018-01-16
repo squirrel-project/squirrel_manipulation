@@ -5,7 +5,7 @@ using namespace std;
 
 HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
-    manipulation_client("squirrel_manipulation_server", true),
+    manipulation_client("squirrel_object_manipulation_server", true),
     runHandover_ (true),
     private_nh("~")
 {
