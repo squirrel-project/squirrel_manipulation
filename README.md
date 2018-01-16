@@ -12,6 +12,6 @@ Repository for manipulation related SQUIRREL packages.
 
 ```bash 
 $ roslaunch squirrel_8dof_planner planner.launch
-$ roslaunch squirrel_object_manipulation  squirrel_object_manipulation.launch
+$ roslaunch squirrel_object_manipulation squirrel_object_manipulation.launch
 ``` 
 
