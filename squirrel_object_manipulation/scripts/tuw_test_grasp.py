@@ -19,7 +19,7 @@ if __name__ == '__main__':
     manipulation_goal = ManipulationGoal()
     # !!! Currently using this string to change the command type (open, close, grasp, place)
     # Need to update message definition
-    manipulation_goal.manipulation_type = 'joints'
+    manipulation_goal.manipulation_type = 'grasp'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
     manipulation_goal.pose.header.frame_id = 'map'  # Always plan in map frame??
     
@@ -27,11 +27,11 @@ if __name__ == '__main__':
     if manipulation_goal.pose.header.frame_id == 'map':
         manipulation_goal.pose.pose.position.x = 1.74; #2.36
         manipulation_goal.pose.pose.position.y = 2.04; #1.17
-        manipulation_goal.pose.pose.position.z = 0.25
+        manipulation_goal.pose.pose.position.z = 0.23
     else:
         manipulation_goal.pose.pose.position.x = 0.2
         manipulation_goal.pose.pose.position.y = 0.0
-        manipulation_goal.pose.pose.position.z = 0.25
+        manipulation_goal.pose.pose.position.z = 0.23
     manipulation_goal.pose.pose.orientation.x = -0.707
     manipulation_goal.pose.pose.orientation.y = 0.00
     manipulation_goal.pose.pose.orientation.z = 0.00
