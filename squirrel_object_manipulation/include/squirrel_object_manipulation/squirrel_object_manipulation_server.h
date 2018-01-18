@@ -22,7 +22,6 @@
 #define METAHAND_STRING_ "metahand"
 #define SOFTHAND_STRING_ "softhand"
 #define MAP_FRAME_ "map"
-#define PLANNING_FRAME_ "map"
 #define JOINT_FRAME_ "odom"
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5

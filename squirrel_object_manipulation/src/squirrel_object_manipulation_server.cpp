@@ -133,7 +133,7 @@ bool SquirrelObjectManipulationServer::initialize ()
     }
 
     goal_pose_pub_ = n_->advertise<visualization_msgs::Marker> ( addNodeName("goal_pose"), 3, this );
-    goal_marker_.header.frame_id = PLANNING_FRAME_;
+    goal_marker_.header.frame_id = MAP_FRAME_;
     goal_marker_.ns = "end_effector_pose";
     goal_marker_.id = 0;
     goal_marker_.type = visualization_msgs::Marker::ARROW;
@@ -470,29 +470,21 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Started" );
     
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    string goal_frame = goal->pose.header.frame_id;
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
     // Transform to map frame
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
     geometry_msgs::PoseStamped map_goal;
-    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    map_goal.header.frame_id = MAP_FRAME_;
+    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
     // Check that the goal is above the minimum height
     if ( !checkGoalHeight(map_goal) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::grasp] Goal height %.2f is invalid", map_goal.pose.position.z );
         return false;
     }
-    // Add height
+    geometry_msgs::PoseStamped grasp_goal = map_goal;
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     map_goal.pose.position.z += approach_height_;
-    map_goal.header.frame_id = MAP_FRAME_;
-
-    // Transform to planning frame (also map but could be different!)
-    geometry_msgs::PoseStamped grasp_goal;
-    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, grasp_goal );
-    grasp_goal.header.frame_id = PLANNING_FRAME_;
-    geometry_msgs::PoseStamped approach_goal;
-    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
-    approach_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal = map_goal;
 
     // Publish the goal end effector pose
     // [x y z roll pitch yaw]
@@ -567,29 +559,21 @@ bool SquirrelObjectManipulationServer::drop ( const squirrel_manipulation_msgs::
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::drop] Started" );
 
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    string goal_frame = goal->pose.header.frame_id;
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
     // Transform to map frame
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
     geometry_msgs::PoseStamped map_goal;
-    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    map_goal.header.frame_id = MAP_FRAME_;
+    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
     // Check that the goal is above the minimum height
     if ( !checkGoalHeight(map_goal) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
         return false;
     }
-    // Add height
+    geometry_msgs::PoseStamped drop_goal = map_goal;
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     map_goal.pose.position.z += approach_height_;
-    map_goal.header.frame_id = MAP_FRAME_;
-
-    // Transform to planning frame (also map but could be different!)
-    geometry_msgs::PoseStamped drop_goal;
-    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, drop_goal );
-    drop_goal.header.frame_id = PLANNING_FRAME_;
-    geometry_msgs::PoseStamped approach_goal;
-    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
-    approach_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal = map_goal;
 
     // Publish the goal end effector pose
     // [x y z roll pitch yaw]
@@ -648,29 +632,21 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::pick] Started" );
 
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    string goal_frame = goal->pose.header.frame_id;
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
     // Transform to map frame
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
     geometry_msgs::PoseStamped map_goal;
-    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    map_goal.header.frame_id = MAP_FRAME_;
+    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
     // Check that the goal is above the minimum height
     if ( !checkGoalHeight(map_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::pick] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
         return false;
     }
-    // Add height
+    geometry_msgs::PoseStamped pick_goal = map_goal;
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     map_goal.pose.position.z += approach_height_;
-    map_goal.header.frame_id = MAP_FRAME_;
-
-    // Transform to planning frame (also map but could be different!)
-    geometry_msgs::PoseStamped pick_goal;
-    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, pick_goal );
-    pick_goal.header.frame_id = PLANNING_FRAME_;
-    geometry_msgs::PoseStamped approach_goal;
-    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
-    approach_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal = map_goal;
 
     // Publish the goal end effector pose
     // [x y z roll pitch yaw]
@@ -755,29 +731,21 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::place] Started" );
 
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    string goal_frame = goal->pose.header.frame_id;
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
     // Transform to map frame
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
     geometry_msgs::PoseStamped map_goal;
-    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    map_goal.header.frame_id = MAP_FRAME_;
+    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
     // Check that the goal is above the minimum height
     if ( !checkGoalHeight(map_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::place] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
         return false;
     }
-    // Add height
+    geometry_msgs::PoseStamped place_goal = map_goal;
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
     map_goal.pose.position.z += approach_height_;
-    map_goal.header.frame_id = MAP_FRAME_;
-
-    // Transform to planning frame (also map but could be different!)
-    geometry_msgs::PoseStamped place_goal;
-    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, place_goal );
-    place_goal.header.frame_id = PLANNING_FRAME_;
-    geometry_msgs::PoseStamped approach_goal;
-    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
-    approach_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal = map_goal;
 
     // Publish the goal end effector pose
     // [x y z roll pitch yaw]
@@ -860,7 +828,7 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     end_eff_goal_.request.positions[3] = roll;
     end_eff_goal_.request.positions[4] = pitch;
     end_eff_goal_.request.positions[5] = yaw;
-    end_eff_goal_.request.frame_id = PLANNING_FRAME_;
+    end_eff_goal_.request.frame_id = MAP_FRAME_;
     end_eff_goal_.request.max_planning_time = planning_time_;
     end_eff_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
     end_eff_goal_.request.check_self_collision = plan_with_self_collisions_;
