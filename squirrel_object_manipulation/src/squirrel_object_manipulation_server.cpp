@@ -526,6 +526,7 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     end_eff_goal_.request.positions[3] = roll;
     end_eff_goal_.request.positions[4] = pitch;
     end_eff_goal_.request.positions[5] = yaw;
+    end_eff_goal_.request.frame_id = PLANNING_FRAME_;
     end_eff_goal_.request.max_planning_time = planning_time_;
     end_eff_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
     end_eff_goal_.request.check_self_collision = plan_with_self_collisions_;
