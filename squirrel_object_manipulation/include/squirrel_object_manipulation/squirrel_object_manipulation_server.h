@@ -23,18 +23,20 @@
 #define SOFTHAND_STRING_ "softhand"
 #define MAP_FRAME_ "map"
 #define PLANNING_FRAME_ "map"
+#define JOINT_FRAME_ "odom"
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
 #define DEFAULT_PLANNING_TIME_ 3.0
-#define DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_ true
-#define DEFAULT_PLAN_WITH_SELF_COLLISIONS_ true
 #define DEFAULT_APPROACH_HEIGHT_ 0.15  // cm
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
+#define METAHAND_MINIMUM_HEIGHT_ 0.22
+#define SOFTHAND_MINIMUM_HEIGHT_ 0.17
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
 #define OPEN_METAHAND_OPERATION_MODE 3
+#define FOLD_METAHAND_OPERATION_MODE 9
 
 // See softhand
 #define CLOSE_SOFTHAND_VALUE 0.9
@@ -68,10 +70,14 @@ class SquirrelObjectManipulationServer
         UNKNOWN_ACTION = 0,
         OPEN_HAND_ACTION = 1,
         CLOSE_HAND_ACTION = 2,
-        GRASP = 3,
-        PLACE = 4,
-        JOINTS = 5,
-        CARTESIAN = 6
+        JOINTS = 3,
+        CARTESIAN = 4,
+        GRASP = 5,
+        DROP = 6,
+        PICK = 7,
+        PLACE = 8,
+        FOLD_ARM_ACTION = 9,
+        UNFOLD_ARM_ACTION = 10
     };
 
     /**
@@ -80,7 +86,8 @@ class SquirrelObjectManipulationServer
     enum HandActuation
     {
         OPEN = 0,
-        CLOSE = 1
+        CLOSE = 1,
+        FOLD_HAND = 2
     };
 
     /**
@@ -119,12 +126,14 @@ class SquirrelObjectManipulationServer
     squirrel_manipulation_msgs::ManipulationFeedback feedback_;
     squirrel_manipulation_msgs::ManipulationResult result_;
     // Services
+    ros::ServiceClient *arm_fold_client_;
     ros::ServiceClient *arm_unfold_client_;
     ros::ServiceClient *arm_end_eff_planner_client_;
     ros::ServiceClient *arm_pose_planner_client_;
     ros::ServiceClient *arm_send_trajectory_client_;
     ros::ServiceClient *hand_client_;
     // Messages
+    squirrel_motion_planner_msgs::UnfoldArm fold_goal_;
     squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
     squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
     squirrel_motion_planner_msgs::PlanPose pose_goal_;
@@ -179,15 +188,45 @@ class SquirrelObjectManipulationServer
     bool actuateSofthand ( const HandActuation &hand_actuation );
 
     /**
-     * \brief Series of actions to grasp an object given a goal grasp pose
-     *        Actions are: open hand, move to approach pose, move to grasp pose, close hand, retract arm
+     * \brief Series of actions to fold the arm
+     *        Actions are: fold hand, move arm to folded pose
+     * \returns True if all actions are performed successfully
+     */
+    bool foldArm ();
+
+    /**
+     * \brief Series of actions to unfold the arm
+     *        Actions are: move arm to unfolded pose
+     * \returns True if all actions are performed successfully
+     */
+    bool unfoldArm ();
+
+    /**
+     * \brief Series of actions to grasp an object given a goal pose
+     *        Actions are: open hand, move to approach pose, move to grasp pose, close hand
      * \param[in] goal The goal grasp pose
      * \returns True if all actions are performed successfully
      */
     bool grasp ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
-     * \brief Series of actions to place an object given a goal place pose
+     * \brief Series of actions to drop an object given a goal drop pose
+     *        Actions are: move to approach pose, move to drop pose, open hand
+     * \param[in] goal The goal drop pose
+     * \returns True if all actions are performed successfully
+     */
+    bool drop ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal);
+
+    /**
+     * \brief Series of actions to pick up an object given a goal pick pose
+     *        Actions are: open hand, move to approach pose, move to grasp pose, close hand, retract arm
+     * \param[in] goal The goal pick pose
+     * \returns True if all actions are performed successfully
+     */
+    bool pick ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
+
+    /**
+     * \brief Series of actions to place an object given a goal pose
      *        Actions are: move to approach pose, move to place pose, open hand, retract arm
      * \param[in] goal The goal place pose
      * \returns True if all actions are performed successfully
@@ -293,11 +332,28 @@ class SquirrelObjectManipulationServer
     bool armIsUnfolded () const;
 
     /**
+     * \brief Checks that the goal height does not exceed the minimum height threshold
+     * \param[in] goal The goal that will be planned to
+     * \returns True if the goal height does not exceed the minimum height threshold
+     */
+    bool checkGoalHeight ( const geometry_msgs::PoseStamped &goal ) const;
+
+    /**
      * \brief Waits until the current commanded trajectory is completed by the robot
      * \param[in] timeout The maximum amount of time to wait for trajectory completion before returning failure
      * \returns True if the robot completes the trajectory within the maximum allowed time
      */
-    bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_);
+    bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_ ) const;
+
+    /**
+     * \brief Disables octomap collision checking (should only be used for final grasp!)
+     */
+    void disableOctomapCollisions ();
+
+    /**
+     * \brief Enables octomap collision checking
+     */
+    void enableOctomapCollisions ();
 
     /**
      * \brief Publishes a visualization marker (as an arrow) of the goal end effector pose

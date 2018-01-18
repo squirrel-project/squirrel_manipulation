@@ -6,7 +6,7 @@ using namespace std;
 SquirrelObjectManipulationServer::SquirrelObjectManipulationServer ( ros::NodeHandle &n, const std::string &action_name ) :
 	n_ ( new ros::NodeHandle(n) ),
 	action_name_ ( action_name ),
-	as_ ( *n_, action_name, boost::bind(&SquirrelObjectManipulationServer::actionServerCallBack, this, _1), false)
+    as_ ( *n_, action_name, boost::bind(&SquirrelObjectManipulationServer::actionServerCallBack, this, _1), false )
 {
     as_.start();
 }
@@ -43,21 +43,25 @@ bool SquirrelObjectManipulationServer::initialize ()
     if ( !n_->getParam(addNodeName("planning_time"), planning_time_) )
         ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning time not given, using default value %.2f",
                     DEFAULT_PLANNING_TIME_ );
-    plan_with_octomap_collisions_ = DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_;
+    plan_with_octomap_collisions_ = true;
     if ( !n_->getParam(addNodeName("plan_with_octomap_collisions"), plan_with_octomap_collisions_) )
     {
-        if ( DEFAULT_PLAN_WITH_OCTOMAP_COLLISIONS_ )
-            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collisions not given, using default value TRUE" );
-        else
-            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collision not given, using default value TRUE" );
+        ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collisions not given, using default value TRUE" );
     }
-    plan_with_self_collisions_ = DEFAULT_PLAN_WITH_SELF_COLLISIONS_;
+    else
+    {
+        if ( !plan_with_octomap_collisions_ )
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with octomap collisions is set to FALSE" );
+    }
+    plan_with_self_collisions_ = true;
     if ( !n_->getParam(addNodeName("plan_with_self_collisions"), plan_with_self_collisions_) )
     {
-        if ( DEFAULT_PLAN_WITH_SELF_COLLISIONS_ )
-            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collision not given, using default value TRUE" );
-        else
-            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collision not given, using default value TRUE" );
+        ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collision not given, using default value TRUE" );
+    }
+    else
+    {
+        if ( !plan_with_self_collisions_ )
+            ROS_WARN ( "[SquirrelObjectManipulationServer::initialize] Planning with self collisions is set to FALSE" );
     }
     approach_height_ = DEFAULT_APPROACH_HEIGHT_;
     if ( !n_->getParam(addNodeName("approach_height"), approach_height_) )
@@ -73,6 +77,7 @@ bool SquirrelObjectManipulationServer::initialize ()
          << "approach_height = " << approach_height_ << endl;
 
     // Setup service clients
+    arm_fold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/fold_arm") );
     arm_unfold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/unfold_arm") );
     arm_end_eff_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanEndEffector>("/squirrel_8dof_planning/find_plan_end_effector") );
     arm_pose_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanPose>("/squirrel_8dof_planning/find_plan_pose") );
@@ -163,13 +168,17 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     action_type_ = SquirrelObjectManipulationServer::UNKNOWN_ACTION;
     if ( goal->manipulation_type.compare("open") == 0 || goal->manipulation_type.compare("open hand") == 0 ) action_type_ = SquirrelObjectManipulationServer::OPEN_HAND_ACTION;
     else if ( goal->manipulation_type.compare("close") == 0 || goal->manipulation_type.compare("close hand") == 0 ) action_type_ = SquirrelObjectManipulationServer::CLOSE_HAND_ACTION;
-    else if ( goal->manipulation_type.compare("grasp") == 0 || goal->manipulation_type.compare("grasp object") == 0 ) action_type_ = SquirrelObjectManipulationServer::GRASP;
-    else if ( goal->manipulation_type.compare("place") == 0 || goal->manipulation_type.compare("place object") == 0 ) action_type_ = SquirrelObjectManipulationServer::PLACE;
     else if ( goal->manipulation_type.compare("joints") == 0 || goal->manipulation_type.compare("move joints") == 0 ) action_type_ = SquirrelObjectManipulationServer::JOINTS;
+    else if ( goal->manipulation_type.compare("cartesian") == 0 || goal->manipulation_type.compare("move cartesian") == 0 ) action_type_ = SquirrelObjectManipulationServer::CARTESIAN;
+    else if ( goal->manipulation_type.compare("grasp") == 0 || goal->manipulation_type.compare("grasp object") == 0 ) action_type_ = SquirrelObjectManipulationServer::GRASP;
+    else if ( goal->manipulation_type.compare("drop") == 0 || goal->manipulation_type.compare("drop object") == 0 ) action_type_ = SquirrelObjectManipulationServer::DROP;
+    else if ( goal->manipulation_type.compare("pick") == 0 || goal->manipulation_type.compare("pick object") == 0 ) action_type_ = SquirrelObjectManipulationServer::PICK;
+    else if ( goal->manipulation_type.compare("place") == 0 || goal->manipulation_type.compare("place object") == 0 ) action_type_ = SquirrelObjectManipulationServer::PLACE;
+    else if ( goal->manipulation_type.compare("fold") == 0 || goal->manipulation_type.compare("fold arm") == 0 ) action_type_ = SquirrelObjectManipulationServer::FOLD_ARM_ACTION;
+    else if ( goal->manipulation_type.compare("unfold") == 0 || goal->manipulation_type.compare("unfold arm") == 0 ) action_type_ = SquirrelObjectManipulationServer::UNFOLD_ARM_ACTION;
     if ( action_type_ == SquirrelObjectManipulationServer::UNKNOWN_ACTION )
     {
-        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Could not interpret input command '%s'", goal->object_id.c_str() );
-        // Set the result to something here
+        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Could not interpret input command '%s'", goal->manipulation_type.c_str() );
         feedback_.current_status = "failed";
         as_.setAborted ( result_ );
         return;
@@ -181,10 +190,9 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_phase = "checking arm configuration";
     feedback_.current_status = "started";
     as_.publishFeedback ( feedback_ );
-    if ( armIsFolded() )
+    if ( armIsFolded() && action_type_ != SquirrelObjectManipulationServer::UNFOLD_ARM_ACTION )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Arm is folded, it must be unfolded first before manipulating objects" );
-        // Set the result to something here
         feedback_.current_status = "failed";
         as_.setAborted ( result_ );
         return;
@@ -196,9 +204,14 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     bool success = false;
     if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
     else if ( action_type_ == SquirrelObjectManipulationServer::CLOSE_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::CLOSE );
-    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( goal );
-    else if ( action_type_ == SquirrelObjectManipulationServer::PLACE ) success = place ( goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::JOINTS ) success = moveArmJoints ( goal->joints, "action request" );
+    else if ( action_type_ == SquirrelObjectManipulationServer::CARTESIAN ) success = moveArmCartesian ( goal->pose, "action request" );
+    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::DROP ) success = drop ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::PICK ) success = pick ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::PLACE ) success = place ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::FOLD_ARM_ACTION ) success = foldArm ();
+    else if ( action_type_ == SquirrelObjectManipulationServer::UNFOLD_ARM_ACTION ) success = unfoldArm ();
 
     if ( success )
     {
@@ -241,6 +254,11 @@ bool SquirrelObjectManipulationServer::actuateMetahand ( const HandActuation &ha
         feedback_.current_phase = "closing hand";
         metahand_goal_.request.operation_mode = CLOSE_METAHAND_OPERATION_MODE;
     }
+    else if ( hand_actuation == SquirrelObjectManipulationServer::FOLD_HAND )
+    {
+        feedback_.current_phase = "folding hand";
+        metahand_goal_.request.operation_mode = FOLD_METAHAND_OPERATION_MODE;
+    }
     else
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::actuateMetahand] Unrecognized command" );
@@ -271,7 +289,7 @@ bool SquirrelObjectManipulationServer::actuateMetahand ( const HandActuation &ha
     }
 
     // Successfully actuated the metahand
-    ROS_INFO ( "[SquirrelObjectManipulationServer::actuateMetahand] Success!");
+    ROS_INFO ( "[SquirrelObjectManipulationServer::actuateMetahand] Success!" );
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
     return true;
@@ -291,6 +309,14 @@ bool SquirrelObjectManipulationServer::actuateSofthand ( const HandActuation &ha
     {
         feedback_.current_phase = "closing hand";
         softhand_goal_.request.position = CLOSE_SOFTHAND_VALUE;
+    }
+    else if ( hand_actuation == SquirrelObjectManipulationServer::FOLD_HAND )
+    {
+        // TODO: Philipp Zech...
+        feedback_.current_phase = "folding hand";
+        ROS_WARN ( "[SquirrelObjectManipulationServer::actuateSofthand] Folding hand is not yet implemented" );
+        return false;
+        // ...
     }
     else
     {
@@ -322,9 +348,120 @@ bool SquirrelObjectManipulationServer::actuateSofthand ( const HandActuation &ha
     }
 
     // Successfully actuated the softhand
-    ROS_INFO ( "[SquirrelObjectManipulationServer::actuateSofthand] Success!");
+    ROS_INFO ( "[SquirrelObjectManipulationServer::actuateSofthand] Success!" );
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::foldArm ()
+{
+    ROS_INFO ( "[SquirrelObjectManipulationServer::foldArm] Started" );
+
+    // Check that the arm is not already folded
+    if ( armIsFolded() )
+    {
+        ROS_WARN ( "[SquirrelGraspServer::foldArm] Arm is already folded" );
+        return true;
+    }
+
+    // ***
+    // Fold hand
+    // ***
+    if ( !actuateHand(SquirrelObjectManipulationServer::FOLD_HAND) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::foldArm] Failed to fold hand" );
+        return false;
+    }
+
+    // ***
+    // Fold arm
+    // ***
+    feedback_.current_phase = "folding";
+    feedback_.current_status = "starting";
+    as_.publishFeedback ( feedback_ );
+    fold_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
+    fold_goal_.request.check_self_collision = true; // Overriding ros parameter
+    if ( !arm_fold_client_->call(fold_goal_) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::foldArm] Failed to call service to fold the arm" );
+        feedback_.current_status = "failed";
+        return false;
+    }
+    // Sleep
+    ros::Duration(2.0).sleep();
+    // Wait for trajectory to finish
+    feedback_.current_status = "waiting for completion";
+    if ( !waitForTrajectoryCompletion() )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::foldArm] Trajectory to folded pose did not complete in time" );
+        feedback_.current_status = "failed";
+        return false;
+    }
+    // If not a successful result
+    if ( fold_goal_.response.result != 0 )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::foldArm] Sending command to move to folded pose returned with result %i",
+                    fold_goal_.response.result );
+        feedback_.current_status = "failed";
+        return false;
+    }
+
+    ROS_INFO ( "[SquirrelObjectManipulationServer::foldArm] Sending command to move to folded pose returned with 0" );
+
+    // Successfully commanded the arm
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::unfoldArm ()
+{
+    ROS_INFO ( "[SquirrelObjectManipulationServer::unfoldArm] Started" );
+
+    // Check that the arm is not already unfolded
+    if ( armIsUnfolded() )
+    {
+        ROS_WARN ( "[SquirrelGraspServer::unfoldArm] Arm is already unfolded" );
+        return true;
+    }
+
+    // ***
+    // Fold arm
+    // ***
+    feedback_.current_phase = "unfolding";
+    feedback_.current_status = "starting";
+    as_.publishFeedback ( feedback_ );
+    unfold_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
+    unfold_goal_.request.check_self_collision = true;  // Overriding ros parameter
+    if ( !arm_unfold_client_->call(unfold_goal_) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::unfoldArm] Failed to call service to unfold the arm" );
+        feedback_.current_status = "failed";
+        return false;
+    }
+    // Sleep
+    ros::Duration(2.0).sleep();
+    // Wait for trajectory to finish
+    feedback_.current_status = "waiting for completion";
+    if ( !waitForTrajectoryCompletion() )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::unfoldArm] Trajectory to unfolded pose did not complete in time" );
+        feedback_.current_status = "failed";
+        return false;
+    }
+    // If not a successful result
+    if ( unfold_goal_.response.result != 0 )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::unfoldArm] Sending command to move to unfolded pose returned with result %i",
+                    unfold_goal_.response.result );
+        feedback_.current_status = "failed";
+        return false;
+    }
+
+    ROS_INFO ( "[SquirrelObjectManipulationServer::unfoldArm] Sending command to move to unfolded pose returned with 0" );
+
+    // Successfully commanded the arm
     return true;
 }
 
@@ -339,6 +476,12 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // Transform to map frame
     geometry_msgs::PoseStamped map_goal;
     transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    // Check that the goal is above the minimum height
+    if ( !checkGoalHeight(map_goal) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::grasp] Goal height %.2f is invalid", map_goal.pose.position.z );
+        return false;
+    }
     // Add height
     map_goal.pose.position.z += approach_height_;
     map_goal.header.frame_id = MAP_FRAME_;
@@ -384,18 +527,25 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // ***
     if ( !moveArmCartesian(approach_goal, "approach") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach approach pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach approach pose" );
         return false;
     }
 
     // ***
     // Grasp
     // ***
+    // Disable octomap collision checks (grasping is always a collision)
+    bool octomap_disable_required = plan_with_octomap_collisions_;
+    if ( octomap_disable_required ) disableOctomapCollisions();
     if ( !moveArmCartesian(grasp_goal, "grasp") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach grasp pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach grasp pose" );
+        // Re-enable octomap collision checks
+        if ( octomap_disable_required ) enableOctomapCollisions();
         return false;
     }
+    // Re-enable octomap collision checks
+    if ( octomap_disable_required ) enableOctomapCollisions();
 
     // ***
     // Close hand
@@ -407,18 +557,196 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
         return false;
     }
 
+    // Successfully grasped object!
+    ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Success!" );
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::drop ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal )
+{
+    ROS_INFO ( "[SquirrelObjectManipulationServer::drop] Started" );
+
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
+    string goal_frame = goal->pose.header.frame_id;
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
+    // Transform to map frame
+    geometry_msgs::PoseStamped map_goal;
+    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    // Check that the goal is above the minimum height
+    if ( !checkGoalHeight(map_goal) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
+        return false;
+    }
+    // Add height
+    map_goal.pose.position.z += approach_height_;
+    map_goal.header.frame_id = MAP_FRAME_;
+
+    // Transform to planning frame (also map but could be different!)
+    geometry_msgs::PoseStamped drop_goal;
+    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, drop_goal );
+    drop_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal;
+    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
+    approach_goal.header.frame_id = PLANNING_FRAME_;
+
+    // Publish the goal end effector pose
+    // [x y z roll pitch yaw]
+    vector<double> drop_positions ( 6 );
+    drop_positions[0] = drop_goal.pose.position.x;
+    drop_positions[1] = drop_goal.pose.position.y;
+    drop_positions[2] = drop_goal.pose.position.z;
+    tf::Matrix3x3 mat ( tf::Quaternion(drop_goal.pose.orientation.x,
+                                       drop_goal.pose.orientation.y,
+                                       drop_goal.pose.orientation.z,
+                                       drop_goal.pose.orientation.w) );
+    double roll, pitch, yaw;
+    mat.getEulerYPR ( yaw, pitch, roll );
+    drop_positions[3] = roll;
+    drop_positions[4] = pitch;
+    drop_positions[5] = yaw;
+    // Publish marker
+    publishGoalMarker ( drop_positions );
+
+
     // ***
-    // Retract to unfolded position for carrying
+    // Approach
+    // ***
+    if ( !moveArmCartesian(approach_goal, "approach") )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::drop] Failed to reach approach pose" );
+        return false;
+    }
+
+    // ***
+    // Drop
+    // ***
+    if ( !moveArmCartesian(drop_goal, "drop") )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::drop] Failed to reach drop pose" );
+        return false;
+    }
+
+    // ***
+    // Open hand
+    // ***
+    ros::Duration(0.5).sleep();
+    if ( !actuateHand(SquirrelObjectManipulationServer::OPEN) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::place] Failed to open hand" );
+        return false;
+    }
+
+    // Successfully dropped object!
+    ROS_INFO ( "[SquirrelObjectManipulationServer::drop] Success!" );
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal )
+{
+    ROS_INFO ( "[SquirrelObjectManipulationServer::pick] Started" );
+
+    // Compute approach pose (approach_height_ cm above input pose in the map frame)
+    string goal_frame = goal->pose.header.frame_id;
+    geometry_msgs::PoseStamped goal_pose = goal->pose;
+    // Transform to map frame
+    geometry_msgs::PoseStamped map_goal;
+    transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    // Check that the goal is above the minimum height
+    if ( !checkGoalHeight(map_goal) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::pick] Goal height %.2f is invalid", map_goal.pose.position.z );
+        return false;
+    }
+    // Add height
+    map_goal.pose.position.z += approach_height_;
+    map_goal.header.frame_id = MAP_FRAME_;
+
+    // Transform to planning frame (also map but could be different!)
+    geometry_msgs::PoseStamped pick_goal;
+    transformPose ( goal_frame, PLANNING_FRAME_, goal_pose, pick_goal );
+    pick_goal.header.frame_id = PLANNING_FRAME_;
+    geometry_msgs::PoseStamped approach_goal;
+    transformPose ( MAP_FRAME_, PLANNING_FRAME_, map_goal, approach_goal );
+    approach_goal.header.frame_id = PLANNING_FRAME_;
+
+    // Publish the goal end effector pose
+    // [x y z roll pitch yaw]
+    vector<double> pick_positions ( 6 );
+    pick_positions[0] = pick_goal.pose.position.x;
+    pick_positions[1] = pick_goal.pose.position.y;
+    pick_positions[2] = pick_goal.pose.position.z;
+    tf::Matrix3x3 mat ( tf::Quaternion(pick_goal.pose.orientation.x,
+                                       pick_goal.pose.orientation.y,
+                                       pick_goal.pose.orientation.z,
+                                       pick_goal.pose.orientation.w) );
+    double roll, pitch, yaw;
+    mat.getEulerYPR ( yaw, pitch, roll );
+    pick_positions[3] = roll;
+    pick_positions[4] = pitch;
+    pick_positions[5] = yaw;
+    // Publish marker
+    publishGoalMarker ( pick_positions );
+
+
+    // ***
+    // Open hand
+    // ***
+    if ( !actuateHand(SquirrelObjectManipulationServer::OPEN) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::pick] Failed to open hand" );
+        return false;
+    }
+
+    // ***
+    // Approach
+    // ***
+    if ( !moveArmCartesian(approach_goal, "approach") )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach approach pose" );
+        return false;
+    }
+
+    // ***
+    // Pick
+    // ***
+    // Disable octomap collision checks (grasping is always a collision)
+    bool octomap_disable_required = plan_with_octomap_collisions_;
+    if ( octomap_disable_required ) disableOctomapCollisions();
+    if ( !moveArmCartesian(pick_goal, "pick") )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach pick up pose" );
+        // Re-enable octomap collision checks
+        if ( octomap_disable_required ) enableOctomapCollisions();
+        return false;
+    }
+    // Re-enable octomap collision checks
+    if ( octomap_disable_required ) enableOctomapCollisions();
+
+    // ***
+    // Close hand
+    // ***
+    ros::Duration(2.0).sleep();
+    if ( !actuateHand(SquirrelObjectManipulationServer::CLOSE) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::pick] Failed to close hand" );
+        return false;
+    }
+
+    // ***
+    // Retract arm for carrying
     // ***
     ros::Duration(1.0).sleep();
     if ( !moveArmCartesian(approach_goal, "retract") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach retract pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach retract pose" );
         return false;
     }
 
-    // Successfully grasped object!
-    ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Success!");
+    // Successfully picked up object!
+    ROS_INFO ( "[SquirrelObjectManipulationServer::pick] Success!" );
     return true;
 }
 
@@ -433,6 +761,12 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // Transform to map frame
     geometry_msgs::PoseStamped map_goal;
     transformPose ( goal_frame, MAP_FRAME_, goal_pose, map_goal );
+    // Check that the goal is above the minimum height
+    if ( !checkGoalHeight(map_goal) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::place] Goal height %.2f is invalid", map_goal.pose.position.z );
+        return false;
+    }
     // Add height
     map_goal.pose.position.z += approach_height_;
     map_goal.header.frame_id = MAP_FRAME_;
@@ -469,7 +803,7 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // ***
     if ( !moveArmCartesian(approach_goal, "approach") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach approach pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach approach pose" );
         return false;
     }
 
@@ -478,7 +812,7 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     // ***
     if ( !moveArmCartesian(place_goal, "place") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach place pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach place pose" );
         return false;
     }
 
@@ -493,17 +827,17 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     }
 
     // ***
-    // Retract to unfolded position
+    // Retract arm
     // ***
     ros::Duration(1.0).sleep();
     if ( !moveArmCartesian(approach_goal, "retract") )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach retract pose");
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach retract pose" );
         return false;
     }
 
     // Successfully placed object!
-    ROS_INFO ( "[SquirrelObjectManipulationServer::place] Success!");
+    ROS_INFO ( "[SquirrelObjectManipulationServer::place] Success!" );
     return true;
 }
 
@@ -538,7 +872,6 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to find a plan to '%s' pose [%.2f %.2f %.2f %.2f %.2f %.2f]",
         message.c_str(), x, y, z, roll, pitch, yaw );
-        // Set the result to something here
         feedback_.current_status = "failed";
         return false;
     }
@@ -546,8 +879,7 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     if ( end_eff_goal_.response.result != 0 )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Planning to '%s' pose returned with result %i",
-        message.c_str(), end_eff_goal_.response.result  );
-        // Set the result to something here
+        message.c_str(), end_eff_goal_.response.result );
         feedback_.current_status = "failed";
         return false;
     }
@@ -560,7 +892,6 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to send command to '%s' pose",
         message.c_str() );
-        // Set the result to something here
         feedback_.current_status = "failed";
         return false;
     }
@@ -573,8 +904,8 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const double &y, const double &z,
-                                                    const double &xx, const double &yy, const double &zz, const double ww,
-                                                    const std::string &message )
+                                                          const double &xx, const double &yy, const double &zz, const double ww,
+                                                          const std::string &message )
 {
     // Convert quaternion to Euler
     tf::Matrix3x3 mat ( tf::Quaternion(xx, yy, zz, ww) );
@@ -587,9 +918,9 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
 bool SquirrelObjectManipulationServer::moveArmCartesian ( const geometry_msgs::PoseStamped &goal, const std::string &message )
 {
     return moveArmCartesian ( goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
-                        goal.pose.orientation.x, goal.pose.orientation.y,
-                        goal.pose.orientation.z, goal.pose.orientation.w,
-                        message );
+                              goal.pose.orientation.x, goal.pose.orientation.y,
+                              goal.pose.orientation.z, goal.pose.orientation.w,
+                              message );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -603,13 +934,12 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmJoints] Input joint values has %lu elements, expecting 8",
                     joint_values.size() );
-        // Set the result to something here
         feedback_.current_status = "failed";
         return false;
     }
 
     // Set the joint values in the message to the motion planner
-    pose_goal_.request.frame_id = "odom";
+    pose_goal_.request.frame_id = JOINT_FRAME_;
     pose_goal_.request.joints.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );  // [basex basey basez arm_joint1 arm_joint2 arm_joint3 arm_joint4 arm_joint5]
     pose_goal_.request.joints = joint_values;
     pose_goal_.request.max_planning_time = planning_time_;
@@ -623,8 +953,7 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmJoints] Failed to find plan arm to '%s' joints [%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f]",
                     message.c_str(), joint_values[0], joint_values[1], joint_values[2], joint_values[3],
-        joint_values[4], joint_values[5], joint_values[6], joint_values[7] );
-        // Set the result to something here
+                    joint_values[4], joint_values[5], joint_values[6], joint_values[7] );
         feedback_.current_status = "failed";
         return false;
     }
@@ -632,13 +961,12 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     if ( pose_goal_.response.result != 0 )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmJoints] Planning to '%s' joints returned with result %i",
-                    message.c_str(), pose_goal_.response.result  );
-        // Set the result to something here
+                    message.c_str(), pose_goal_.response.result );
         feedback_.current_status = "failed";
         return false;
     }
     ROS_INFO ( "[SquirrelObjectManipulationServer::moveArmJoints] Planning to '%s' joints returned with 0",
-    message.c_str() );
+               message.c_str() );
 
     // Send the command to the arm controller
     ROS_INFO ( "[SquirrelObjectManipulationServer::moveArmJoints] Moving to '%s' joints", message.c_str() );
@@ -647,7 +975,6 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmJoints] Failed to send command to '%s' joints",
                     message.c_str() );
-        // Set the result to something here
         feedback_.current_status = "failed";
         return false;
     }
@@ -667,7 +994,6 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Failed to send '%s' command",
         message.c_str() );
-        // Set the result to something here
         feedback_.current_status = "failed";
         return false;
     }
@@ -678,8 +1004,7 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     if ( !waitForTrajectoryCompletion() )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Trajectory to '%s' did not complete in time",
-                    message.c_str());
-        // Set the result to something here
+                    message.c_str() );
         feedback_.current_status = "failed";
         return false;
     }
@@ -687,8 +1012,7 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     if ( cmd_goal_.response.result != 0 )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Sending command to move to '%s' returned with result %i",
-                    message.c_str(), cmd_goal_.response.result  );
-        // Set the result to something here
+                    message.c_str(), cmd_goal_.response.result );
         feedback_.current_status = "failed";
         return false;
     }
@@ -830,7 +1154,36 @@ bool SquirrelObjectManipulationServer::armIsUnfolded () const
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool SquirrelObjectManipulationServer::waitForTrajectoryCompletion ( const double &timeout )
+bool SquirrelObjectManipulationServer::checkGoalHeight ( const geometry_msgs::PoseStamped &goal ) const
+{
+    // Transform to map frame
+    geometry_msgs::PoseStamped in_goal = goal;
+    geometry_msgs::PoseStamped map_goal = goal;
+    if ( goal.header.frame_id.compare(MAP_FRAME_) != 0 )
+    {
+        transformPose ( goal.header.frame_id, MAP_FRAME_, in_goal, map_goal );
+    }
+    // Get the minimum height specific for the hand type
+    double min_height = 0.30;
+    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
+        min_height = METAHAND_MINIMUM_HEIGHT_;
+    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
+        min_height = SOFTHAND_MINIMUM_HEIGHT_;
+    // Check that the goal is above the minimum height
+    if ( map_goal.pose.position.z < min_height )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::checkGoalHeight] Goal height %.2f in frame '%s' is below the minimum threshold %.2f",
+                    map_goal.pose.position.z, MAP_FRAME_, min_height );
+        return false;
+    }
+
+    // Otherwise the goal height is valid
+    return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::waitForTrajectoryCompletion ( const double &timeout ) const
 {
     // The error of the joints state must be small
     bool all_joints_in_position = true;
@@ -856,6 +1209,18 @@ bool SquirrelObjectManipulationServer::waitForTrajectoryCompletion ( const doubl
 
     // If finished while loop without exiting then trajectory did not finish in time
     return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SquirrelObjectManipulationServer::disableOctomapCollisions ()
+{
+    plan_with_octomap_collisions_ = false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SquirrelObjectManipulationServer::enableOctomapCollisions ()
+{
+    plan_with_octomap_collisions_ = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
