@@ -350,8 +350,10 @@ class SquirrelObjectManipulationServer
     std::vector<double> poseDiff ( const std::vector<double> &pose1, const std::vector<double> &pose2 ) const;
 
     /**
-     * \brief Call HAF grasping
-     * \returns True if HAF grasping returns a meaningful result
+     * \brief Call haf grasping
+     * \param[in] goal The manipulation server goal specifiying details for the haf grasp
+     * \param[out] grasp_goal A modified manipulation server goal with details from the haf grasp
+     * \returns True if haf grasping returns a meaningful result
      */
     bool callHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
                            squirrel_manipulation_msgs::ManipulationGoalPtr &grasp_goal );
@@ -362,6 +364,14 @@ class SquirrelObjectManipulationServer
      * \returns A quaternion representing the orientation of the gripper
      */
     geometry_msgs::Quaternion hafToGripperOrientation ( const haf_grasping::GraspOutput &haf_output ) const;
+
+    /**
+     * \brief Retrieve details about an object from the message store
+     * \param[in] object_id The string identifier for the object
+     * \param[out] scene_object TA scene object message type describing the queried object
+     * \returns True if the queried object is found in the message store
+     */
+    bool getSceneObject ( const std::string &object_id, squirrel_object_perception_msgs::SceneObject &scene_object ) const;
 
     /**
      * \brief Checks if the arm is in the folded position

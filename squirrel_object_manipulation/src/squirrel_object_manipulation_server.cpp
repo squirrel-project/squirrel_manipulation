@@ -205,15 +205,54 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
+    // If a valid scene object is found then create a grasp goal according to the object's properties
+    squirrel_manipulation_msgs::ManipulationGoalPtr object_goal;
+    if ( action_type_ == SquirrelObjectManipulationServer::GRASP ||
+         action_type_ == SquirrelObjectManipulationServer::PICK )
+    {
+        // Copy the message
+        object_goal->manipulation_type = goal->manipulation_type;
+        object_goal->object_id = goal->object_id;
+        object_goal->pose = goal->pose;
+        object_goal->object_bounding_cylinder = goal->object_bounding_cylinder;
+        object_goal->joints = goal->joints;
+        // Get a scene object from the message store
+        squirrel_object_perception_msgs::SceneObject scene_object;
+        if ( getSceneObject(object_goal->object_id, scene_object) )
+        {
+            // Copy scene object information to object goal
+            object_goal->pose.header.frame_id = scene_object.header.frame_id;
+            object_goal->object_bounding_cylinder = scene_object.bounding_cylinder;
+            // If not frame id specified then assume it is map
+            if ( object_goal->pose.header.frame_id.empty() )
+            {
+                ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Message strore object has no frame id specified, reverting to map" );
+                object_goal->pose.header.frame_id = MAP_FRAME_;
+                object_goal->pose.pose = scene_object.pose;
+            }
+            // Otherwise, transform the pose to map
+            else
+            {
+                geometry_msgs::PoseStamped scene_object_pose, transformed_pose;
+                scene_object_pose.header.frame_id = object_goal->pose.header.frame_id;
+                scene_object_pose.pose.position = scene_object.pose.position;
+                scene_object_pose.pose.orientation.w = 1.0;
+                transformPose ( object_goal->pose.header.frame_id, MAP_FRAME_, scene_object_pose, transformed_pose );
+                object_goal->pose.pose.position = transformed_pose.pose.position;
+            }
+
+        }
+    }
+
     // Call the appropriate action
     bool success = false;
     if ( action_type_ == SquirrelObjectManipulationServer::OPEN_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::OPEN );
     else if ( action_type_ == SquirrelObjectManipulationServer::CLOSE_HAND_ACTION ) success = actuateHand ( SquirrelObjectManipulationServer::CLOSE );
     else if ( action_type_ == SquirrelObjectManipulationServer::JOINTS ) success = moveArmJoints ( goal->joints, "action request" );
     else if ( action_type_ == SquirrelObjectManipulationServer::CARTESIAN ) success = moveArmCartesian ( goal->pose, "action request" );
-    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::GRASP ) success = grasp ( object_goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::DROP ) success = drop ( goal );
-    else if ( action_type_ == SquirrelObjectManipulationServer::PICK ) success = pick ( goal );
+    else if ( action_type_ == SquirrelObjectManipulationServer::PICK ) success = pick ( object_goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::PLACE ) success = place ( goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::HAF_GRASP ) success = hafGrasp ( goal );
     else if ( action_type_ == SquirrelObjectManipulationServer::HAF_PICK ) success = hafPick ( goal );
@@ -1196,48 +1235,23 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
     haf_goal_.graspinput.input_pc = *(ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/kinect/depth_registered/points", *n_, ros::Duration(1.0)));
     haf_goal_.graspinput.max_calculation_time = ros::Duration ( 30.0 );
     // Set the search parameters according to the classification result
-    bool object_in_database = false;
     float object_diameter = 1.0;
-    if ( goal->object_id.size() > 0 )
+    squirrel_object_perception_msgs::SceneObject scene_object;
+    if ( getSceneObject(goal->object_id, scene_object) )
     {
-        ROS_INFO ( "[SquirrelObjectManipulationServer::callHafGrasping] Querying the database for object information" );
-        mongodb_store::MessageStoreProxy message_store ( *n_ );
-        std::vector<boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
-        message_store.query<squirrel_object_perception_msgs::SceneObject> ( results );
-        int match = -1;
-        for ( size_t i = 0; i < results.size(); ++i )
+        haf_goal_.graspinput.goal_frame_id = scene_object.header.frame_id;
+        if ( haf_goal_.graspinput.goal_frame_id.empty() )
         {
-            if ( goal->object_id.compare(results[i]->id) == 0 )
-            {
-                // Found the object in the message store
-                match = i;
-                break;
-            }
+            ROS_WARN ( "[SquirrelObjectManipulationServer::callHafGrasping] Message strore object has no frame id specified, reverting to map" );
+            haf_goal_.graspinput.goal_frame_id = MAP_FRAME_;
         }
-        // If match is negative then did not find the object in the message store
-        if ( match < 0 || match >= results.size() )
-        {
-            ROS_WARN ( "[SquirrelObjectManipulationServer::callHafGrasping] Did not find object '%s' in the message store",
-                       goal->object_id.c_str() );
-        }
-        // Otherwise set the search parameters
-        else
-        {
-            haf_goal_.graspinput.goal_frame_id = results[match]->header.frame_id;
-            if ( haf_goal_.graspinput.goal_frame_id.empty() )
-            {
-                ROS_WARN ( "[SquirrelObjectManipulationServer::callHafGrasping] Message strore object has no frame id specified, reverting to map" );
-                haf_goal_.graspinput.goal_frame_id = MAP_FRAME_;
-            }
-            haf_goal_.graspinput.grasp_area_center = results[match]->pose.position;
-            haf_goal_.graspinput.grasp_area_length_x = results[match]->bounding_cylinder.diameter;
-            haf_goal_.graspinput.grasp_area_length_y = results[match]->bounding_cylinder.diameter;
-            object_in_database = true;
-            object_diameter = results[match]->bounding_cylinder.diameter;
-        }
+        haf_goal_.graspinput.grasp_area_center = scene_object.pose.position;
+        haf_goal_.graspinput.grasp_area_length_x = scene_object.bounding_cylinder.diameter;
+        haf_goal_.graspinput.grasp_area_length_y = scene_object.bounding_cylinder.diameter;
+        object_diameter = scene_object.bounding_cylinder.diameter;
     }
     // If could not find the object in the database then use the information in the pose field
-    if ( !object_in_database )
+    else
     {
         haf_goal_.graspinput.goal_frame_id = goal->pose.header.frame_id;
         haf_goal_.graspinput.grasp_area_center = goal->pose.pose.position;
@@ -1338,6 +1352,45 @@ geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientat
     geometry_msgs::Quaternion result;
     tf::quaternionTFToMsg ( quat_new, result );
     return result;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::getSceneObject ( const std::string &object_id,
+                                                        squirrel_object_perception_msgs::SceneObject &scene_object ) const
+{
+    // If the object id is empty
+    if ( object_id.empty() )
+    {
+        ROS_WARN ( "[SquirrelObjectManipulationServer::getSceneObject] Input object_id is empty" );
+        return false;
+    }
+
+    ROS_INFO ( "[SquirrelObjectManipulationServer::getSceneObject] Querying the database for object information" );
+    mongodb_store::MessageStoreProxy message_store ( *n_ );
+    std::vector<boost::shared_ptr<squirrel_object_perception_msgs::SceneObject> > results;
+    message_store.query<squirrel_object_perception_msgs::SceneObject> ( results );
+    int match = -1;
+    for ( size_t i = 0; i < results.size(); ++i )
+    {
+        if ( object_id.compare(results[i]->id) == 0 )
+        {
+            // Found the object in the message store
+            match = i;
+            break;
+        }
+    }
+
+    // If match is negative then did not find the object in the message store
+    if ( match < 0 || match >= results.size() )
+    {
+        ROS_WARN ( "[SquirrelObjectManipulationServer::getSceneObject] Did not find object '%s' in the message store",
+                   object_id.c_str() );
+        return false;
+    }
+
+    // Otherwise set the values of the scene object and return success
+    scene_object = *results[match];
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
