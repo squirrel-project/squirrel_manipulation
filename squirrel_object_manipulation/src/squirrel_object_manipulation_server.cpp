@@ -135,7 +135,7 @@ bool SquirrelObjectManipulationServer::initialize ()
         return false;
     }
 
-    goal_pose_pub_ = n_->advertise<visualization_msgs::Marker> ( addNodeName("goal_pose"), 3, this );
+    goal_pose_pub_ = n_->advertise<visualization_msgs::MarkerArray> ( addNodeName("goal_pose"), 3, this );
     goal_marker_.header.frame_id = MAP_FRAME_;
     goal_marker_.ns = "end_effector_pose";
     goal_marker_.id = 0;
@@ -1447,6 +1447,10 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
 {
     // Pose is [x y z roll pitch yaw]
 
+    visualization_msgs::MarkerArray goal_marker_array;
+
+    // Goal pose
+
     // Create two end points
     goal_marker_.points.resize ( 2 );
     // First end points is the grasp point
@@ -1459,8 +1463,16 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
     goal_marker_.points[1].x = pose[0] + length*pose[3]/denom;
     goal_marker_.points[1].y = pose[1] + length*pose[4]/denom;
     goal_marker_.points[1].z = pose[2] + length*pose[5]/denom;
+    goal_marker_array.markers.push_back ( goal_marker_ );
+
+    // Perpendicular pose
+//    goal_marker_.points[1].x = pose[0] + length*pose[3]/denom;
+//    goal_marker_.points[1].y = pose[1] + length*pose[4]/denom;
+//    goal_marker_.points[1].z = pose[2] + length*pose[5]/denom;
+//    goal_marker_array.markers.push_back ( goal_marker_ );
+
     // Publish
-    goal_pose_pub_.publish ( goal_marker_ );
+    goal_pose_pub_.publish ( goal_marker_array );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -11,7 +11,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <squirrel_manipulation_msgs/ManipulationAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
