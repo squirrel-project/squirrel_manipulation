@@ -347,6 +347,16 @@ class SquirrelObjectManipulationServer
                          geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const;
 
     /**
+     * \brief Transforms a pose from one frame to another using the TF tree
+     * \param[in] goal The manipulation action goal
+     * \param[out] gripper_pose The pose the gripper should take for the action
+     * \param[out] approach_pose The approach pose the gripper should take for the action
+     * \returns True if poses are generated from the manipulation action goal
+     */
+    bool getGripperAndApproachPose ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
+                                     geometry_msgs::PoseStamped &gripper_pose, geometry_msgs::PoseStamped &approach_pose );
+
+    /**
      * \brief Computes the difference between two poses
      * \param[in] pose1 The first vector of values
      * \param[in] pose2 The second vector of values
@@ -357,11 +367,11 @@ class SquirrelObjectManipulationServer
     /**
      * \brief Call haf grasping
      * \param[in] goal The manipulation server goal specifiying details for the haf grasp
-     * \param[out] grasp_goal A modified manipulation server goal with details from the haf grasp
+     * \param[out] gripper_poseThe pose the gripper should take for the grasp
      * \returns True if haf grasping returns a meaningful result
      */
     bool callHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
-                           squirrel_manipulation_msgs::ManipulationGoalPtr &grasp_goal );
+                           geometry_msgs::PoseStamped &gripper_pose );
 
     /**
      * \brief Compute the gripper pose given the haf output
@@ -369,6 +379,12 @@ class SquirrelObjectManipulationServer
      * \returns A quaternion representing the orientation of the gripper
      */
     geometry_msgs::Quaternion hafToGripperOrientation ( const haf_grasping::GraspOutput &haf_output ) const;
+
+    /**
+     * \brief Compute the gripper orientation for facing downwards (for a grasp)
+     * \returns A quaternion representing the orientation of the gripper for facing downwards
+     */
+    geometry_msgs::Quaternion getDownwardsGripper () const;
 
     /**
      * \brief Retrieve details about an object from the message store

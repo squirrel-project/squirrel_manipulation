@@ -17,32 +17,29 @@ if __name__ == '__main__':
     client.wait_for_server()
 
     manipulation_goal = ManipulationGoal()
-    # !!! Currently using this string to change the command type (open, close, grasp, place)
-    # Need to update message definition
     manipulation_goal.manipulation_type = 'grasp'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
-    manipulation_goal.pose.header.frame_id = 'map'  # Always plan in map frame??
+    manipulation_goal.pose.header.frame_id = 'map'
     
-    # Facing down (orientation works for KCL hand...not sure about Innsbruck hand)
+    # Define the pose of the object
     if manipulation_goal.pose.header.frame_id == 'map':
-        manipulation_goal.pose.pose.position.x = 1.74; #2.36
-        manipulation_goal.pose.pose.position.y = 2.04; #1.17
-        manipulation_goal.pose.pose.position.z = 0.23
+        manipulation_goal.pose.pose.position.x = 1.74;
+        manipulation_goal.pose.pose.position.y = 2.04;
+        manipulation_goal.pose.pose.position.z = 0.15
     else:
         manipulation_goal.pose.pose.position.x = 0.2
         manipulation_goal.pose.pose.position.y = 0.0
-        manipulation_goal.pose.pose.position.z = 0.23
+        manipulation_goal.pose.pose.position.z = 0.15
+        
+    # This is now the pose of the object! (gripper pose taken care of inside object manipulation server)
     manipulation_goal.pose.pose.orientation.x = -0.707
     manipulation_goal.pose.pose.orientation.y = 0.00
     manipulation_goal.pose.pose.orientation.z = 0.00
     manipulation_goal.pose.pose.orientation.w = 0.707
-    # http://quaternions.online/
-    # Euler: x = -90, y = 0, z = 0
-    # Adjust z (-ve direction to not be exactly straight with axis)
    
-    # In case it is needed
-    manipulation_goal.object_bounding_cylinder.diameter = 0.2
-    manipulation_goal.object_bounding_cylinder.height = 0.08
+    # Size of the object (height is used to find position of gripper for grasping)
+    manipulation_goal.object_bounding_cylinder.diameter = 0.20
+    manipulation_goal.object_bounding_cylinder.height = 0.10
     
     # Testing moving to joint configuration
     manipulation_goal.joints = [0.0, 0.0, 0.0, -0.6, 0.6, 0, -0.7, 0.0]

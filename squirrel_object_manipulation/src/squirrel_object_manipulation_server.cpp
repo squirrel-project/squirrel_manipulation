@@ -205,7 +205,24 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
+    // Check that a valid object height is given (otherwise the graps might be too low and collide with the ground)
+    feedback_.current_phase = "retrieving scene object properties";
+    feedback_.current_status = "started";
+    as_.publishFeedback ( feedback_ );
+    if ( goal->object_bounding_cylinder.height <= 0 )
+    {
+        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] No object bounding cylinder given" );
+        feedback_.current_status = "failed";
+        as_.setAborted ( result_ );
+        return;
+    }
+    feedback_.current_status = "success";
+    as_.publishFeedback ( feedback_ );
+
     // If a valid scene object is found then create a grasp goal according to the object's properties
+    feedback_.current_phase = "retrieving scene object properties";
+    feedback_.current_status = "started";
+    as_.publishFeedback ( feedback_ );
     squirrel_manipulation_msgs::ManipulationGoalPtr object_goal;
     if ( action_type_ == SquirrelObjectManipulationServer::GRASP ||
          action_type_ == SquirrelObjectManipulationServer::PICK )
@@ -240,10 +257,12 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
                 transformPose ( object_goal->pose.header.frame_id, MAP_FRAME_, scene_object_pose, transformed_pose );
                 object_goal->pose.pose.position = transformed_pose.pose.position;
             }
-            // Add height to grasp object within the fingers (not the wrist joint reference)
-            object_goal->pose.pose.position.z += FINGER_CLEARANCE_;
+            // TODO: scene object specifies only x and y, and assumes object is on the floor (i.e. z = 0)
+            object_goal->pose.pose.position.z = object_goal->object_bounding_cylinder.height/2.0;
         }
     }
+    feedback_.current_status = "success";
+    as_.publishFeedback ( feedback_ );
 
     // Call the appropriate action
     bool success = false;
@@ -517,39 +536,13 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::grasp] Started" );
     
-    // Transform to map frame
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
-    geometry_msgs::PoseStamped map_goal;
-    map_goal.header.frame_id = MAP_FRAME_;
-    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
-    // Check that the goal is above the minimum height
-    if ( !checkGoalHeight(map_goal) )
+    // Get the grasp and approach poses
+    geometry_msgs::PoseStamped grasp_goal, approach_goal;
+    if ( !getGripperAndApproachPose(goal, grasp_goal, approach_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::grasp] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::grasp] Could not get grasp and approach poses" );
         return false;
     }
-    geometry_msgs::PoseStamped grasp_goal = map_goal;
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    map_goal.pose.position.z += approach_height_;
-    geometry_msgs::PoseStamped approach_goal = map_goal;
-
-    // Publish the goal end effector pose
-    // [x y z roll pitch yaw]
-    vector<double> grasp_positions ( 6 );
-    grasp_positions[0] = grasp_goal.pose.position.x;
-    grasp_positions[1] = grasp_goal.pose.position.y;
-    grasp_positions[2] = grasp_goal.pose.position.z;
-    tf::Matrix3x3 mat ( tf::Quaternion(grasp_goal.pose.orientation.x,
-                                       grasp_goal.pose.orientation.y,
-                                       grasp_goal.pose.orientation.z,
-                                       grasp_goal.pose.orientation.w) );
-    double roll, pitch, yaw;
-    mat.getEulerYPR ( yaw, pitch, roll );
-    grasp_positions[3] = roll;
-    grasp_positions[4] = pitch;
-    grasp_positions[5] = yaw;
-    // Publish marker
-    publishGoalMarker ( grasp_positions );
 
 
     // ***
@@ -606,39 +599,13 @@ bool SquirrelObjectManipulationServer::drop ( const squirrel_manipulation_msgs::
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::drop] Started" );
 
-    // Transform to map frame
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
-    geometry_msgs::PoseStamped map_goal;
-    map_goal.header.frame_id = MAP_FRAME_;
-    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
-    // Check that the goal is above the minimum height
-    if ( !checkGoalHeight(map_goal) )
+    // Get the drop and approach poses
+    geometry_msgs::PoseStamped drop_goal, approach_goal;
+    if ( !getGripperAndApproachPose(goal, drop_goal, approach_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::drop] Could not get drop and approach poses" );
         return false;
     }
-    geometry_msgs::PoseStamped drop_goal = map_goal;
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    map_goal.pose.position.z += approach_height_;
-    geometry_msgs::PoseStamped approach_goal = map_goal;
-
-    // Publish the goal end effector pose
-    // [x y z roll pitch yaw]
-    vector<double> drop_positions ( 6 );
-    drop_positions[0] = drop_goal.pose.position.x;
-    drop_positions[1] = drop_goal.pose.position.y;
-    drop_positions[2] = drop_goal.pose.position.z;
-    tf::Matrix3x3 mat ( tf::Quaternion(drop_goal.pose.orientation.x,
-                                       drop_goal.pose.orientation.y,
-                                       drop_goal.pose.orientation.z,
-                                       drop_goal.pose.orientation.w) );
-    double roll, pitch, yaw;
-    mat.getEulerYPR ( yaw, pitch, roll );
-    drop_positions[3] = roll;
-    drop_positions[4] = pitch;
-    drop_positions[5] = yaw;
-    // Publish marker
-    publishGoalMarker ( drop_positions );
 
 
     // ***
@@ -679,39 +646,13 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::pick] Started" );
 
-    // Transform to map frame
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
-    geometry_msgs::PoseStamped map_goal;
-    map_goal.header.frame_id = MAP_FRAME_;
-    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
-    // Check that the goal is above the minimum height
-    if ( !checkGoalHeight(map_goal) )
+    // Get the pick up and approach poses
+    geometry_msgs::PoseStamped pick_goal, approach_goal;
+    if ( !getGripperAndApproachPose(goal, pick_goal, approach_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::pick] Could not get pick and approach poses" );
         return false;
     }
-    geometry_msgs::PoseStamped pick_goal = map_goal;
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    map_goal.pose.position.z += approach_height_;
-    geometry_msgs::PoseStamped approach_goal = map_goal;
-
-    // Publish the goal end effector pose
-    // [x y z roll pitch yaw]
-    vector<double> pick_positions ( 6 );
-    pick_positions[0] = pick_goal.pose.position.x;
-    pick_positions[1] = pick_goal.pose.position.y;
-    pick_positions[2] = pick_goal.pose.position.z;
-    tf::Matrix3x3 mat ( tf::Quaternion(pick_goal.pose.orientation.x,
-                                       pick_goal.pose.orientation.y,
-                                       pick_goal.pose.orientation.z,
-                                       pick_goal.pose.orientation.w) );
-    double roll, pitch, yaw;
-    mat.getEulerYPR ( yaw, pitch, roll );
-    pick_positions[3] = roll;
-    pick_positions[4] = pitch;
-    pick_positions[5] = yaw;
-    // Publish marker
-    publishGoalMarker ( pick_positions );
 
 
     // ***
@@ -778,39 +719,13 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::place] Started" );
 
-    // Transform to map frame
-    geometry_msgs::PoseStamped goal_pose = goal->pose;
-    geometry_msgs::PoseStamped map_goal;
-    map_goal.header.frame_id = MAP_FRAME_;
-    transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
-    // Check that the goal is above the minimum height
-    if ( !checkGoalHeight(map_goal) )
+    // Get the place and approach poses
+    geometry_msgs::PoseStamped place_goal, approach_goal;
+    if ( !getGripperAndApproachPose(goal, place_goal, approach_goal) )
     {
-        ROS_ERROR ( "[SquirrelGraspServer::drop] Goal height %.2f is invalid", map_goal.pose.position.z );
+        ROS_ERROR ( "[SquirrelGraspServer::place] Could not get place and approach poses" );
         return false;
     }
-    geometry_msgs::PoseStamped place_goal = map_goal;
-    // Compute approach pose (approach_height_ cm above input pose in the map frame)
-    map_goal.pose.position.z += approach_height_;
-    geometry_msgs::PoseStamped approach_goal = map_goal;
-
-    // Publish the goal end effector pose
-    // [x y z roll pitch yaw]
-    vector<double> place_positions ( 6 );
-    place_positions[0] = place_goal.pose.position.x;
-    place_positions[1] = place_goal.pose.position.y;
-    place_positions[2] = place_goal.pose.position.z;
-    tf::Matrix3x3 mat ( tf::Quaternion(place_goal.pose.orientation.x,
-                                       place_goal.pose.orientation.y,
-                                       place_goal.pose.orientation.z,
-                                       place_goal.pose.orientation.w) );
-    double roll, pitch, yaw;
-    mat.getEulerYPR ( yaw, pitch, roll );
-    place_positions[3] = roll;
-    place_positions[4] = pitch;
-    place_positions[5] = yaw;
-    // Publish marker
-    publishGoalMarker ( place_positions );
 
 
     // ***
@@ -862,21 +777,11 @@ bool SquirrelObjectManipulationServer::hafGrasp ( const squirrel_manipulation_ms
     ROS_INFO ( "[SquirrelObjectManipulationServer::hafGrasp] Started" );
 
     // ***
-    // Call haf grasping calculation
+    // Grasp (haf calculation taken care of inside grasp function)
     // ***
-    squirrel_manipulation_msgs::ManipulationGoalPtr grasp_goal;
-    if ( !callHafGrasping(goal, grasp_goal) )
+    if ( !grasp(goal) )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafGrasp] Call to Haf grasping was unsuccessful" );
-        return false;
-    }
-
-    // ***
-    // Grasp
-    // ***
-    if ( !grasp(grasp_goal) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafGrasp] Call to Haf grasping was unsuccessful" );
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafGrasp] Call to grasp action was unsuccessful" );
         return false;
     }
 
@@ -891,21 +796,11 @@ bool SquirrelObjectManipulationServer::hafPick ( const squirrel_manipulation_msg
     ROS_INFO ( "[SquirrelObjectManipulationServer::hafPick] Started" );
 
     // ***
-    // Call haf grasping calculation
+    // Pick up (haf calculation taken care of inside pick function)
     // ***
-    squirrel_manipulation_msgs::ManipulationGoalPtr pick_goal;
-    if ( !callHafGrasping(goal, pick_goal) )
+    if ( !pick(goal) )
     {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafPick] Call to Haf grasping was unsuccessful" );
-        return false;
-    }
-
-    // ***
-    // Pick up
-    // ***
-    if ( !pick(pick_goal) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafPick] Call to Haf grasping was unsuccessful" );
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::hafPick] Call to pick up action was unsuccessful" );
         return false;
     }
 
@@ -1200,6 +1095,78 @@ bool SquirrelObjectManipulationServer::transformPose ( const string &origin_fram
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
+                                                                   geometry_msgs::PoseStamped &gripper_pose,
+                                                                   geometry_msgs::PoseStamped &approach_pose )
+{
+    // If this is haf grasping/picking
+    if ( action_type_ == SquirrelObjectManipulationServer::HAF_GRASP ||
+         action_type_ == SquirrelObjectManipulationServer::HAF_PICK )
+    {
+        if ( !callHafGrasping(goal, gripper_pose) )
+        {
+            ROS_ERROR ( "[SquirrelGraspServer::getGripperAndApproachPose] Call to haf grasping was unsuccessful" );
+            return false;
+        }
+    }
+    // Otherwise, use the information in the goal
+    else
+    {
+        // Check the object orientation is valid
+        if ( goal->pose.pose.orientation.x == 0 && goal->pose.pose.orientation.y == 0 &&
+             goal->pose.pose.orientation.z == 0 && goal->pose.pose.orientation.w == 0 )
+        {
+            ROS_ERROR ( "[SquirrelGraspServer::getGripperAndApproachPose] Object pose is invalid" );
+            return false;
+        }
+        // Transform to map frame
+        geometry_msgs::PoseStamped goal_pose = goal->pose;
+        geometry_msgs::PoseStamped map_goal;
+        map_goal.header.frame_id = MAP_FRAME_;
+        transformPose ( goal->pose.header.frame_id, MAP_FRAME_, goal_pose, map_goal );
+        gripper_pose = map_goal;
+        // TODO: determine a proper gripper orientation related to the orientation of the object
+        // For now just face the gripper downwards
+        gripper_pose.pose.orientation = getDownwardsGripper();
+    }
+
+    // Compute gripper height (add half the height of the bounding cylinder and the finger clearance)
+    gripper_pose.pose.position.z += ( goal->object_bounding_cylinder.height/2.0 + FINGER_CLEARANCE_ );
+    // Check that the goal is above the minimum height
+    if ( !checkGoalHeight(gripper_pose) )
+    {
+        ROS_ERROR ( "[SquirrelGraspServer::getGripperAndApproachPose] Goal height %.2f is invalid",
+                    gripper_pose.pose.position.z );
+        return false;
+    }
+
+    // Compute approach pose (approach_height_ above gripper pose in the map frame)
+    approach_pose = gripper_pose;
+    approach_pose.pose.position.z += approach_height_;
+
+    // Publish the goal end effector pose for visualization
+    // [x y z roll pitch yaw]
+    vector<double> gripper_positions ( 6 );
+    gripper_positions[0] = gripper_pose.pose.position.x;
+    gripper_positions[1] = gripper_pose.pose.position.y;
+    gripper_positions[2] = gripper_pose.pose.position.z;
+    tf::Matrix3x3 mat ( tf::Quaternion(gripper_pose.pose.orientation.x,
+                                       gripper_pose.pose.orientation.y,
+                                       gripper_pose.pose.orientation.z,
+                                       gripper_pose.pose.orientation.w) );
+    double roll, pitch, yaw;
+    mat.getEulerYPR ( yaw, pitch, roll );
+    gripper_positions[3] = roll;
+    gripper_positions[4] = pitch;
+    gripper_positions[5] = yaw;
+    // Publish marker
+    publishGoalMarker ( gripper_positions );
+
+    // Return successful
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 vector<double> SquirrelObjectManipulationServer::poseDiff ( const vector<double> &pose1, const vector<double> &pose2 ) const
 {
     vector<double> diff;
@@ -1221,7 +1188,7 @@ vector<double> SquirrelObjectManipulationServer::poseDiff ( const vector<double>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
-                                                         squirrel_manipulation_msgs::ManipulationGoalPtr &grasp_goal )
+                                                         geometry_msgs::PoseStamped &gripper_pose )
 {
     ROS_INFO ( "[SquirrelObjectManipulationServer::callHafGrasping] Started" );
 
@@ -1236,7 +1203,6 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
     haf_goal_.graspinput.input_pc = *(ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/kinect/depth_registered/points", *n_, ros::Duration(1.0)));
     haf_goal_.graspinput.max_calculation_time = ros::Duration ( 30.0 );
     // Set the search parameters according to the classification result
-    float object_diameter = 1.0;
     squirrel_object_perception_msgs::SceneObject scene_object;
     if ( getSceneObject(goal->object_id, scene_object) )
     {
@@ -1249,7 +1215,6 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
         haf_goal_.graspinput.grasp_area_center = scene_object.pose.position;
         haf_goal_.graspinput.grasp_area_length_x = scene_object.bounding_cylinder.diameter;
         haf_goal_.graspinput.grasp_area_length_y = scene_object.bounding_cylinder.diameter;
-        object_diameter = scene_object.bounding_cylinder.diameter;
     }
     // If could not find the object in the database then use the information in the pose field
     else
@@ -1258,7 +1223,6 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
         haf_goal_.graspinput.grasp_area_center = goal->pose.pose.position;
         haf_goal_.graspinput.grasp_area_length_x = 1.0;  // TODO: what to put here
         haf_goal_.graspinput.grasp_area_length_y = 1.0;  // TODO: what to put here
-        object_diameter = goal->object_bounding_cylinder.diameter;
     }
 
     // Send the goal and wait for the action server to return
@@ -1281,14 +1245,12 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
             haf_pose.pose.position.z = result->graspOutput.averagedGraspPoint.z;
             haf_pose.pose.orientation = hafToGripperOrientation ( result->graspOutput );
             // Transform to map frame
-            transformPose ( haf_pose.header.frame_id, MAP_FRAME_, haf_pose, grasp_goal->pose );
+            transformPose ( haf_pose.header.frame_id, MAP_FRAME_, haf_pose, gripper_pose );
+            // Adjust the height to be the center of the object
+            // (this will be readjusted in the grasp/pick call by adding half the height)
+            gripper_pose.pose.position.z /= 2.0;
             // Add height to grasp object within the fingers (not the wrist joint reference)
-            grasp_goal->pose.pose.position.z += FINGER_CLEARANCE_;
-            // Fill the other grasp goal values
-            grasp_goal->manipulation_type = goal->manipulation_type;
-            grasp_goal->object_id = goal->object_id;
-            grasp_goal->object_bounding_cylinder.diameter = object_diameter;
-            grasp_goal->object_bounding_cylinder.height = haf_pose.pose.position.z;
+            //gripper_pose->pose.pose.position.z += FINGER_CLEARANCE_;
             return true;
         }
         else
@@ -1308,32 +1270,12 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
 geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientation ( const haf_grasping::GraspOutput &haf_output ) const
 {
     geometry_msgs::PoseStamped downwards_gripper, downwards_gripper_haf_frame;
-    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-    {
-        downwards_gripper.pose.orientation.x = -0.707;
-        downwards_gripper.pose.orientation.x = 0.0;
-        downwards_gripper.pose.orientation.x = 0.0;
-        downwards_gripper.pose.orientation.x = 0.707;
-    }
-    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-    {
-        downwards_gripper.pose.orientation.x = 0.5;
-        downwards_gripper.pose.orientation.x = 0.5;
-        downwards_gripper.pose.orientation.x = -0.5;
-        downwards_gripper.pose.orientation.x = 0.5;
-    }
+    downwards_gripper.pose.orientation = getDownwardsGripper();
     // Transform to haf_output frame
     transformPose ( MAP_FRAME_, haf_output.header.frame_id, downwards_gripper, downwards_gripper_haf_frame );
     // Transform to quaternion
     tf::Quaternion quat ( 0.0, 0.0, 0.0, 0.0 );
     tf::quaternionMsgToTF ( downwards_gripper_haf_frame.pose.orientation, quat );
-
-//    // Set the original quaternion in the map frame
-//    tf::Quaternion quat ( 0.0, 0.0, 0.0, 0.0 );
-//    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-//        quat = tf::Quaternion ( -0.707, 0.0, 0.0, 0.707 );
-//    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-//        quat = tf::Quaternion ( 0.5, 0.5, -0.5, 0.5 );
 
     // Create the rotation according to the roll
     // (TODO: what to do with approach vector in result->graspOutput.approachVector??)
@@ -1350,6 +1292,31 @@ geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientat
     geometry_msgs::Quaternion result;
     tf::quaternionTFToMsg ( quat_new, result );
     return result;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+geometry_msgs::Quaternion SquirrelObjectManipulationServer::getDownwardsGripper () const
+{
+    // http://quaternions.online/
+    // Euler: x = -90, y = 0, z = 0
+    // Adjust z (-ve direction to not be exactly straight with axis)
+
+    geometry_msgs::Quaternion downwards_gripper;
+    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
+    {
+        downwards_gripper.x = -0.707;
+        downwards_gripper.y = 0.0;
+        downwards_gripper.z = 0.0;
+        downwards_gripper.w = 0.707;
+    }
+    else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
+    {
+        downwards_gripper.x = 0.5;
+        downwards_gripper.y = 0.5;
+        downwards_gripper.z = -0.5;
+        downwards_gripper.w = 0.5;
+    }
+    return downwards_gripper;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
