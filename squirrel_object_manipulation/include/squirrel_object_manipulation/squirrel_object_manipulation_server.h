@@ -7,8 +7,10 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
+#include <actionlib/client/simple_action_client.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
 #include <squirrel_manipulation_msgs/ManipulationAction.h>
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
@@ -17,6 +19,9 @@
 #include <squirrel_motion_planner_msgs/UnfoldArm.h>
 #include <kclhand_control/HandOperationMode.h>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
+#include <haf_grasping/CalcGraspPointsServerAction.h>
+#include <mongodb_store/message_store.h>
+#include <squirrel_object_perception_msgs/SceneObject.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -75,8 +80,10 @@ class SquirrelObjectManipulationServer
         DROP = 6,
         PICK = 7,
         PLACE = 8,
-        FOLD_ARM_ACTION = 9,
-        UNFOLD_ARM_ACTION = 10
+        HAF_GRASP = 9,
+        HAF_PICK = 10,
+        FOLD_ARM_ACTION = 11,
+        UNFOLD_ARM_ACTION = 12
     };
 
     /**
@@ -124,14 +131,16 @@ class SquirrelObjectManipulationServer
     // Messages to publish feedback and result
     squirrel_manipulation_msgs::ManipulationFeedback feedback_;
     squirrel_manipulation_msgs::ManipulationResult result_;
-    // Services
+    // Service clients
     ros::ServiceClient *arm_fold_client_;
     ros::ServiceClient *arm_unfold_client_;
     ros::ServiceClient *arm_end_eff_planner_client_;
     ros::ServiceClient *arm_pose_planner_client_;
     ros::ServiceClient *arm_send_trajectory_client_;
     ros::ServiceClient *hand_client_;
-    // Messages
+    // Action clients
+    actionlib::SimpleActionClient<haf_grasping::CalcGraspPointsServerAction> *haf_client_;
+    // Goals
     squirrel_motion_planner_msgs::UnfoldArm fold_goal_;
     squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
     squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
@@ -139,6 +148,7 @@ class SquirrelObjectManipulationServer
     squirrel_motion_planner_msgs::SendControlCommand cmd_goal_;
     kclhand_control::HandOperationMode metahand_goal_;
     squirrel_manipulation_msgs::SoftHandGrasp softhand_goal_;
+    haf_grasping::CalcGraspPointsServerGoal haf_goal_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
@@ -230,7 +240,21 @@ class SquirrelObjectManipulationServer
      * \param[in] goal The goal place pose
      * \returns True if all actions are performed successfully
      */
-    bool place ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal);
+    bool place ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
+
+    /**
+     * \brief Uses HAF grasping to grasp an object
+     * \param[in] goal The goal pose of the object to be searched for
+     * \returns True if actions for grasping object are successful
+     */
+    bool hafGrasp ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
+
+    /**
+     * \brief Uses HAF grasping to pick up an object
+     * \param[in] goal The goal pose of the object to be searched for
+     * \returns True if actions for picking up object are successful
+     */
+    bool hafPick ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
      * \brief Moves the end effector to a 6DOF pose in the map frame
@@ -288,6 +312,13 @@ class SquirrelObjectManipulationServer
     bool sendCommandTrajectory ( const std::string &message = "" );
 
     /**
+     * \brief Waits until the current commanded trajectory is completed by the robot
+     * \param[in] timeout The maximum amount of time to wait for trajectory completion before returning failure
+     * \returns True if the robot completes the trajectory within the maximum allowed time
+     */
+    bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_ ) const;
+
+    /**
      * \brief Callback function to update the current joint state
      * \param[in] joints The message from joint state topic
      */
@@ -319,6 +350,20 @@ class SquirrelObjectManipulationServer
     std::vector<double> poseDiff ( const std::vector<double> &pose1, const std::vector<double> &pose2 ) const;
 
     /**
+     * \brief Call HAF grasping
+     * \returns True if HAF grasping returns a meaningful result
+     */
+    bool callHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
+                           squirrel_manipulation_msgs::ManipulationGoalPtr &grasp_goal );
+
+    /**
+     * \brief Compute the gripper pose given the haf output
+     * \param[in] haf_output The output from the haf grasping calculation
+     * \returns A quaternion representing the orientation of the gripper
+     */
+    geometry_msgs::Quaternion hafToGripperOrientation ( const haf_grasping::GraspOutput &haf_output ) const;
+
+    /**
      * \brief Checks if the arm is in the folded position
      * \returns True if all joint values match the folded joint values
      */
@@ -336,13 +381,6 @@ class SquirrelObjectManipulationServer
      * \returns True if the goal height does not exceed the minimum height threshold
      */
     bool checkGoalHeight ( const geometry_msgs::PoseStamped &goal ) const;
-
-    /**
-     * \brief Waits until the current commanded trajectory is completed by the robot
-     * \param[in] timeout The maximum amount of time to wait for trajectory completion before returning failure
-     * \returns True if the robot completes the trajectory within the maximum allowed time
-     */
-    bool waitForTrajectoryCompletion ( const double &timeout = MAX_WAIT_TRAJECTORY_COMPLETION_ ) const;
 
     /**
      * \brief Disables octomap collision checking (should only be used for final grasp!)
