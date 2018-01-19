@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<package>
+  <name>squirrel_push_manipulation</name>
+  <version>0.0.0</version>
+  <description>The object manipulation package</description>
+
+  <maintainer email="senka.krivic@uibk.ac.at">senka krivic</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>roscpp</build_depend>
+    <build_depend>armadillo</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>sensor_msgs</build_depend>
+    <build_depend>std_msgs</build_depend>
+    <build_depend>nav_msgs</build_depend>
+    <build_depend>tf</build_depend>
+    <build_depend>actionlib</build_depend>
+    <build_depend>control_toolbox</build_depend>
+    <build_depend>cmake_modules</build_depend> <!-- to find Eigen -->
+    <build_depend>costmap_2d</build_depend>
+    <build_depend>robotino_msgs</build_depend>
+    <build_depend>squirrel_rgbd_mapping_msgs</build_depend>
+    <build_depend>squirrel_manipulation_msgs</build_depend>
+    <build_depend>squirrel_object_perception_msgs</build_depend>
+    <build_depend>mongodb_store</build_depend>
+
+    <run_depend>roscpp</run_depend>
+    <run_depend>armadillo</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>std_msgs</run_depend>
+    <run_depend>nav_msgs</run_depend>
+    <run_depend>tf</run_depend>
+    <run_depend>squirrel_rgbd_mapping_msgs</run_depend>
+    <run_depend>squirrel_manipulation_msgs</run_depend>
+    <run_depend>squirrel_object_perception_msgs</run_depend>
+    <run_depend>actionlib</run_depend>
+    <run_depend>control_toolbox</run_depend>
+    <run_depend>cmake_modules</run_depend> 
+    <run_depend>costmap_2d</run_depend>
+    <run_depend>robotino_msgs</run_depend>
+    <run_depend>mongodb_store</run_depend>
+ 
+</package>
