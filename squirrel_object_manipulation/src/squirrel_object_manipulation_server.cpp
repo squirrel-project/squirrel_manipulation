@@ -240,7 +240,8 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
                 transformPose ( object_goal->pose.header.frame_id, MAP_FRAME_, scene_object_pose, transformed_pose );
                 object_goal->pose.pose.position = transformed_pose.pose.position;
             }
-
+            // Add height to grasp object within the fingers (not the wrist joint reference)
+            object_goal->pose.pose.position.z += FINGER_CLEARANCE_;
         }
     }
 
@@ -1281,11 +1282,8 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
             haf_pose.pose.orientation = hafToGripperOrientation ( result->graspOutput );
             // Transform to map frame
             transformPose ( haf_pose.header.frame_id, MAP_FRAME_, haf_pose, grasp_goal->pose );
-            // Add height because of the gripper
-            if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
-                grasp_goal->pose.pose.position.z += METAHAND_MINIMUM_HEIGHT_;
-            else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-                grasp_goal->pose.pose.position.z += SOFTHAND_MINIMUM_HEIGHT_;
+            // Add height to grasp object within the fingers (not the wrist joint reference)
+            grasp_goal->pose.pose.position.z += FINGER_CLEARANCE_;
             // Fill the other grasp goal values
             grasp_goal->manipulation_type = goal->manipulation_type;
             grasp_goal->object_id = goal->object_id;

@@ -30,12 +30,13 @@
 #define JOINT_FRAME_ "odom"
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
-#define DEFAULT_PLANNING_TIME_ 3.0
-#define DEFAULT_APPROACH_HEIGHT_ 0.15  // cm
+#define DEFAULT_PLANNING_TIME_ 3.0  // seconds
+#define DEFAULT_APPROACH_HEIGHT_ 0.15  // meters
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define METAHAND_MINIMUM_HEIGHT_ 0.22
-#define SOFTHAND_MINIMUM_HEIGHT_ 0.17
+#define METAHAND_MINIMUM_HEIGHT_ 0.22  // meters
+#define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
+#define FINGER_CLEARANCE_ 0.1  // meters
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -47,9 +48,13 @@
 #define OPEN_SOFTHAND_VALUE 0.0
 
 /**
- * \brief Object Manipulation server to perform grasping, placing, hand opening and closing
- *        Operates with the KCL metahand and the UIBK softhand, this is a parameter given to the ros node
- *        Depends on the squirrel_motion_planner for planning and sending trajectories to the arm
+ * \brief Object Manipulation server to perform different actions.
+ *        Actions include: hand opening, hand closing, arm folding, arm unfolding,
+ *        grasping, droping, picking, placing, haf picking and haf grasping.
+ *        Operates with the KCL metahand and the UIBK softhand, this is a parameter given to the ros node.
+ *        Dependencies: squirrel_motion_planner for planning and sending trajectories to the arm;
+ *        KCL or UIBK hand controller to open and close the hand; haf grasping to calculate grasp points;
+ *        and a message store to query object poses in the database.
  * \author Tim Patten (patten@acin.tuwien.ac.at)
  */
 class SquirrelObjectManipulationServer
