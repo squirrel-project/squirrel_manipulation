@@ -38,7 +38,7 @@ include_directories(
 )
 
 catkin_add_gtest(${PROJECT_NAME}_manipulation test/manipulation.cpp)
-target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES} kukadu_utils  ${ARMADILLO_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_manipulation ${catkin_LIBRARIES} ${GTEST_LIBRARIES}  ${ARMADILLO_LIBRARIES})
 
 add_library(robotino
    src/RobotinoControl.cpp
