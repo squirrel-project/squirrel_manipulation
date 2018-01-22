@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="squirrel_push_manipulation" type="push" name="push" cwd="node" required="true" output="screen">
+   <remap from="/cmd_vel" to="/cmd_pushing" />
+  </node>
+
+</launch>

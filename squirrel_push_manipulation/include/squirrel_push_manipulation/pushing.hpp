@@ -1,0 +1,143 @@
+#ifndef SQUIRREL_PUSH_MANIPULATION_PUSH_ACTION_H_
+#define SQUIRREL_PUSH_MANIPULATION_PUSH_ACTION_H_
+
+#include <ros/ros.h>
+#include <iostream>
+
+#include <std_msgs/Float64.h>
+#include <boost/assert.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <boost/range/numeric.hpp>
+
+#include <tf/transform_listener.h>
+
+#include <squirrel_view_controller_msgs/LookAtPosition.h>
+
+#include <squirrel_navigation_msgs/ClearCostmapRegion.h>
+#include <squirrel_navigation_msgs/GetPathClearance.h>
+#include <nav_msgs/GetPlan.h>
+
+#include <dynamic_reconfigure/DoubleParameter.h>
+#include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/Config.h>
+
+#include <squirrel_manipulation_msgs/PushAction.h>
+#include <squirrel_manipulation_msgs/PushActionFeedback.h>
+#include <squirrel_manipulation_msgs/PushActionGoal.h>
+#include <squirrel_manipulation_msgs/PushActionResult.h>
+
+#include <squirrel_object_perception_msgs/StartObjectTracking.h>
+#include <squirrel_object_perception_msgs/StopObjectTracking.h>
+#include <squirrel_object_perception_msgs/SceneObject.h>
+
+#include <actionlib/server/simple_action_server.h>
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+
+#include <squirrel_push_manipulation/RobotinoControl.hpp>
+#include <squirrel_push_manipulation/conversion_utils.hpp>
+
+#include "../src/pushing/include/PushPlanner.hpp"
+#include "../src/pushing/include/DynamicPush.hpp"
+
+#include "mongodb_store/message_store.h"
+
+#define PUSH_NAME "push"
+
+typedef actionlib::SimpleActionServer<squirrel_manipulation_msgs::PushAction> pushServer;
+
+class PushAction {
+
+private:
+
+
+    boost::shared_ptr<RobotinoControl> robotino;
+    boost::shared_ptr<PushPlanner> push_planner_;
+
+    tf::TransformListener tfl_;
+    std::string node_name_;
+
+    double controller_frequency_, tilt_nav_, tilt_perception_, pan_perception_, lookahead_, goal_toll_, object_diameter_, robot_diameter_, corridor_width_ ;
+
+    std::string robot_base_frame_, global_frame_;
+
+    bool state_machine_, clearance_nav_, check_collisions_, obstacles_;
+    bool nav_, artag_, firstSet, save_data_, sim_, static_paths_, save_corr_, load_corr_;
+    double artag_offsetX, artag_offsetY, tag_t_prev;
+    bool fixed_, relaxation_;
+    geometry_msgs::PoseStamped push_goal_;
+    std::string object_id_;
+    std::vector<double> corridor_width_array_;
+
+
+   // mongodb_store::MessageStoreProxy message_store;
+
+    //navigation path
+    nav_msgs::Path pushing_path_;
+    bool getPushPath();
+    std::string action_active_topic_;
+    ros::Publisher active_pub_;
+    dynamic_reconfigure::ReconfigureRequest costmap_srv_req;
+    dynamic_reconfigure::ReconfigureResponse costmap_srv_resp;
+    dynamic_reconfigure::BoolParameter costmap_param;
+
+    //robot pose update
+    std::string pose_topic_;
+    geometry_msgs::Pose2D pose_robot_;
+    ros::Subscriber pose_sub_, marker_sub_ ;
+    boost::mutex robot_pose_mutex_;
+    void updatePose( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& );
+
+    // push planning
+    bool runPushPlan_;
+
+    //object tracking
+    double Olx, Oly;
+    std::string tracker_tf_;
+    geometry_msgs::TransformStamped t_artag;
+
+    geometry_msgs::PoseStamped pose_object_;
+    tf::TransformListener tf_listener_;
+    bool trackingStart_;
+    bool objectLost_;
+    bool first_pose_;
+    boost::thread* object_tracking_thread_;
+    boost::thread* irsensors_thread_;
+    boost::mutex object_pose_mutex_;
+    bool startTracking();
+    bool stopTracking();
+    bool getFirstObjectPose();
+    void objectTrackingThread();
+    void checkCollisionsThread();
+
+    void abortPush();
+    void finishPush();
+    void finishSuccess();
+
+    //demo
+    int demo_path;
+
+
+protected:
+
+    ros::NodeHandle nh, private_nh;
+
+    actionlib::SimpleActionServer<squirrel_manipulation_msgs::PushAction> pushServer;
+
+    squirrel_manipulation_msgs::PushFeedback pushFeedback;
+
+    squirrel_manipulation_msgs::PushResult pushResult;
+
+public:
+
+    PushAction(const std::string pushServerActionName);
+    ~PushAction();
+
+    void executePush(const squirrel_manipulation_msgs::PushGoalConstPtr &goal);
+    void goalCB();
+    void preemptCB();
+
+
+};
+
+#endif
