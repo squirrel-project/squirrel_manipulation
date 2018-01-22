@@ -77,7 +77,7 @@ bool SquirrelObjectManipulationServer::initialize ()
          << "approach_height = " << approach_height_ << endl;
 
     // Setup service clients
-    arm_fold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/fold_arm") );
+    arm_fold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::FoldArm>("/squirrel_8dof_planning/fold_arm") );
     arm_unfold_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::UnfoldArm>("/squirrel_8dof_planning/unfold_arm") );
     arm_end_eff_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanEndEffector>("/squirrel_8dof_planning/find_plan_end_effector") );
     arm_pose_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanPose>("/squirrel_8dof_planning/find_plan_pose") );
@@ -209,7 +209,9 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_phase = "retrieving scene object properties";
     feedback_.current_status = "started";
     as_.publishFeedback ( feedback_ );
-    if ( goal->object_bounding_cylinder.height <= 0 )
+    if ( action_type_ != SquirrelObjectManipulationServer::UNFOLD_ARM_ACTION &&
+         action_type_ != SquirrelObjectManipulationServer::FOLD_ARM_ACTION && 
+         goal->object_bounding_cylinder.height <= 0 )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] No object bounding cylinder given" );
         feedback_.current_status = "failed";
@@ -447,8 +449,8 @@ bool SquirrelObjectManipulationServer::foldArm ()
     feedback_.current_phase = "folding";
     feedback_.current_status = "starting";
     as_.publishFeedback ( feedback_ );
-    fold_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
-    fold_goal_.request.check_self_collision = true; // Overriding ros parameter
+    fold_goal_.request.check_octomap_collision = false;//plan_with_octomap_collisions_;
+    fold_goal_.request.check_self_collision = false; // Overriding ros parameter
     if ( !arm_fold_client_->call(fold_goal_) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::foldArm] Failed to call service to fold the arm" );
@@ -456,7 +458,7 @@ bool SquirrelObjectManipulationServer::foldArm ()
         return false;
     }
     // Sleep
-    ros::Duration(2.0).sleep();
+    ros::Duration(1.0).sleep();
     // Wait for trajectory to finish
     feedback_.current_status = "waiting for completion";
     if ( !waitForTrajectoryCompletion() )
@@ -498,8 +500,9 @@ bool SquirrelObjectManipulationServer::unfoldArm ()
     feedback_.current_phase = "unfolding";
     feedback_.current_status = "starting";
     as_.publishFeedback ( feedback_ );
-    unfold_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
-    unfold_goal_.request.check_self_collision = true;  // Overriding ros parameter
+    unfold_goal_.request.check_octomap_collision = false;//plan_with_octomap_collisions_;
+    unfold_goal_.request.check_self_collision = false;  // Overriding ros parameter
+    std::cout << "Calling service" << std::endl;
     if ( !arm_unfold_client_->call(unfold_goal_) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::unfoldArm] Failed to call service to unfold the arm" );
@@ -507,9 +510,10 @@ bool SquirrelObjectManipulationServer::unfoldArm ()
         return false;
     }
     // Sleep
-    ros::Duration(2.0).sleep();
+    ros::Duration(1.0).sleep();
     // Wait for trajectory to finish
     feedback_.current_status = "waiting for completion";
+    std::cout << "Waiting for completion" << std::endl;
     if ( !waitForTrajectoryCompletion() )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::unfoldArm] Trajectory to unfolded pose did not complete in time" );
