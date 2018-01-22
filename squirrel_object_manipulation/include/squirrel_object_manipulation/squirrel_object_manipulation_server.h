@@ -16,6 +16,7 @@
 #include <squirrel_motion_planner_msgs/PlanEndEffector.h>
 #include <squirrel_motion_planner_msgs/PlanPose.h>
 #include <squirrel_motion_planner_msgs/SendControlCommand.h>
+#include <squirrel_motion_planner_msgs/FoldArm.h>
 #include <squirrel_motion_planner_msgs/UnfoldArm.h>
 #include <kclhand_control/HandOperationMode.h>
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
@@ -146,7 +147,7 @@ class SquirrelObjectManipulationServer
     // Action clients
     actionlib::SimpleActionClient<haf_grasping::CalcGraspPointsServerAction> *haf_client_;
     // Goals
-    squirrel_motion_planner_msgs::UnfoldArm fold_goal_;
+    squirrel_motion_planner_msgs::FoldArm fold_goal_;
     squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
     squirrel_motion_planner_msgs::PlanEndEffector end_eff_goal_;
     squirrel_motion_planner_msgs::PlanPose pose_goal_;
