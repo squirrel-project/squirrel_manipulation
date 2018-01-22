@@ -135,7 +135,7 @@ bool SquirrelObjectManipulationServer::initialize ()
         return false;
     }
 
-    goal_pose_pub_ = n_->advertise<visualization_msgs::MarkerArray> ( addNodeName("goal_pose"), 3, this );
+    goal_pose_pub_ = n_->advertise<visualization_msgs::Marker> ( addNodeName("goal_pose"), 3, this );
     goal_marker_.header.frame_id = MAP_FRAME_;
     goal_marker_.ns = "end_effector_pose";
     goal_marker_.id = 0;
@@ -1278,9 +1278,12 @@ geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientat
     tf::quaternionMsgToTF ( downwards_gripper_haf_frame.pose.orientation, quat );
 
     // Create the rotation according to the roll
-    // (TODO: what to do with approach vector in result->graspOutput.approachVector??)
+    // (TODO: what to do with approach vector in haf_output.approachVector??)
     tf::Matrix3x3 ypr;
-    ypr.setEulerYPR ( 0, 0, haf_output.roll );
+    //ypr.setEulerYPR ( 0.0, 0.0, haf_output.roll );
+    ypr.setEulerYPR ( atan2(haf_output.graspPoint1.y - haf_output.graspPoint2.y,
+                            haf_output.graspPoint1.x - haf_output.graspPoint2.x ),
+                      0.0, 0.0 );
     tf::Quaternion rotation;
     ypr.getRotation ( rotation );
 
@@ -1447,10 +1450,6 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
 {
     // Pose is [x y z roll pitch yaw]
 
-    visualization_msgs::MarkerArray goal_marker_array;
-
-    // Goal pose
-
     // Create two end points
     goal_marker_.points.resize ( 2 );
     // First end points is the grasp point
@@ -1463,16 +1462,9 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
     goal_marker_.points[1].x = pose[0] + length*pose[3]/denom;
     goal_marker_.points[1].y = pose[1] + length*pose[4]/denom;
     goal_marker_.points[1].z = pose[2] + length*pose[5]/denom;
-    goal_marker_array.markers.push_back ( goal_marker_ );
-
-    // Perpendicular pose
-//    goal_marker_.points[1].x = pose[0] + length*pose[3]/denom;
-//    goal_marker_.points[1].y = pose[1] + length*pose[4]/denom;
-//    goal_marker_.points[1].z = pose[2] + length*pose[5]/denom;
-//    goal_marker_array.markers.push_back ( goal_marker_ );
 
     // Publish
-    goal_pose_pub_.publish ( goal_marker_array );
+    goal_pose_pub_.publish ( goal_marker_ );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
