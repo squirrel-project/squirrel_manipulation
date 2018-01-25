@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   robotino_msgs
   squirrel_manipulation_msgs
   squirrel_object_perception_msgs
+  squirrel_view_controller_msgs
 )
 
 
@@ -24,7 +25,7 @@ filesystem
 )
 
 catkin_package(
-    CATKIN_DEPENDS tf roscpp std_msgs nav_msgs actionlib sensor_msgs geometry_msgs robotino_msgs control_toolbox cmake_modules costmap_2d mongodb_store squirrel_manipulation_msgs squirrel_rgbd_mapping_msgs squirrel_object_perception_msgs
+    CATKIN_DEPENDS tf roscpp std_msgs nav_msgs actionlib sensor_msgs geometry_msgs robotino_msgs control_toolbox cmake_modules costmap_2d mongodb_store squirrel_manipulation_msgs squirrel_rgbd_mapping_msgs squirrel_object_perception_msgs squirrel_view_controller_msgs
 )
 
 include_directories(${ARMADILLO_INCLUDE_DIRS})
