@@ -23,6 +23,7 @@
 #include <haf_grasping/CalcGraspPointsServerAction.h>
 #include <mongodb_store/message_store.h>
 #include <squirrel_object_perception_msgs/SceneObject.h>
+#include <dynamic_reconfigure/server.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -42,6 +43,7 @@
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
 #define OPEN_METAHAND_OPERATION_MODE 3
+#define CHANGE_WORKSPACE_METAHAND_OPERATION_MODE 5
 #define FOLD_METAHAND_OPERATION_MODE 9
 
 // See softhand
@@ -99,7 +101,8 @@ class SquirrelObjectManipulationServer
     {
         OPEN = 0,
         CLOSE = 1,
-        FOLD_HAND = 2
+        FOLD_HAND = 2,
+        CHANGE_WORKSPACE = 3
     };
 
     /**

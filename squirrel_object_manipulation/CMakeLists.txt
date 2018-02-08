@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   kclhand_control
   haf_grasping
   mongodb_store
+  dynamic_reconfigure
 )
 
 #catkin_python_setup()
@@ -37,6 +38,7 @@ catkin_package(
   kclhand_control
   haf_grasping
   mongodb_store
+  dynamic_reconfigure
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
