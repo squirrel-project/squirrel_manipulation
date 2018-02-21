@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   haf_grasping
   mongodb_store
   dynamic_reconfigure
+  squirrel_waypoint_msgs
+  move_base_msgs
 )
 
 #catkin_python_setup()
@@ -39,6 +41,8 @@ catkin_package(
   haf_grasping
   mongodb_store
   dynamic_reconfigure
+  squirrel_waypoint_msgs
+  move_base_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

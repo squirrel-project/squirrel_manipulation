@@ -24,6 +24,8 @@
 #include <mongodb_store/message_store.h>
 #include <squirrel_object_perception_msgs/SceneObject.h>
 #include <dynamic_reconfigure/server.h>
+#include <squirrel_waypoint_msgs/ExamineWaypoint.h>
+#include "move_base_msgs/MoveBaseAction.h"
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -39,6 +41,7 @@
 #define METAHAND_MINIMUM_HEIGHT_ 0.22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
+#define HAF_MIN_DIST_ 0.75
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -90,8 +93,12 @@ class SquirrelObjectManipulationServer
         PLACE = 8,
         HAF_GRASP = 9,
         HAF_PICK = 10,
-        FOLD_ARM_ACTION = 11,
-        UNFOLD_ARM_ACTION = 12
+        HAF_GRASP_FULL = 11,
+        HAF_PICK_FULL = 12,
+        FOLD_ARM_ACTION = 13,
+        UNFOLD_ARM_ACTION = 14,
+        PREPARE_FOR_HAF = 15,
+        PREPARE_FOR_RECOGNITION = 16
     };
 
     /**
@@ -147,8 +154,10 @@ class SquirrelObjectManipulationServer
     ros::ServiceClient *arm_pose_planner_client_;
     ros::ServiceClient *arm_send_trajectory_client_;
     ros::ServiceClient *hand_client_;
+    ros::ServiceClient *examine_waypoint_client_;
     // Action clients
     actionlib::SimpleActionClient<haf_grasping::CalcGraspPointsServerAction> *haf_client_;
+    actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> *move_base_client_;
     // Goals
     squirrel_motion_planner_msgs::FoldArm fold_goal_;
     squirrel_motion_planner_msgs::UnfoldArm unfold_goal_;
@@ -158,6 +167,8 @@ class SquirrelObjectManipulationServer
     kclhand_control::HandOperationMode metahand_goal_;
     squirrel_manipulation_msgs::SoftHandGrasp softhand_goal_;
     haf_grasping::CalcGraspPointsServerGoal haf_goal_;
+    squirrel_waypoint_msgs::ExamineWaypoint examine_waypoint_goal_;
+    move_base_msgs::MoveBaseGoal move_base_goal_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
@@ -266,6 +277,22 @@ class SquirrelObjectManipulationServer
     bool hafPick ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
+     * \brief Uses HAF grasping to grasp an object
+     *        and positions the robot in front of the object before the HAF calculation
+     * \param[in] goal The goal pose of the object to be searched for
+     * \returns True if actions for grasping object are successful
+     */
+    bool hafGraspFull ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
+
+    /**
+     * \brief Uses HAF grasping to pick up an object
+     *        and positions the robot in front of the object before the HAF calculation
+     * \param[in] goal The goal pose of the object to be searched for
+     * \returns True if actions for picking up object are successful
+     */
+    bool hafPickFull ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
+
+    /**
      * \brief Moves the end effector to a 6DOF pose in the map frame
      * \param[in] x The x coordinate of pose
      * \param[in] y The y coordinate of pose
@@ -371,11 +398,19 @@ class SquirrelObjectManipulationServer
     /**
      * \brief Call haf grasping
      * \param[in] goal The manipulation server goal specifiying details for the haf grasp
-     * \param[out] gripper_poseThe pose the gripper should take for the grasp
+     * \param[out] gripper_pose The pose the gripper should take for the grasp
      * \returns True if haf grasping returns a meaningful result
      */
     bool callHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
                            geometry_msgs::PoseStamped &gripper_pose );
+
+    /**
+     * \brief Move robot to position for haf grasping
+     * \param[in] goal The manipulation server goal specifiying details for the haf grasp
+     * \returns True if robot successfully moves to the location
+     */
+    bool prepareForHafGrasping ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal,
+                                 const float &min_dist = -1.0 );
 
     /**
      * \brief Compute the gripper pose given the haf output
