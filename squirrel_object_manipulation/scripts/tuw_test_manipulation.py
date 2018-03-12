@@ -17,7 +17,7 @@ if __name__ == '__main__':
     client.wait_for_server()
 
     manipulation_goal = ManipulationGoal()
-    manipulation_goal.manipulation_type = 'haf pick full'
+    manipulation_goal.manipulation_type = 'haf pick'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
     manipulation_goal.pose.header.frame_id = 'map'
     

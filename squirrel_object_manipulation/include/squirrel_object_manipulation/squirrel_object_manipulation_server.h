@@ -26,6 +26,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <squirrel_waypoint_msgs/ExamineWaypoint.h>
 #include "move_base_msgs/MoveBaseAction.h"
+#include <pcl_ros/point_cloud.h>
+#include <pcl/filters/filter.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -36,12 +38,15 @@
 #define NUM_ARM_JOINTS_ 5
 #define DEFAULT_PLANNING_TIME_ 3.0  // seconds
 #define DEFAULT_APPROACH_HEIGHT_ 0.15  // meters
-#define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
+#define MAX_WAIT_TRAJECTORY_COMPLETION_ 120.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
 #define METAHAND_MINIMUM_HEIGHT_ 0.22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
+#define LOCK_BASE_VAL_ -10.0 
+#define LOCK_ARM_VAL_ -20.0
+#define BASE_TO_FINAL_VAL_ -30.0
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -98,7 +103,8 @@ class SquirrelObjectManipulationServer
         FOLD_ARM_ACTION = 13,
         UNFOLD_ARM_ACTION = 14,
         PREPARE_FOR_HAF = 15,
-        PREPARE_FOR_RECOGNITION = 16
+        PREPARE_FOR_RECOGNITION = 16,
+        RETURN_TO_PREVIOUS = 17
     };
 
     /**
@@ -172,6 +178,7 @@ class SquirrelObjectManipulationServer
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
+    std::vector<double> previous_joints_;
     // Joints command callback
     ros::Subscriber joints_command_sub_;
     std::vector<double> current_cmd_;
