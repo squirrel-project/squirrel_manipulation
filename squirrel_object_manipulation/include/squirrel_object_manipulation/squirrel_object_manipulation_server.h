@@ -23,6 +23,7 @@
 #include <haf_grasping/CalcGraspPointsServerAction.h>
 #include <mongodb_store/message_store.h>
 #include <squirrel_object_perception_msgs/SceneObject.h>
+#include <squirrel_object_perception_msgs/CreateOctomapWithLumps.h>
 #include <dynamic_reconfigure/server.h>
 #include <squirrel_waypoint_msgs/ExamineWaypoint.h>
 #include "move_base_msgs/MoveBaseAction.h"
@@ -171,6 +172,7 @@ class SquirrelObjectManipulationServer
     ros::ServiceClient *arm_send_trajectory_client_;
     ros::ServiceClient *hand_client_;
     ros::ServiceClient *examine_waypoint_client_;
+    ros::ServiceClient *create_octomap_client_;
     // Action clients
     actionlib::SimpleActionClient<haf_grasping::CalcGraspPointsServerAction> *haf_client_;
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> *move_base_client_;
@@ -185,6 +187,7 @@ class SquirrelObjectManipulationServer
     haf_grasping::CalcGraspPointsServerGoal haf_goal_;
     squirrel_waypoint_msgs::ExamineWaypoint examine_waypoint_goal_;
     move_base_msgs::MoveBaseGoal move_base_goal_;
+    squirrel_object_perception_msgs::CreateOctomapWithLumps create_octomap_goal_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;

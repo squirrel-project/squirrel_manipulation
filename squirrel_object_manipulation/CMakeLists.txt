@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   squirrel_waypoint_msgs
   move_base_msgs
+  squirrel_object_perception_msgs
 )
 
 #catkin_python_setup()
@@ -43,6 +44,7 @@ catkin_package(
   dynamic_reconfigure
   squirrel_waypoint_msgs
   move_base_msgs
+  squirrel_object_perception_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

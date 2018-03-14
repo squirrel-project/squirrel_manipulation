@@ -83,6 +83,7 @@ bool SquirrelObjectManipulationServer::initialize ()
     arm_pose_planner_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::PlanPose>("/squirrel_8dof_planning/find_plan_pose") );
     arm_send_trajectory_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_motion_planner_msgs::SendControlCommand>("/squirrel_8dof_planning/send_trajectory_controller") );
     examine_waypoint_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_waypoint_msgs::ExamineWaypoint>("/squirrel_perception_examine_waypoint") );
+    create_octomap_client_ = new ros::ServiceClient ( n_->serviceClient<squirrel_object_perception_msgs::CreateOctomapWithLumps>("/squirrel_create_octomap_with_lumps") );
 
     // Setup action clients
     haf_client_ = new actionlib::SimpleActionClient<haf_grasping::CalcGraspPointsServerAction> ( "calc_grasppoints_svm_action_server", true );
@@ -237,6 +238,14 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
+    // Clear the create octomap with lumps list
+    bool create_octomap = false;
+    create_octomap_goal_.request.lumps.clear();
+    create_octomap_goal_.request.lumps.resize ( 1 );
+    create_octomap_goal_.request.lumps[0].header.frame_id = MAP_FRAME_;
+    create_octomap_goal_.request.lumps[0].pose = goal->pose.pose;
+    create_octomap_goal_.request.lumps[0].bounding_cylinder = goal->object_bounding_cylinder;
+
     // If a valid scene object is found then create a grasp goal according to the object's properties
     feedback_.current_phase = "retrieving scene object properties";
     feedback_.current_status = "started";
@@ -249,6 +258,9 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
          action_type_ == SquirrelObjectManipulationServer::HAF_GRASP_FULL ||
          action_type_ == SquirrelObjectManipulationServer::HAF_PICK_FULL )
     {
+        // Set creating the octomap to true
+        create_octomap = true;
+
         // Copy the message
         object_goal->manipulation_type = goal->manipulation_type;
         object_goal->object_id = goal->object_id;
@@ -281,6 +293,28 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
             }
             // TODO: scene object specifies only x and y, and assumes object is on the floor (i.e. z = 0)
             //object_goal->pose.pose.position.z = object_goal->object_bounding_cylinder.height/2.0;
+            create_octomap_goal_.request.lumps[0].pose = object_goal->pose.pose;
+            create_octomap_goal_.request.lumps[0].bounding_cylinder = object_goal->object_bounding_cylinder;
+        }
+    }
+    feedback_.current_status = "success";
+    as_.publishFeedback ( feedback_ );
+
+    // Create the octomap
+    feedback_.current_phase = "creating octomap with lumps";
+    feedback_.current_status = "started";
+    as_.publishFeedback ( feedback_ );
+    if ( action_type_ == SquirrelObjectManipulationServer::DROP ||
+         action_type_ == SquirrelObjectManipulationServer::PLACE )
+    {
+        create_octomap = true;
+        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Define lkump from box location" );
+    }
+    if ( create_octomap )
+    {
+        if ( !create_octomap_client_->call(create_octomap_goal_) )
+        {
+            ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Create octomap with lumps failed (if 8dof planning fails, set octomap service topic to /octomap_full in the config file)" );
         }
     }
     feedback_.current_status = "success";
