@@ -34,6 +34,9 @@
 #define SOFTHAND_STRING_ "softhand"
 #define MAP_FRAME_ "map"
 #define JOINT_FRAME_ "odom"
+#define PLANNING_LINK_ "/hand_wrist_link"
+#define APPROACH_TOLERANCE_ 0.01
+#define MAX_REPLAN_TRY_ 3
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
 #define DEFAULT_PLANNING_TIME_ 3.0  // seconds
@@ -57,6 +60,13 @@
 // See softhand
 #define CLOSE_SOFTHAND_VALUE 0.9
 #define OPEN_SOFTHAND_VALUE 0.0
+
+// Move cartesian types
+#define STR_APPROACH_ "approach"
+#define STR_GRASP_ "grasp"
+#define STR_PICK_ "pick"
+#define STR_RETRACT_ "retract"
+#define STR_PLACE_ "place"
 
 /**
  * \brief Object Manipulation server to perform different actions.
@@ -308,11 +318,12 @@ class SquirrelObjectManipulationServer
      * \param[in] pitch The pitch of the pose
      * \param[in] yaw The yaw of the pose
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
+     * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
      * \returns True if end effectors is successfully moved to goal pose
      */
     bool moveArmCartesian ( const double &x, const double &y, const double &z,
                             const double &roll, const double &pitch, const double &yaw,
-                            const std::string &message = "" );
+                            const std::string &message = "", const float &tolerance = -1.0 );
 
     /**
      * \brief Moves the end effector to a pose in the map frame specified by a position and orientation (quaternion)
@@ -324,19 +335,21 @@ class SquirrelObjectManipulationServer
      * \param[in] zz The z component of the quaternion
      * \param[in] ww The w component of the quaternion
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
+     * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
      * \returns True if end effectors is successfully moved to goal pose
      */
     bool moveArmCartesian ( const double &x, const double &y, const double &z,
                             const double &xx, const double &yy, const double &zz, const double ww,
-                            const std::string &message = "" );
+                            const std::string &message = "", const float &tolerance = -1.0 );
 
     /**
      * \brief Moves the end effector to a pose in the map frame
      * \param[in] goal The goal pose
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
+     * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
      * \returns True if end effectors is successfully moved to goal pose
      */
-    bool moveArmCartesian ( const geometry_msgs::PoseStamped &goal, const std::string &message = "" );
+    bool moveArmCartesian ( const geometry_msgs::PoseStamped &goal, const std::string &message = "", const float &tolerance = -1.0 );
 
     /**
      * \brief Moves the base and arm to an 8DOF joint configuration
