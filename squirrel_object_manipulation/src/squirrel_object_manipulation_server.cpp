@@ -308,7 +308,9 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
          action_type_ == SquirrelObjectManipulationServer::PLACE )
     {
         create_octomap = true;
-        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Define lkump from box location" );
+        create_octomap_goal_.request.lumps[0].bounding_cylinder.diameter = 0.4;
+        create_octomap_goal_.request.lumps[0].bounding_cylinder.height = 0.15;
+        //ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Define lump from actual box location" );
     }
     if ( create_octomap )
     {
