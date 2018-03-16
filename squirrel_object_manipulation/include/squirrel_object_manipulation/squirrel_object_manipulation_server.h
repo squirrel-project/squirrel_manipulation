@@ -35,7 +35,8 @@
 #define SOFTHAND_STRING_ "softhand"
 #define MAP_FRAME_ "map"
 #define JOINT_FRAME_ "odom"
-#define PLANNING_LINK_ "/hand_wrist_link"
+#define PLANNING_LINK_ "hand_wrist_link"
+#define GRASPING_LINK_ "hand_palm_link"
 #define APPROACH_TOLERANCE_ 0.01
 #define MAX_REPLAN_TRY_ 3
 #define NUM_BASE_JOINTS_ 3
@@ -200,6 +201,7 @@ class SquirrelObjectManipulationServer
     visualization_msgs::Marker goal_marker_;
     // Transform
     tf::TransformListener tf_listener_;
+    tf::StampedTransform hand_to_wrist_transform_;
     // Important poses
     std::vector<double> folded_pose;
     std::vector<double> unfolded_pose;
@@ -324,9 +326,10 @@ class SquirrelObjectManipulationServer
      * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
      * \returns True if end effectors is successfully moved to goal pose
      */
+    /*
     bool moveArmCartesian ( const double &x, const double &y, const double &z,
                             const double &roll, const double &pitch, const double &yaw,
-                            const std::string &message = "", const float &tolerance = -1.0 );
+                            const std::string &message = "", const float &tolerance = -1.0 );*/
 
     /**
      * \brief Moves the end effector to a pose in the map frame specified by a position and orientation (quaternion)
@@ -490,6 +493,8 @@ class SquirrelObjectManipulationServer
      * \param[in] pose The end effector goal pose [x y z roll pitch yaw]
      */
     void publishGoalMarker ( const std::vector<double> &pose );
+
+    void publishGoalMarker ( const geometry_msgs::Pose &pose );
 
 };
 

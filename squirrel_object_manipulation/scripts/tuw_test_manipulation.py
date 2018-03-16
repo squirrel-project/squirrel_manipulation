@@ -30,7 +30,7 @@ if __name__ == '__main__':
         manipulation_goal.pose.pose.position.x = 0.2
         manipulation_goal.pose.pose.position.y = 0.0
         manipulation_goal.pose.pose.position.z = 0.15
-        
+
     # This is now the pose of the object! (gripper pose taken care of inside object manipulation server)
     manipulation_goal.pose.pose.orientation.x = -0.707
     manipulation_goal.pose.pose.orientation.y = 0.00

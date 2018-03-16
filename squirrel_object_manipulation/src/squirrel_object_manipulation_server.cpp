@@ -159,6 +159,33 @@ bool SquirrelObjectManipulationServer::initialize ()
     joints_state_sub_ = n_->subscribe ( "/joint_states", 1, &SquirrelObjectManipulationServer::jointsStateCallBack, this );
     joints_command_sub_ = n_->subscribe ( "/arm_controller/joint_trajectory_controller/command", 1, &SquirrelObjectManipulationServer::jointsCommandCallBack, this );
 
+    // Store the transform between the hand and the wrist
+    try
+    {
+        if ( tf_listener_.waitForTransform ( PLANNING_LINK_, GRASPING_LINK_, ros::Time(0), ros::Duration(5.0) ) )
+        {
+            tf_listener_.lookupTransform ( PLANNING_LINK_, GRASPING_LINK_, ros::Time(0), hand_to_wrist_transform_ );
+        }
+        else
+        {
+            ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] Error waiting for transform %s -> %s", PLANNING_LINK_, GRASPING_LINK_ );
+            ros::Duration(1.0).sleep();
+            return false;
+        }
+        ROS_INFO_STREAM ( "[SquirrelObjectManipulationServer::initialize] Found transform:\n - Translation: [" <<
+                           hand_to_wrist_transform_.getOrigin().getX() << ", " << hand_to_wrist_transform_.getOrigin().getY() << ", " <<
+                           hand_to_wrist_transform_.getOrigin().getZ() << "]\n - Rotation [" <<
+                           hand_to_wrist_transform_.getRotation().getX() << ", " << hand_to_wrist_transform_.getRotation().getY() << ", " <<
+                           hand_to_wrist_transform_.getRotation().getZ() << ", " << hand_to_wrist_transform_.getRotation().getW() << "]\n" );
+    }
+    catch ( tf::TransformException ex )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] %s", ex.what() );
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::initialize] Error looking up transform %s -> %s", PLANNING_LINK_, GRASPING_LINK_ );
+        ros::Duration(1.0).sleep();
+        return false;
+    }
+
     return true;
 }
 
@@ -223,6 +250,7 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     as_.publishFeedback ( feedback_ );
     if ( (action_type_ == SquirrelObjectManipulationServer::GRASP ||
           action_type_ == SquirrelObjectManipulationServer::PICK ||
+          action_type_ == SquirrelObjectManipulationServer::DROP ||
           action_type_ == SquirrelObjectManipulationServer::PLACE ||
           action_type_ == SquirrelObjectManipulationServer::HAF_GRASP ||
           action_type_ == SquirrelObjectManipulationServer::HAF_PICK ||
@@ -230,7 +258,7 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
           action_type_ == SquirrelObjectManipulationServer::HAF_PICK_FULL) &&
          goal->object_bounding_cylinder.height <= 0 )
     {
-        ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] No object bounding cylinder given" );
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::actionServerCallBack] No object bounding cylinder given" );
         feedback_.current_status = "failed";
         as_.setAborted ( result_ );
         return;
@@ -238,7 +266,7 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
-    // Clear the create octomap with lumps list
+    // Clear the list of lumps when creating octomap
     bool create_octomap = false;
     create_octomap_goal_.request.lumps.clear();
     create_octomap_goal_.request.lumps.resize ( 1 );
@@ -367,6 +395,9 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
             //if ( octomap_disable_required ) enableOctomapCollisions();
         }
     }
+
+    ROS_WARN("Sleeping for 5 seconds");
+    ros::Duration(5.0).sleep();
 
     if ( success )
     {
@@ -718,13 +749,6 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
         ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach approach pose" );
         return false;
     }
-    /*
-    ROS_WARN ( "[SquirrelObjectManipulationServer::grasp] Moving to approach pose for second time" );
-    if ( !moveArmCartesian(approach_goal, STR_APPROACH_) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach approach pose" );
-        return false;
-    }*/
 
     // ***
     // Grasp
@@ -786,12 +810,6 @@ bool SquirrelObjectManipulationServer::drop ( const squirrel_manipulation_msgs::
         ROS_ERROR ( "[SquirrelObjectManipulationServer::drop] Failed to reach approach pose" );
         return false;
     }
-    /*
-    if ( !moveArmCartesian(approach_goal, STR_APPROACH_) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::drop] Failed to reach approach pose" );
-        return false;
-    }*/
 
     // ***
     // Drop
@@ -869,30 +887,6 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
         return false;
     }
 
-    /*
-    std::cout << "Goal---\n" << approach_goal << std::endl;
-    geometry_msgs::PoseStamped approach1, approach_map1, approach2, approach_map2;
-    approach1.pose.orientation.w = 1.0;
-    transformPose ( "/hand_wrist_link", approach_goal.header.frame_id, approach1, approach_map1 );
-    std::cout << "Actual 1---\n" << approach_map1 << std::endl;
-    std::cout << "Error 1---\n" << approach_goal.pose.position.x - approach_map1.pose.position.x << " "
-              << approach_goal.pose.position.y - approach_map1.pose.position.y << " "
-              << approach_goal.pose.position.z - approach_map1.pose.position.z << std::endl;
-    
-    ROS_WARN("Planning to approach second time!");
-    if ( !moveArmCartesian(approach_goal, STR_APPROACH_) )
-    {
-        ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach approach pose" );
-        return false;
-    }
-
-    approach2.pose.orientation.w = 1.0;
-    transformPose ( "/hand_wrist_link", approach_goal.header.frame_id, approach2, approach_map2 );
-    std::cout << "Actual 2---\n" << approach_map2 << std::endl;
-    std::cout << "Error 2---\n" << approach_goal.pose.position.x - approach_map2.pose.position.x << " "
-              << approach_goal.pose.position.y - approach_map2.pose.position.y << " "
-              << approach_goal.pose.position.z - approach_map2.pose.position.z << std::endl;
-    */
 
     // ***
     // Pick
@@ -1118,7 +1112,8 @@ bool SquirrelObjectManipulationServer::hafPickFull ( const squirrel_manipulation
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const double &y, const double &z,
-                                                          const double &roll, const double &pitch, const double &yaw,
+                                                          //const double &roll, const double &pitch, const double &yaw,
+                                                          const double &xx, const double &yy, const double &zz, const double ww,
                                                           const std::string &message, const float &tolerance )
 {
     // Plan end effector to goal position
@@ -1126,25 +1121,46 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     feedback_.current_status = "starting";
     as_.publishFeedback ( feedback_ );
 
+    // Convert quaternion to roll, pitch and yaw
+    double tx = x, ty = y, tz = z;
+    tf::Quaternion quat ( xx, yy, zz, ww );
+    tf::Matrix3x3 mat ( quat );
+    double roll, pitch, yaw;
+    mat.getEulerYPR ( yaw, pitch, roll );
+
+    // TODO: Try transformation
+    /*
+    tf::Transform wrist_transform;
+    wrist_transform.mult ( tf::Transform(quat, tf::Vector3(x, y, z)), hand_to_wrist_transform_.inverse() );
+    tx = wrist_transform.getOrigin().getX();
+    ty = wrist_transform.getOrigin().getY();
+    tz = wrist_transform.getOrigin().getZ();
+    mat = tf::Matrix3x3 ( tf::Quaternion(wrist_transform.getRotation().getX(), wrist_transform.getRotation().getY(),
+                                         wrist_transform.getRotation().getZ(), wrist_transform.getRotation().getW()) );
+    mat.getEulerYPR ( yaw, pitch, roll );
+    // --*/
+
     // Set the values in the message for the motion planner
     // [x y z roll pitch yaw]
     end_eff_goal_.request.positions.resize ( 6 );
-    end_eff_goal_.request.positions[0] = x;
-    end_eff_goal_.request.positions[1] = y;
-    end_eff_goal_.request.positions[2] = z;
+    end_eff_goal_.request.positions[0] = tx;
+    end_eff_goal_.request.positions[1] = ty;
+    end_eff_goal_.request.positions[2] = tz;
     end_eff_goal_.request.positions[3] = roll;
     end_eff_goal_.request.positions[4] = pitch;
     end_eff_goal_.request.positions[5] = yaw;
     end_eff_goal_.request.frame_id = MAP_FRAME_;
     end_eff_goal_.request.max_planning_time = planning_time_;
     end_eff_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
+    end_eff_goal_.request.check_octomap_collision = false;
     end_eff_goal_.request.check_self_collision = plan_with_self_collisions_;
+    end_eff_goal_.request.check_self_collision = false;
     end_eff_goal_.request.fold_arm = false;
     end_eff_goal_.request.min_distance_before_folding = 0.0;
     end_eff_goal_.request.disabled_octomap_link_collision.clear();
     if ( plan_with_octomap_collisions_ && (message.compare(STR_GRASP_) == 0 ||
          message.compare(STR_PICK_) == 0 || message.compare(STR_RETRACT_) == 0 ||
-         message.compare(STR_PLACE_) == 0) )
+         message.compare(STR_PLACE_) == 0 || message.compare(STR_APPROACH_) == 0) )
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::moveArmCartesian] Disabling finger joints from collision check" );
         end_eff_goal_.request.disabled_octomap_link_collision.push_back("hand_wrist_link");
@@ -1162,22 +1178,6 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
         end_eff_goal_.request.disabled_octomap_link_collision.push_back("hand_right_finger_upper_link");
         end_eff_goal_.request.disabled_octomap_link_collision.push_back("hand_cableCanal_link");
     }
-
-    /*
-    std::cout << "- - - MoveArmCartesian - - -" << std::endl;
-    std::cout << end_eff_goal_.request << std::endl;
-    if ( action_type_ == SquirrelObjectManipulationServer::PICK ) //FAKE 2.84 0.61 0.32 -1.22 0.18 -1.28
-    {
-       ROS_WARN("CHANGING CARTESIAN GOAL");
-       end_eff_goal_.request.positions[0] = 2.85;
-       end_eff_goal_.request.positions[1] = 0.52;
-       end_eff_goal_.request.positions[2] = 0.38;
-       end_eff_goal_.request.positions[3] = -1.68;
-       end_eff_goal_.request.positions[4] = 0.05;
-       end_eff_goal_.request.positions[5] = -2.65;
-       if ( message.compare("retract") == 0 )
-           end_eff_goal_.request.positions[2] = 0.4;
-    }*/
 
     feedback_.current_status = "planning";
     // Call the service
@@ -1285,7 +1285,7 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     //end_eff_goal_.request.min_distance_before_folding = 0.0;
     return true;
 }
-
+/*
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const double &y, const double &z,
                                                           const double &xx, const double &yy, const double &zz, const double ww,
@@ -1296,11 +1296,33 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     double roll, pitch, yaw;
     mat.getEulerYPR ( yaw, pitch, roll );
     return moveArmCartesian ( x, y, z, roll, pitch, yaw, message, tolerance );
-}
+}*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SquirrelObjectManipulationServer::moveArmCartesian ( const geometry_msgs::PoseStamped &goal, const std::string &message, const float &tolerance )
 {
+    /*
+    // Why, oh why is ROS so fucking bad with data types ...?
+    tf::Transform goal_transform(
+            tf::Quaternion(goal.pose.orientation.x,
+                           goal.pose.orientation.y,
+                           goal.pose.orientation.z,
+                           goal.pose.orientation.w),
+            tf::Vector3(goal.pose.position.x,
+                        goal.pose.position.y,
+                        goal.pose.position.z));
+    tf::Transform wrist_transform;
+    wrist_transform.mult(goal_transform, hand_to_wrist_transform_.inverse());
+    return moveArmCartesian ( wrist_transform.getOrigin().getX(),
+                              wrist_transform.getOrigin().getY(),
+                              wrist_transform.getOrigin().getZ(),
+                              wrist_transform.getRotation().getX(),
+                              wrist_transform.getRotation().getY(),
+                              wrist_transform.getRotation().getZ(),
+                              wrist_transform.getRotation().getW(),
+                              message, tolerance);
+    */
+
     return moveArmCartesian ( goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
                               goal.pose.orientation.x, goal.pose.orientation.y,
                               goal.pose.orientation.z, goal.pose.orientation.w,
@@ -1419,7 +1441,7 @@ bool SquirrelObjectManipulationServer::waitForTrajectoryCompletion ( const doubl
     int count = 1;
     while ( ros::Time::now() - start_time < dur )
     {
-        if ( count % 4 == 0 )
+        if ( count % 5 == 0 )
             std::cout << "waiting..." << std::endl;
         ++count;
         diff = poseDiff ( current_cmd_, current_joints_ );
@@ -1577,6 +1599,7 @@ bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirre
 
 
     // Publish the goal end effector pose for visualization
+    /*
     // [x y z roll pitch yaw]
     vector<double> gripper_positions ( 6 );
     gripper_positions[0] = gripper_pose.pose.position.x;
@@ -1592,7 +1615,9 @@ bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirre
     gripper_positions[4] = pitch;
     gripper_positions[5] = yaw;
     // Publish marker
-    publishGoalMarker ( gripper_positions );
+    //publishGoalMarker ( gripper_positions );
+    */
+    publishGoalMarker ( gripper_pose.pose );
 
     // Return successful
     return true;
@@ -1655,8 +1680,10 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
             haf_goal_.graspinput.goal_frame_id = MAP_FRAME_;
         }
         haf_goal_.graspinput.grasp_area_center = scene_object.pose.position;
-        haf_goal_.graspinput.grasp_area_length_x = scene_object.bounding_cylinder.diameter;
-        haf_goal_.graspinput.grasp_area_length_y = scene_object.bounding_cylinder.diameter;
+        //haf_goal_.graspinput.grasp_area_length_x = scene_object.bounding_cylinder.diameter;
+        //haf_goal_.graspinput.grasp_area_length_y = scene_object.bounding_cylinder.diameter;
+        haf_goal_.graspinput.grasp_area_length_x = 50.0;  // TODO: what to put here
+        haf_goal_.graspinput.grasp_area_length_y = 50.0;  // TODO: what to put here
     }
     // If could not find the object in the database then use the information in the pose field
     else
@@ -1677,6 +1704,14 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
     // Send the goal and wait for the action server to return
     haf_client_->sendGoal ( haf_goal_ );
     bool finished_before_timeout = haf_client_->waitForResult ( ros::Duration(60.0) );
+    int count = 0;
+    while ( count < 2 && !finished_before_timeout )
+    {
+        ++count;
+        ROS_WARN("[SquirrelObjectManipulationServer::callHafGrasping] Calling Haf client, count = %i", count );
+        haf_client_->sendGoal ( haf_goal_ );
+        finished_before_timeout = haf_client_->waitForResult ( ros::Duration(60.0) );
+    }
 
     // If the action returned before the timeout, return the grasp pose
     if ( finished_before_timeout )
@@ -1778,14 +1813,18 @@ bool SquirrelObjectManipulationServer::prepareForHafGrasping ( const squirrel_ma
     for ( size_t i = 0; i < examine_waypoint_goal_.response.poses.size(); ++i )
     {
         curr_pt = examine_waypoint_goal_.response.poses[i].pose.pose.position;
+        /*
         d = std::sqrt ( (map_pose.pose.position.x-curr_pt.x)*(map_pose.pose.position.x-curr_pt.x) +
                         (map_pose.pose.position.y-curr_pt.y)*(map_pose.pose.position.y-curr_pt.y) );
+        */
+        d = examine_waypoint_goal_.response.poses[i].pose.pose.position.x;
         if ( d < nearest_dist )
         {
             nearest_dist = d;
             nearest_pose_index = i;
         }
     }
+
     // If found a good waypoint
     if ( nearest_pose_index < 0 || nearest_pose_index >= examine_waypoint_goal_.response.poses.size() )
     {
@@ -1903,6 +1942,11 @@ geometry_msgs::Quaternion SquirrelObjectManipulationServer::getDownwardsGripper 
         downwards_gripper.y = 0.0;
         downwards_gripper.z = 0.0;
         downwards_gripper.w = 0.707;
+        /*
+        downwards_gripper.x = 0.047;
+        downwards_gripper.y = 0.777;
+        downwards_gripper.z = -0.038;
+        downwards_gripper.w = 0.626;*/
     }
     else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
     {
@@ -2041,6 +2085,7 @@ void SquirrelObjectManipulationServer::enableOctomapCollisions ()
 void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> &pose )
 {
     // Pose is [x y z roll pitch yaw]
+    goal_marker_.type = visualization_msgs::Marker::ARROW;
 
     // Create two end points
     goal_marker_.points.resize ( 2 );
@@ -2055,6 +2100,112 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
     goal_marker_.points[1].y = pose[1] + length*pose[4]/denom;
     goal_marker_.points[1].z = pose[2] + length*pose[5]/denom;
 
+    // Publish
+    goal_pose_pub_.publish ( goal_marker_ );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SquirrelObjectManipulationServer::publishGoalMarker ( const geometry_msgs::Pose &pose )
+{
+    // Pose
+    float length = 0.3;
+    goal_marker_.type = visualization_msgs::Marker::LINE_LIST;
+    goal_marker_.pose = pose;
+    goal_marker_.points.resize ( 6 );
+    goal_marker_.colors.resize ( 6 );
+    
+    /*
+    goal_marker_.points[0].x = pose.position.x;
+    goal_marker_.points[0].y = pose.position.y;
+    goal_marker_.points[0].z = pose.position.z;
+    goal_marker_.points[1].x = pose.position.x + length;
+    goal_marker_.points[1].y = pose.position.y;
+    goal_marker_.points[1].z = pose.position.z;
+    goal_marker_.colors[0].r = 1.0;
+    goal_marker_.colors[0].g = 0.0;
+    goal_marker_.colors[0].b = 0.0;
+    goal_marker_.colors[0].a = 1.0;
+    goal_marker_.colors[1].r = 1.0;
+    goal_marker_.colors[1].g = 0.0;
+    goal_marker_.colors[1].b = 0.0;
+    goal_marker_.colors[1].a = 1.0;
+
+    goal_marker_.points[2].x = pose.position.x;
+    goal_marker_.points[2].y = pose.position.y;
+    goal_marker_.points[2].z = pose.position.z;
+    goal_marker_.points[3].x = pose.position.x;
+    goal_marker_.points[3].y = pose.position.y + length;
+    goal_marker_.points[3].z = pose.position.z;
+    goal_marker_.colors[2].r = 0.0;
+    goal_marker_.colors[2].g = 1.0;
+    goal_marker_.colors[2].b = 0.0;
+    goal_marker_.colors[2].a = 1.0;
+    goal_marker_.colors[3].r = 0.0;
+    goal_marker_.colors[3].g = 1.0;
+    goal_marker_.colors[3].b = 0.0;
+    goal_marker_.colors[3].a = 1.0;
+
+    goal_marker_.points[4].x = pose.position.x;
+    goal_marker_.points[4].y = pose.position.y;
+    goal_marker_.points[4].z = pose.position.z;
+    goal_marker_.points[5].x = pose.position.x;
+    goal_marker_.points[5].y = pose.position.y;
+    goal_marker_.points[5].z = pose.position.z + length;
+    goal_marker_.colors[4].r = 0.0;
+    goal_marker_.colors[4].g = 0.0;
+    goal_marker_.colors[4].b = 1.0;
+    goal_marker_.colors[4].a = 1.0;
+    goal_marker_.colors[5].r = 0.0;
+    goal_marker_.colors[5].g = 0.0;
+    goal_marker_.colors[5].b = 1.0;
+    goal_marker_.colors[5].a = 1.0;*/
+
+    goal_marker_.points[0].x = 0;
+    goal_marker_.points[0].y = 0;
+    goal_marker_.points[0].z = 0;
+    goal_marker_.points[1].x = length;
+    goal_marker_.points[1].y = 0;
+    goal_marker_.points[1].z = 0;
+    goal_marker_.colors[0].r = 1.0;
+    goal_marker_.colors[0].g = 0.0;
+    goal_marker_.colors[0].b = 0.0;
+    goal_marker_.colors[0].a = 1.0;
+    goal_marker_.colors[1].r = 1.0;
+    goal_marker_.colors[1].g = 0.0;
+    goal_marker_.colors[1].b = 0.0;
+    goal_marker_.colors[1].a = 1.0;
+
+    goal_marker_.points[2].x = 0;
+    goal_marker_.points[2].y = 0;
+    goal_marker_.points[2].z = 0;
+    goal_marker_.points[3].x = 0;
+    goal_marker_.points[3].y = length;
+    goal_marker_.points[3].z = 0;
+    goal_marker_.colors[2].r = 0.0;
+    goal_marker_.colors[2].g = 1.0;
+    goal_marker_.colors[2].b = 0.0;
+    goal_marker_.colors[2].a = 1.0;
+    goal_marker_.colors[3].r = 0.0;
+    goal_marker_.colors[3].g = 1.0;
+    goal_marker_.colors[3].b = 0.0;
+    goal_marker_.colors[3].a = 1.0;
+
+    goal_marker_.points[4].x = 0;
+    goal_marker_.points[4].y = 0;
+    goal_marker_.points[4].z = 0;
+    goal_marker_.points[5].x = 0;
+    goal_marker_.points[5].y = 0;
+    goal_marker_.points[5].z = length;
+    goal_marker_.colors[4].r = 0.0;
+    goal_marker_.colors[4].g = 0.0;
+    goal_marker_.colors[4].b = 1.0;
+    goal_marker_.colors[4].a = 1.0;
+    goal_marker_.colors[5].r = 0.0;
+    goal_marker_.colors[5].g = 0.0;
+    goal_marker_.colors[5].b = 1.0;
+    goal_marker_.colors[5].a = 1.0;
+
+    
     // Publish
     goal_pose_pub_.publish ( goal_marker_ );
 }
