@@ -1,6 +1,0 @@
-devel_space: /home/lokalmatador/Work/ROS/squirrel_ws/src/squirrel_manipulation/squirrel_handovers/devel
-install: false
-install_space: /home/lokalmatador/Work/ROS/squirrel_ws/src/squirrel_manipulation/squirrel_handovers/install
-profile: default
-source_space: /home/lokalmatador/Work/ROS/squirrel_ws/src/squirrel_manipulation/squirrel_handovers/src
-workspace: /home/lokalmatador/Work/ROS/squirrel_ws/src/squirrel_manipulation/squirrel_handovers

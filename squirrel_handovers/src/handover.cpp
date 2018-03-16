@@ -3,8 +3,9 @@
 
 using namespace std;
 
-HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
-    handoverServer(nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
+HandoverAction::HandoverAction(ros::NodeHandle &n, const std::string std_HandoverServerActionName) :
+    nh ( new ros::NodeHandle(n) ),
+    handoverServer(*nh, std_HandoverServerActionName, boost::bind(&HandoverAction::executeHandover, this, _1), false),
     manipulation_client("squirrel_object_manipulation_server", true),
     runHandover_ (true),
     private_nh("~")
@@ -17,7 +18,7 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     private_nh.param("robot", robot, std::string("tuw-robotino2"));
     private_nh.param("frequency", handover_frequency_, 10.00);
 
-    odom = nh.subscribe("/odom", 1, &HandoverAction::odomCallback, this);
+    odom = nh->subscribe("/odom", 1, &HandoverAction::odomCallback, this);
     //set callback for cancel request
     handoverServer.registerPreemptCallback(boost::bind(&HandoverAction::preemptCB, this));  
 
@@ -26,14 +27,14 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     current_forces_ = temp;
     current_torques_ = temp;
 
-    sub_h = nh.subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
+    sub_h = nh->subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
     //    tiltPub = nh.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
     //    panPub = nh.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
-    safety_pub_ = nh.advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
+    safety_pub_ = nh->advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
 
 
     if(robot == tuw_robotino){
-        sub_f = nh.subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
+        sub_f = nh->subscribe(FINGERTIP_TOPIC, 1, &HandoverAction::sensorReadCallbackFingers, this);
     }
 
     //arm control
@@ -41,29 +42,28 @@ HandoverAction::HandoverAction(const std::string std_HandoverServerActionName) :
     manipulation_client.waitForServer();
 
     handoverServer.start();
-    ROS_INFO("(Handover) server started \n");
-    cout<<endl;
+    ROS_INFO("(Handover) Ready...");
 }
 
 void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverGoalConstPtr &goal) {
 
 
-    ROS_INFO("(Handover) action started \n");
+    ROS_INFO("(Handover) action started");
     //cout <<  endl;
 
     runHandover_ = true;
     ros::Rate lRate(handover_frequency_);
 
-    ROS_INFO("(Handover) action type %s \n", goal->action_type.c_str());
-    ROS_INFO("(Handover) robot: %s \n", robot.c_str());
+    ROS_INFO("(Handover) action type %s", goal->action_type.c_str());
+    ROS_INFO("(Handover) robot: %s", robot.c_str());
 
     //hand
     squirrel_manipulation_msgs::ManipulationGoal hand_goal;
 
     vector<double> start = {0.0, 0.0, 0.0, -0.7, 1.6, 0.0, 1.8, -1.9};
     vector<double> end =  {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, -1.9};
-    vector<double> handover_vienna = {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, -1.9};
-    vector<double> start_vienna = {0.0, 0.0, 0.0, -0.7, 1.6, 0.0, 1.8, -1.9};
+    vector<double> handover_vienna = {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, 0.0};
+    vector<double> start_vienna = {0.0, 0.0, 0.0, -0.7, 1.6, 0.0, 1.8, 0.0};
     vector<double> end_type1 = {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, -1.9};
     vector<double> end_type2 =  {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, -1.9};
     vector<double> end_type3 =  {0.0, 0.0, 0.0, -0.74, 0.53, 0.0, 1.0, -1.9};
@@ -133,13 +133,13 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //if(runHandover_) robotinoQueue->jointPtp(start);
 
 
-        ROS_INFO("(handover) going to the handover pose with the open hand \n");
+        ROS_INFO("(Handover) going to the handover pose with the open hand");
 
         //if(runHandover_)robotinoQueue->jointPtp(end);
         if(runHandover_) moveArm(end);
 
 
-        ROS_INFO("(handover) waiting to grasp the object \n");
+        ROS_WARN("(Handover) waiting to grasp the object...");
         sleep(1.0);
 
         bool grasp_value = false; //detect object
@@ -160,11 +160,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
             hand_goal.manipulation_type = "close";
             manipulation_client.sendGoal(hand_goal);
-            if (manipulation_client.waitForResult(ros::Duration(5.0))){
-                ROS_INFO("(handover) (hand msg) HAND Grasped! \n");
+            if (manipulation_client.waitForResult(ros::Duration(10.0))){
+                ROS_INFO("(Handover) HAND Grasped!");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("handover) (hand msg) FAILED to Graps! \n");
+                ROS_ERROR("(Handover) FAILED to Grasp!");
                 handover_success_ = false;
                 runHandover_ = false;
             }
@@ -177,7 +177,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         //if(runHandover_) robotinoQueue->jointPtp(start);
         sleep(0.2);
-        ROS_INFO("(handover) cheking if object is in the hand \n");
+        ROS_INFO("(Handover) cheking if object is in the hand");
         force_past.clear();
         torque_past.clear();
         k = 0;
@@ -188,7 +188,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         }
         double new_magnitude = getMean(force_past);
         if (abs((init_magnitude - new_magnitude)) < 0.2){
-            ROS_ERROR("handover) FAILED to grasp. Empty hand! \n");
+            ROS_ERROR("(Handover) FAILED to grasp, hand is empty!");
             handover_success_ = false;
             runHandover_ = false;
         }
@@ -201,7 +201,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         // if (runHandover_) robotinoQueue->jointPtp(start);
 
-        ROS_INFO("(handover) going to the handover pose with the closed hand");
+        ROS_INFO("(Handover) going to the handover pose with the closed hand");
         //stage = 6; // initial pose with the closed hand
         //cout << "(handover) current stage "<<stage<<endl;
 
@@ -210,7 +210,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         sleep(1.0);
 
-        ROS_INFO("(handover) waiting to release the object \n");
+        ROS_WARN("(Handover) waiting to release the object...");
 
         bool release = false;
         torque_past.clear();
@@ -256,11 +256,11 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
             hand_goal.manipulation_type = "open";
             manipulation_client.sendGoal(hand_goal);
-            if (manipulation_client.waitForResult(ros::Duration(5.0))){
-                ROS_INFO("(handover) (hand msg) HAND Released!");
+            if (manipulation_client.waitForResult(ros::Duration(10.0))){
+                ROS_INFO("(Handover) HAND Released!");
                 handover_success_ = true;
             }else{
-                ROS_ERROR("handover) (hand msg)  FAILED to Release!");
+                ROS_ERROR("(Handover) (FAILED to Release!");
                 handover_success_ = false;
                 runHandover_ = false;
             }
@@ -268,18 +268,18 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         }
         this->resetSafety();
 
-        ROS_INFO("(handover) going to initial pose with the open hand \n");
+        ROS_INFO("(Handover) going to initial pose with the open hand");
         //if (runHandover_) robotinoQueue->jointPtp(start);
         if (runHandover_) moveArm(start);
 
     }
     else{
-        ROS_ERROR(" Handover: Handover action unknown \n");
+        ROS_ERROR("(Handover) handover action unknown");
         //cout<<endl;
         handover_success_ = false;
     }
 
-    ROS_INFO(" Handover: Handover sequence finished. \n");
+    ROS_INFO("(Handover) handover sequence finished");
 
     //stop arm queue
 
@@ -288,19 +288,19 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
     if (!runHandover_){
         handoverResult.result_status = "canceled";
         handoverServer.setAborted(handoverResult);
-        ROS_INFO(" Handover: failed \n ");
+        ROS_INFO("(Handover) failed");
         //cout<< endl;
     }
     else if(handover_success_){
         handoverResult.result_status = "success";
         handoverServer.setSucceeded(handoverResult);
-        ROS_INFO(" Handover: Sucessfuly finished \n ");
+        ROS_INFO("(Handover) successfully finished");
         //cout<< endl;
     }
     else{
         handoverResult.result_status = "failure";
         handoverServer.setAborted(handoverResult);
-        ROS_INFO(" Handover: failed \n");
+        ROS_INFO("(Handover) failed");
         //cout<< endl;
     }
 }
@@ -421,8 +421,7 @@ double HandoverAction::getMean(const std::vector<double>& starters)
 }
 void HandoverAction::preemptCB(){
 
-    ROS_INFO("(handover) Canceled handover action by the high-level planner");
-    cout<<endl;
+    ROS_INFO("(Handover) action was pre-empted");
     runHandover_ = false;
 
 }
@@ -455,11 +454,11 @@ bool HandoverAction::moveArm(vector<double> joints) {
     bool finished_before_timeout = manipulation_client.waitForResult(ros::Duration(30.0));
     if (finished_before_timeout) {
         actionlib::SimpleClientGoalState state = manipulation_client.getState();
-        ROS_INFO("Action finished: %s",state.toString().c_str());
+        ROS_INFO("(Handover) action finished '%s'", state.toString().c_str());
         return true;
     }
     else {
-        ROS_INFO("Action did not finish before the time out.");
+        ROS_INFO("(Handover) action did not finish before the time out");
         return false;
     }
 }
@@ -477,13 +476,15 @@ void HandoverAction::odomCallback(const nav_msgs::OdometryConstPtr &msg) {
 int main(int argc, char** argv) {
 
     ros::init(argc, argv, "handover");
-    sleep(1); ros::AsyncSpinner spinner(10); spinner.start();
+    ros::NodeHandle n("");
+    //sleep(1); ros::AsyncSpinner spinner(10); spinner.start();
 
-    HandoverAction hadnover(HANDOVER_NAME);
+    HandoverAction handover(n, HANDOVER_NAME);
 
-    getchar();
+    // Listen to action calls
+    ros::spin();
+    // Shutdown and exit
+    ros::shutdown();
+
     return 0;
-
 }
-
-

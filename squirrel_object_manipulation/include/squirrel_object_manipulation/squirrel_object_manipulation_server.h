@@ -49,6 +49,7 @@
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
+#define HAF_SEARCH_SIZE_ 40
 #define LOCK_BASE_VAL_ -10.0 
 #define LOCK_ARM_VAL_ -20.0
 #define BASE_TO_FINAL_VAL_ -30.0

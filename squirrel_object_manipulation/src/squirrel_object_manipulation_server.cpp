@@ -396,8 +396,18 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
         }
     }
 
-    ROS_WARN("Sleeping for 5 seconds");
-    ros::Duration(5.0).sleep();
+     if ( (action_type_ == SquirrelObjectManipulationServer::GRASP ||
+           action_type_ == SquirrelObjectManipulationServer::PICK ||
+           action_type_ == SquirrelObjectManipulationServer::DROP ||
+           action_type_ == SquirrelObjectManipulationServer::PLACE ||
+           action_type_ == SquirrelObjectManipulationServer::HAF_GRASP ||
+           action_type_ == SquirrelObjectManipulationServer::HAF_PICK ||
+           action_type_ == SquirrelObjectManipulationServer::HAF_GRASP_FULL ||
+           action_type_ == SquirrelObjectManipulationServer::HAF_PICK_FULL) )
+    {
+        ROS_WARN("Sleeping for 5 seconds");
+        ros::Duration(5.0).sleep();
+    }
 
     if ( success )
     {
@@ -1682,16 +1692,16 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
         haf_goal_.graspinput.grasp_area_center = scene_object.pose.position;
         //haf_goal_.graspinput.grasp_area_length_x = scene_object.bounding_cylinder.diameter;
         //haf_goal_.graspinput.grasp_area_length_y = scene_object.bounding_cylinder.diameter;
-        haf_goal_.graspinput.grasp_area_length_x = 50.0;  // TODO: what to put here
-        haf_goal_.graspinput.grasp_area_length_y = 50.0;  // TODO: what to put here
+        haf_goal_.graspinput.grasp_area_length_x = HAF_SEARCH_SIZE_;
+        haf_goal_.graspinput.grasp_area_length_y = HAF_SEARCH_SIZE_;
     }
     // If could not find the object in the database then use the information in the pose field
     else
     {
         haf_goal_.graspinput.goal_frame_id = goal->pose.header.frame_id;
         haf_goal_.graspinput.grasp_area_center = goal->pose.pose.position;
-        haf_goal_.graspinput.grasp_area_length_x = 50.0;  // TODO: what to put here
-        haf_goal_.graspinput.grasp_area_length_y = 50.0;  // TODO: what to put here
+        haf_goal_.graspinput.grasp_area_length_x = HAF_SEARCH_SIZE_;
+        haf_goal_.graspinput.grasp_area_length_y = HAF_SEARCH_SIZE_;
     }
 
     haf_goal_.graspinput.grasp_area_center.z = 0.0;
@@ -2235,7 +2245,7 @@ int main ( int argc, char **argv )
         ros::shutdown ;
         return EXIT_FAILURE;
     }
-    // Lsten to action calls
+    // Listen to action calls
     ros::spin();
 
     // Shutdown and exit
