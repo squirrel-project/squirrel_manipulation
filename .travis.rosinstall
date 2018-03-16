@@ -9,5 +9,5 @@
 - git:
     uri: 'https://github.com/squirrel-project/haf_grasping'
     local-name: haf_grasping
-    version: indigo_dev
+    version: master
 
