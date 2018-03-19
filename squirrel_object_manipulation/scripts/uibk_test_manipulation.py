@@ -19,25 +19,22 @@ if __name__ == '__main__':
     client.wait_for_server()
 
     manipulation_goal = ManipulationGoal()
-    # !!! Currently using this string to change the command type (open, close, grasp, place)
-    # Need to update message definition
     manipulation_goal.manipulation_type = 'grasp'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
     manipulation_goal.pose.header.frame_id = 'map'  # Always plan in map frame??
     
-    # Facing down (orientation works for Innsbruck hand)
+    # Define the pose of the object
     manipulation_goal.pose.pose.position.x = 0.38
     manipulation_goal.pose.pose.position.y = 0.17
     manipulation_goal.pose.pose.position.z = 0.17
+    
+    # This is now the pose of the object! (gripper pose taken care of inside object manipulation server)
     manipulation_goal.pose.pose.orientation.x = 0.5
     manipulation_goal.pose.pose.orientation.y = 0.5
     manipulation_goal.pose.pose.orientation.z = -0.5
     manipulation_goal.pose.pose.orientation.w = 0.5
-    # http://quaternions.online/
-    # Euler: x = -90, y = 0, z = 0
-    # Adjust z (-ve direction to not be exactly straight with axis)
    
-    # In case it is needed 
+    # Size of the object (height is used to find position of gripper for grasping)
     manipulation_goal.object_bounding_cylinder.diameter = 0.2
     manipulation_goal.object_bounding_cylinder.height = 0.08
     

@@ -13,6 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   squirrel_manipulation_msgs
   kclhand_control
+  haf_grasping
+  mongodb_store
+  dynamic_reconfigure
+  squirrel_waypoint_msgs
+  move_base_msgs
+  squirrel_object_perception_msgs
 )
 
 #catkin_python_setup()
@@ -33,6 +39,12 @@ catkin_package(
   squirrel_manipulation_msgs
   squirrel_motion_planner_msgs
   kclhand_control
+  haf_grasping
+  mongodb_store
+  dynamic_reconfigure
+  squirrel_waypoint_msgs
+  move_base_msgs
+  squirrel_object_perception_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

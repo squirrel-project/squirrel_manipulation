@@ -49,7 +49,7 @@ enum Axes
 
 class HandoverAction {
 private:
-    static auto constexpr  SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27; //displacement  of forces and torques
+    static auto constexpr SENSOR_MISS_ALIGNMENT_COMPARED_TO_END_EFFECTOR = -2.27; //displacement  of forces and torques
     static auto constexpr MIN_VALS = 3;	//minimum number of readings per quantity required for the computatio
     static auto constexpr MIN_VALS_GIVE = 5;	//minimum number of readings per quantity required for the computation
 
@@ -90,7 +90,8 @@ private:
 
 protected:
 
-    ros::NodeHandle nh, private_nh;
+    ros::NodeHandle *nh;
+    ros::NodeHandle private_nh;
 
     actionlib::SimpleActionServer<squirrel_manipulation_msgs::HandoverAction> handoverServer;
 
@@ -121,7 +122,7 @@ protected:
 
 public:
 
-    HandoverAction(const std::string handoverServerActionName);
+    HandoverAction(ros::NodeHandle &n, const std::string handoverServerActionName);
     ~HandoverAction();
 
     void executeHandover(const squirrel_manipulation_msgs::HandoverGoalConstPtr &goal);

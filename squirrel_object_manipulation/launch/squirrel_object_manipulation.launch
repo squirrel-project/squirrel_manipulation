@@ -6,9 +6,9 @@
 	<arg name="hand" default="metahand" />
 	<arg name="action_name" default="squirrel_object_manipulation_server" />
 	<arg name="planning_time" default="3.0" />
-	<arg name="plan_with_octomap_collisions" default="true" />
+    <arg name="plan_with_octomap_collisions" default="false" />
 	<arg name="plan_with_self_collisions" default="true" />
-	<arg name="approach_height" default="0.2" />
+    <arg name="approach_height" default="0.22" /> <!-- 0.15 -->
 
 	<!-- Action Server -->
 	<node name="squirrel_object_manipulation_server" pkg="squirrel_object_manipulation" type="squirrel_object_manipulation_server" output="screen">
