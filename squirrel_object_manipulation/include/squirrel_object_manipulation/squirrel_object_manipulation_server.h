@@ -42,10 +42,10 @@
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
 #define DEFAULT_PLANNING_TIME_ 3.0  // seconds
-#define DEFAULT_APPROACH_HEIGHT_ 0.15  // meters
-#define MAX_WAIT_TRAJECTORY_COMPLETION_ 120.0  // seconds
+#define DEFAULT_APPROACH_HEIGHT_ 0.10  // meters
+#define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define METAHAND_MINIMUM_HEIGHT_ 0.22  // meters
+#define METAHAND_MINIMUM_HEIGHT_ 0.05  //22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
@@ -493,9 +493,9 @@ class SquirrelObjectManipulationServer
      * \brief Publishes a visualization marker (as an arrow) of the goal end effector pose
      * \param[in] pose The end effector goal pose [x y z roll pitch yaw]
      */
-    void publishGoalMarker ( const std::vector<double> &pose );
+    void publishGoalMarker ( const std::vector<double> &pose, int id = 0 );
 
-    void publishGoalMarker ( const geometry_msgs::Pose &pose );
+    void publishGoalMarker ( const geometry_msgs::Pose &pose, int id = 0 );
 
 };
 
