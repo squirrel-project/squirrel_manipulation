@@ -22,6 +22,7 @@
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
 #include <haf_grasping/CalcGraspPointsServerAction.h>
 #include <mongodb_store/message_store.h>
+#include <mongodb_store_msgs/MongoInsertMsg.h>
 #include <squirrel_object_perception_msgs/SceneObject.h>
 #include <squirrel_object_perception_msgs/CreateOctomapWithLumps.h>
 #include <dynamic_reconfigure/server.h>
@@ -37,7 +38,7 @@
 #define JOINT_FRAME_ "odom"
 #define PLANNING_LINK_ "hand_wrist_link"
 #define GRASPING_LINK_ "hand_palm_link"
-#define APPROACH_TOLERANCE_ 0.01
+#define APPROACH_TOLERANCE_ 0.005
 #define MAX_REPLAN_TRY_ 3
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
@@ -45,11 +46,11 @@
 #define DEFAULT_APPROACH_HEIGHT_ 0.10  // meters
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define METAHAND_MINIMUM_HEIGHT_ 0.05  //22  // meters
+#define METAHAND_MINIMUM_HEIGHT_ 0.07  //22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
-#define HAF_SEARCH_SIZE_ 40
+#define HAF_SEARCH_SIZE_ 50
 #define LOCK_BASE_VAL_ -10.0 
 #define LOCK_ARM_VAL_ -20.0
 #define BASE_TO_FINAL_VAL_ -30.0
@@ -69,6 +70,7 @@
 #define STR_GRASP_ "grasp"
 #define STR_PICK_ "pick"
 #define STR_RETRACT_ "retract"
+#define STR_CARRY_ "carry"
 #define STR_PLACE_ "place"
 
 /**

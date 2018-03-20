@@ -328,6 +328,27 @@ void SquirrelObjectManipulationServer::actionServerCallBack ( const squirrel_man
     feedback_.current_status = "success";
     as_.publishFeedback ( feedback_ );
 
+    // Add the boxes to 8dof planning octomap
+    std::vector<std::string> box_names;
+    box_names.push_back ( "box1_location" );
+    box_names.push_back ( "box2_location" );
+    box_names.push_back ( "box3_location" );
+    for ( size_t i = 0; i < box_names.size(); ++i )
+    {
+        squirrel_object_perception_msgs::SceneObject box;
+        if ( getSceneObject(box_names[i], box) )
+        {
+            create_octomap_goal_.request.lumps.push_back ( box );
+            create_octomap_goal_.request.lumps.back().bounding_cylinder.height = 0.2;
+            create_octomap_goal_.request.lumps.back().bounding_cylinder.diameter = 0.33;
+        }
+        else
+        {
+            ROS_WARN ( "[SquirrelObjectManipulationServer::actionServerCallBack] Could not find '%s' in message store", box_names[i].c_str() );
+        }
+    }
+
+
     // Create the octomap
     feedback_.current_phase = "creating octomap with lumps";
     feedback_.current_status = "started";
@@ -930,7 +951,7 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
     }
 
     // ***
-    // Retract arm for carrying
+    // Retract arm from grasp
     // ***
     ros::Duration(1.0).sleep();
     // Remove full base trajectory
@@ -947,7 +968,19 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
     // Re-enable octomap collision checks
     //if ( octomap_disable_required ) enableOctomapCollisions();
     //end_eff_goal_.request.min_distance_before_folding = 0.0;
+    
 
+    // ***
+    // Position arm for carrying
+    // ***
+    ros::Duration(1.0).sleep();
+    std::vector<double> carry_pose = current_joints_;
+    carry_pose[6] = 1.4;  // Rotate arm_joint4 upwards
+    if ( !moveArmJoints(carry_pose, STR_CARRY_) )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach carry pose" );
+        return false;
+    }
     
     // Successfully picked up object!
     ROS_INFO ( "[SquirrelObjectManipulationServer::pick] Success!" );
@@ -972,6 +1005,18 @@ bool SquirrelObjectManipulationServer::place ( const squirrel_manipulation_msgs:
     std::cout << "=============== PLACING ==============" << std::endl;
     std::cout << "Approach goal\n" << approach_goal << std::endl;
     std::cout << "Place goal\n" << place_goal << std::endl;
+
+    // ***
+    // Re-position arm from carrying
+    // ***
+    ros::Duration(1.0).sleep();
+    std::vector<double> carry_pose = current_joints_;
+    carry_pose[6] = -1.4;  // Rotate arm_joint4 upwards
+    if ( !moveArmJoints(carry_pose, STR_CARRY_) )
+    {
+        ROS_ERROR ( "[SquirrelObjectManipulationServer::place] Failed to reach carry pose" );
+        return false;
+    }
 
 
     // ***
@@ -1577,8 +1622,13 @@ bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirre
     {
         if ( !callHafGrasping(goal, gripper_pose) )
         {
-            ROS_ERROR ( "[SquirrelGraspServer::getGripperAndApproachPose] Call to haf grasping was unsuccessful" );
-            return false;
+            // Try a second time
+            ROS_WARN ( "[SquirrelGraspServer::getGripperAndApproachPose] Call to haf grasping was unsuccessful, trying again..." );
+            if ( !callHafGrasping(goal, gripper_pose) )
+            {
+                ROS_ERROR ( "[SquirrelGraspServer::getGripperAndApproachPose] Call to haf grasping was unsuccessful" );
+                return false;
+            }
         }
     }
     // Otherwise, use the information in the goal
@@ -1620,12 +1670,18 @@ bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirre
     // Compute approach pose (approach_height_ above gripper pose in the map frame)
     approach_pose = gripper_pose;
     approach_pose.pose.position.z += approach_height_;
-    if ( gripper_pose.pose.position.z > 0.35 )
+    if ( gripper_pose.pose.position.z > 0.32 )
     {
         ROS_WARN ( "[SquirrelGraspServer::getGripperAndApproachPose] Goal height %.2f is too heigh",
                    gripper_pose.pose.position.z );
-        gripper_pose.pose.position.z = 0.35;
-        approach_pose.pose.position.z = 0.45;
+        gripper_pose.pose.position.z = 0.30;
+        approach_pose.pose.position.z = 0.32;
+    }
+    else if ( action_type_ == SquirrelObjectManipulationServer::PLACE )
+    {
+        ROS_WARN ( "[SquirrelGraspServer::getGripperAndApproachPose] Setting placement to higher z value" );
+        gripper_pose.pose.position.z = 0.30;
+        approach_pose.pose.position.z = 0.32;
     }
 
 
@@ -1768,7 +1824,7 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
             haf_pose.header.frame_id = result->graspOutput.header.frame_id;
             haf_pose.pose.position.x = result->graspOutput.averagedGraspPoint.x;
             haf_pose.pose.position.y = result->graspOutput.averagedGraspPoint.y;
-            haf_pose.pose.position.z = result->graspOutput.averagedGraspPoint.z;
+            haf_pose.pose.position.z = result->graspOutput.averagedGraspPoint.z;// - 0.01;
             haf_pose.pose.orientation = hafToGripperOrientation ( result->graspOutput );
             // Transform to map frame
             transformPose ( haf_pose.header.frame_id, MAP_FRAME_, haf_pose, gripper_pose );
@@ -2029,6 +2085,15 @@ bool SquirrelObjectManipulationServer::getSceneObject ( const std::string &objec
         ROS_WARN ( "[SquirrelObjectManipulationServer::getSceneObject] Input object_id is empty" );
         return false;
     }
+
+    // Check if MongoDB is running
+    ros::ServiceClient mongodb_client = n_->serviceClient<mongodb_store_msgs::MongoInsertMsg>("/message_store/insert");
+    if ( !mongodb_client.waitForExistence(ros::Duration(0.5)) )
+    {
+        ROS_WARN ( "[SquirrelObjectManipulationServer::getSceneObject] Waiting for mongodb store failed" );
+        return false;
+    }
+
 
     ROS_INFO ( "[SquirrelObjectManipulationServer::getSceneObject] Querying the database for object information" );
     mongodb_store::MessageStoreProxy message_store ( *n_ );
