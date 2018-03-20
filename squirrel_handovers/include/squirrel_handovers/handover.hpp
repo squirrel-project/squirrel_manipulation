@@ -28,6 +28,7 @@
 #include <squirrel_manipulation_msgs/HandoverActionGoal.h>
 #include <squirrel_manipulation_msgs/HandoverActionResult.h>
 #include <squirrel_manipulation_msgs/ManipulationAction.h>
+//#include <squirrel_view_controller_msgs/LooktAtPosition.h>
 
 #define HANDOVER_NAME "handover"
 #define SENSOR_TOPIC "/wrist"
@@ -116,6 +117,7 @@ protected:
     void preemptCB();
 
     bool moveArm(std::vector<double> joints);
+    void lookAtHand();
     void odomCallback(const nav_msgs::OdometryConstPtr &msg);
     std::mutex odomLock;
 

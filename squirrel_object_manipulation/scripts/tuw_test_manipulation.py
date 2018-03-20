@@ -17,7 +17,7 @@ if __name__ == '__main__':
     client.wait_for_server()
 
     manipulation_goal = ManipulationGoal()
-    manipulation_goal.manipulation_type = 'haf pick'
+    manipulation_goal.manipulation_type = 'pick'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
     manipulation_goal.pose.header.frame_id = 'map'
     
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     if manipulation_goal.pose.header.frame_id == 'map':
         manipulation_goal.pose.pose.position.x = 1.96
         manipulation_goal.pose.pose.position.y = 1.28
-        manipulation_goal.pose.pose.position.z = 0.15
+        manipulation_goal.pose.pose.position.z = 0.10
     else:
         manipulation_goal.pose.pose.position.x = 0.2
         manipulation_goal.pose.pose.position.y = 0.0

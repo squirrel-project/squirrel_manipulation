@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   actionlib
   squirrel_manipulation_msgs
+  squirrel_view_controller_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS
@@ -27,7 +28,7 @@ filesystem
 )
 
 catkin_package(
-    CATKIN_DEPENDS roscpp std_msgs actionlib squirrel_manipulation_msgs
+    CATKIN_DEPENDS roscpp std_msgs actionlib squirrel_manipulation_msgs squirrel_view_controller_msgs
 )
 
 include_directories(

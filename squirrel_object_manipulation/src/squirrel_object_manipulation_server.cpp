@@ -150,8 +150,8 @@ bool SquirrelObjectManipulationServer::initialize ()
     goal_marker_.color.b = 0;
     goal_marker_.color.a = 1;
     goal_marker_.scale.x = 0.05;
-    goal_marker_.scale.y = 0.1;
-    goal_marker_.scale.z = 0.1;
+    goal_marker_.scale.y = 0.0;
+    goal_marker_.scale.z = 0.0;
 
     // To store the joint states and the trajectory command
     current_joints_.resize ( NUM_BASE_JOINTS_ + NUM_ARM_JOINTS_ );  // 5 for arm and 3 for base
@@ -1131,18 +1131,33 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     feedback_.current_status = "starting";
     as_.publishFeedback ( feedback_ );
 
-    // Convert quaternion to roll, pitch and yaw
-    double tx = x, ty = y, tz = z;
-    tf::Quaternion quat ( xx, yy, zz, ww );
-    tf::Matrix3x3 mat ( quat );
-    double roll, pitch, yaw;
-    mat.getEulerYPR ( yaw, pitch, roll );
-
-    // TODO: Try transformation
-    /*
+    // transfrom goal position from TCP (= hand_palm_link) to wrist (= hand_wrist_link)
     tf::Transform wrist_transform;
-    wrist_transform.mult ( tf::Transform(quat, tf::Vector3(x, y, z)), hand_to_wrist_transform_.inverse() );
-    tx = wrist_transform.getOrigin().getX();
+    wrist_transform.mult ( tf::Transform(tf::Quaternion(xx, yy, zz, ww), tf::Vector3(x, y, z)), hand_to_wrist_transform_.inverse() );
+    geometry_msgs::Pose tcp_pose;
+    tcp_pose.position.x = x;
+    tcp_pose.position.y = y;
+    tcp_pose.position.z = z;
+    tcp_pose.orientation.x = xx;
+    tcp_pose.orientation.y = yy;
+    tcp_pose.orientation.z = zz;
+    tcp_pose.orientation.w = ww;
+    geometry_msgs::Pose wrist_pose;
+    wrist_pose.position.x = wrist_transform.getOrigin().getX();
+    wrist_pose.position.y = wrist_transform.getOrigin().getY();
+    wrist_pose.position.z = wrist_transform.getOrigin().getZ();
+    wrist_pose.orientation.x = wrist_transform.getRotation().getX();
+    wrist_pose.orientation.y = wrist_transform.getRotation().getY();
+    wrist_pose.orientation.z = wrist_transform.getRotation().getZ();
+    wrist_pose.orientation.w = wrist_transform.getRotation().getW();
+    //publishGoalMarker ( tcp_pose, 0);
+    //publishGoalMarker ( wrist_pose, 1);
+
+
+    ROS_INFO_STREAM ( "[SquirrelObjectManipulationServer::moveArmCartesian]\n tcp:   " << tcp_pose <<
+            "\n wrist: " << wrist_pose);
+
+    /*tx = wrist_transform.getOrigin().getX();
     ty = wrist_transform.getOrigin().getY();
     tz = wrist_transform.getOrigin().getZ();
     mat = tf::Matrix3x3 ( tf::Quaternion(wrist_transform.getRotation().getX(), wrist_transform.getRotation().getY(),
@@ -1150,12 +1165,16 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     mat.getEulerYPR ( yaw, pitch, roll );
     // --*/
 
+    tf::Matrix3x3 mat ( wrist_transform.getRotation() );
+    double roll, pitch, yaw;
+    mat.getEulerYPR ( yaw, pitch, roll );
+
     // Set the values in the message for the motion planner
     // [x y z roll pitch yaw]
     end_eff_goal_.request.positions.resize ( 6 );
-    end_eff_goal_.request.positions[0] = tx;
-    end_eff_goal_.request.positions[1] = ty;
-    end_eff_goal_.request.positions[2] = tz;
+    end_eff_goal_.request.positions[0] = wrist_pose.position.x;
+    end_eff_goal_.request.positions[1] = wrist_pose.position.y;
+    end_eff_goal_.request.positions[2] = wrist_pose.position.z;
     end_eff_goal_.request.positions[3] = roll;
     end_eff_goal_.request.positions[4] = pitch;
     end_eff_goal_.request.positions[5] = yaw;
@@ -1361,6 +1380,8 @@ bool SquirrelObjectManipulationServer::moveArmJoints ( const std::vector<double>
     pose_goal_.request.max_planning_time = planning_time_;
     pose_goal_.request.check_octomap_collision = plan_with_octomap_collisions_;
     pose_goal_.request.check_self_collision = plan_with_self_collisions_;
+    pose_goal_.request.check_octomap_collision = false;
+    pose_goal_.request.check_self_collision = false;
     pose_goal_.request.fold_arm = false;
     pose_goal_.request.min_distance_before_folding = 0.0;
     feedback_.current_status = "planning";
@@ -1582,12 +1603,12 @@ bool SquirrelObjectManipulationServer::getGripperAndApproachPose ( const squirre
     }
 
     // Compute gripper height (add half the height of the bounding cylinder and the finger clearance)
-    gripper_pose.pose.position.z += ( goal->object_bounding_cylinder.height/2.0 + FINGER_CLEARANCE_ );
+    //gripper_pose.pose.position.z += ( goal->object_bounding_cylinder.height/2.0 + FINGER_CLEARANCE_ );
     // HACK
-    if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
+    /*if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
         gripper_pose.pose.position.z = 1.05*METAHAND_MINIMUM_HEIGHT_;
     else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND )
-        gripper_pose.pose.position.z = 1.05*SOFTHAND_MINIMUM_HEIGHT_;
+        gripper_pose.pose.position.z = 1.05*SOFTHAND_MINIMUM_HEIGHT_;*/
     // Check that the goal is above the minimum height
     if ( !checkGoalHeight(gripper_pose) )
     {
@@ -1755,7 +1776,7 @@ bool SquirrelObjectManipulationServer::callHafGrasping ( const squirrel_manipula
             //std::cout << "Gripper pose\n" << gripper_pose << std::endl;
             // Adjust the height to be the center of the object
             // (this will be readjusted in the grasp/pick call by adding half the height)
-            gripper_pose.pose.position.z /= 2.0;
+            //gripper_pose.pose.position.z /= 2.0;
             // Add height to grasp object within the fingers (not the wrist joint reference)
             //gripper_pose->pose.pose.position.z += FINGER_CLEARANCE_;
             return true;
@@ -1910,7 +1931,37 @@ bool SquirrelObjectManipulationServer::prepareForHafGrasping ( const squirrel_ma
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientation ( const haf_grasping::GraspOutput &haf_output ) const
 {
-    geometry_msgs::PoseStamped downwards_gripper, downwards_gripper_haf_frame;
+    // direction of finger movement = vector between grasp the two points
+    tf::Vector3 grasp_dir(haf_output.graspPoint1.x - haf_output.graspPoint2.x,
+                          haf_output.graspPoint1.y - haf_output.graspPoint2.y,
+                          haf_output.graspPoint1.z - haf_output.graspPoint2.z);
+    grasp_dir.normalize();
+    // rotation matrix of the hand_palm_link (= TCP)
+    // NOTE: hand_palm_link is defined such that:
+    //       x points in the closing direction of the two fingers (treating any hand as two-finger gripper)
+    //         in KCL hand case: towards the thumb
+    //       z points away from the wrist
+    //       y is normal to these
+    tf::Matrix3x3 rot;
+    tf::Vector3 z(0., 0., -1);
+    tf::Vector3 y = z.cross(grasp_dir);
+    rot[0][0] = grasp_dir.getX();
+    rot[1][0] = grasp_dir.getY();
+    rot[2][0] = grasp_dir.getZ();
+    rot[0][1] = y.getX();
+    rot[1][1] = y.getY();
+    rot[2][1] = y.getZ();
+    rot[0][2] = z.getX();
+    rot[1][2] = z.getY();
+    rot[2][2] = z.getZ();
+    // Convert rotation matrix to quaternion and this to a message *sigh*
+    tf::Quaternion qrot;
+    rot.getRotation( qrot );
+    geometry_msgs::Quaternion result;
+    tf::quaternionTFToMsg ( qrot, result );
+    return result;
+
+    /*geometry_msgs::PoseStamped downwards_gripper, downwards_gripper_haf_frame;
     downwards_gripper.pose.orientation = getDownwardsGripper();
     // Transform to haf_output frame
     transformPose ( MAP_FRAME_, haf_output.header.frame_id, downwards_gripper, downwards_gripper_haf_frame );
@@ -1935,23 +1986,23 @@ geometry_msgs::Quaternion SquirrelObjectManipulationServer::hafToGripperOrientat
     // Convert the quaternion to a message and return
     geometry_msgs::Quaternion result;
     tf::quaternionTFToMsg ( quat_new, result );
-    return result;
+    return result;*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 geometry_msgs::Quaternion SquirrelObjectManipulationServer::getDownwardsGripper () const
 {
     // http://quaternions.online/
-    // Euler: x = -90, y = 0, z = 0
+    // Euler: x = 180, y = 0, z = 0
     // Adjust z (-ve direction to not be exactly straight with axis)
 
     geometry_msgs::Quaternion downwards_gripper;
     if ( hand_type_ == SquirrelObjectManipulationServer::METAHAND )
     {
-        downwards_gripper.x = -0.707;
+        downwards_gripper.x = 1.0;
         downwards_gripper.y = 0.0;
         downwards_gripper.z = 0.0;
-        downwards_gripper.w = 0.707;
+        downwards_gripper.w = 0.0;
         /*
         downwards_gripper.x = 0.047;
         downwards_gripper.y = 0.777;
@@ -2092,9 +2143,10 @@ void SquirrelObjectManipulationServer::enableOctomapCollisions ()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> &pose )
+void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> &pose, int id )
 {
     // Pose is [x y z roll pitch yaw]
+    goal_marker_.id = id;
     goal_marker_.type = visualization_msgs::Marker::ARROW;
 
     // Create two end points
@@ -2115,10 +2167,11 @@ void SquirrelObjectManipulationServer::publishGoalMarker ( const vector<double> 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SquirrelObjectManipulationServer::publishGoalMarker ( const geometry_msgs::Pose &pose )
+void SquirrelObjectManipulationServer::publishGoalMarker ( const geometry_msgs::Pose &pose, int id )
 {
     // Pose
     float length = 0.3;
+    goal_marker_.id = id;
     goal_marker_.type = visualization_msgs::Marker::LINE_LIST;
     goal_marker_.pose = pose;
     goal_marker_.points.resize ( 6 );

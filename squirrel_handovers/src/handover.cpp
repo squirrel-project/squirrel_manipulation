@@ -307,6 +307,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
 HandoverAction::~HandoverAction() {
 
+    // NOTE: nh is not deleted!
 
 }
 
@@ -451,7 +452,7 @@ bool HandoverAction::moveArm(vector<double> joints) {
     goal.joints = joints;
     manipulation_client.sendGoal(goal);
 
-    bool finished_before_timeout = manipulation_client.waitForResult(ros::Duration(30.0));
+    bool finished_before_timeout = manipulation_client.waitForResult(ros::Duration(80.0));
     if (finished_before_timeout) {
         actionlib::SimpleClientGoalState state = manipulation_client.getState();
         ROS_INFO("(Handover) action finished '%s'", state.toString().c_str());
@@ -463,6 +464,22 @@ bool HandoverAction::moveArm(vector<double> joints) {
     }
 }
 
+
+void HandoverAction::lookAtHand() {
+    /*ros::ServiceClient look_client = n->serviceClient<squirrel_view_controller_msgs::LookAtPosition>("/squirrel_view_controller/look_at_position");
+    squirrel_view_controller_msgs::LookAtPosition srv;
+    srv.target.header.seq = 0;
+    srv.target.header.tamp = ros::Time:now();
+    srv.target.header.frame_id = "hand_palm_link";
+    srv.target.pose.position.x = 0.;
+    srv.target.pose.position.y = 0.;
+    srv.target.pose.position.z = 0.;
+    srv.target.pose.orientation.x = 0.;
+    srv.target.pose.orientation.y = 0.;
+    srv.target.pose.orientation.z = 0.;
+    srv.target.pose.orientation.w = 1.;
+    srv.reason = "";*/
+}
 
 void HandoverAction::odomCallback(const nav_msgs::OdometryConstPtr &msg) {
     odomLock.lock();
