@@ -18,6 +18,7 @@ if __name__ == '__main__':
 
     manipulation_goal = ManipulationGoal()
     manipulation_goal.manipulation_type = 'haf pick'
+    #manipulation_goal.manipulation_type = 'place'
     manipulation_goal.pose.header.stamp = rospy.Time.now()
     manipulation_goal.pose.header.frame_id = 'map'
     

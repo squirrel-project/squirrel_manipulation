@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
+#include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
@@ -29,7 +31,9 @@
 #include <squirrel_waypoint_msgs/ExamineWaypoint.h>
 #include "move_base_msgs/MoveBaseAction.h"
 #include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 #include <pcl/filters/filter.h>
+#include <pcl/common/common.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -46,7 +50,7 @@
 #define DEFAULT_APPROACH_HEIGHT_ 0.10  // meters
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define METAHAND_MINIMUM_HEIGHT_ 0.07  //22  // meters
+#define METAHAND_MINIMUM_HEIGHT_ 0.11  //22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
@@ -54,6 +58,8 @@
 #define LOCK_BASE_VAL_ -10.0 
 #define LOCK_ARM_VAL_ -20.0
 #define BASE_TO_FINAL_VAL_ -30.0
+#define RECOGNITION_RESULT_EXPIRED_ 20.0
+#define HEAD_TO_HAND_ 1.0
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -199,6 +205,11 @@ class SquirrelObjectManipulationServer
     // Joints command callback
     ros::Subscriber joints_command_sub_;
     std::vector<double> current_cmd_;
+    // Recognition callback
+    ros::Subscriber recognition_result_sub_;
+    sensor_msgs::PointCloud2 recognition_cloud_;
+    // Head command publisher
+    ros::Publisher head_pub_;
     // Marker publisher
     ros::Publisher goal_pose_pub_;
     visualization_msgs::Marker goal_marker_;
@@ -213,6 +224,8 @@ class SquirrelObjectManipulationServer
     bool plan_with_octomap_collisions_;
     bool plan_with_self_collisions_;
     double approach_height_;
+    // To actually place the object
+    bool do_full_placement_;
 
     /**
      * \brief The main action server callback function
@@ -396,6 +409,18 @@ class SquirrelObjectManipulationServer
     void jointsCommandCallBack ( const trajectory_msgs::JointTrajectoryConstPtr &cmd );
 
     /**
+     * \brief Callback function to update the recognition result
+     * \param[in] cmd The message from command topic
+     */
+    void recognitionCallBack ( const sensor_msgs::PointCloud2ConstPtr &cloud );
+
+    /**
+     * \brief Publish a message to move the head
+     * \param[in] val The value to move the head
+     */
+    void moveHead ( const float &val = 0.0f ); 
+
+    /**
      * \brief Transforms a pose from one frame to another using the TF tree
      * \param[in] origin_frame The frame to transform from
      * \param[in] target_frame The frame to transform to
@@ -405,6 +430,17 @@ class SquirrelObjectManipulationServer
      */
     bool transformPose ( const std::string &origin_frame, const std::string &target_frame,
                          geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const;
+
+     /**
+     * \brief Transforms a point cloud from one frame to another using the TF tree
+     * \param[in] origin_frame The frame to transform from
+     * \param[in] target_frame The frame to transform to
+     * \param[in] in The point cloud to transform
+     * \param[out] out The transformed point cloud
+     * \returns True if the point cloud is successfully transformed
+     */
+    bool transformPointCloud ( const std::string &origin_frame, const std::string &target_frame,
+                               sensor_msgs::PointCloud2 &in, sensor_msgs::PointCloud2 &out ) const;
 
     /**
      * \brief Transforms a pose from one frame to another using the TF tree
