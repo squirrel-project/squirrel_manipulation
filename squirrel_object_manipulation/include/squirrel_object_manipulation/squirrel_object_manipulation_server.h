@@ -60,6 +60,7 @@
 #define BASE_TO_FINAL_VAL_ -30.0
 #define RECOGNITION_RESULT_EXPIRED_ 20.0
 #define HEAD_TO_HAND_ 1.0
+#define SPIN_THRESHOLD_ 1.0f*M_PI
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -198,6 +199,9 @@ class SquirrelObjectManipulationServer
     squirrel_waypoint_msgs::ExamineWaypoint examine_waypoint_goal_;
     move_base_msgs::MoveBaseGoal move_base_goal_;
     squirrel_object_perception_msgs::CreateOctomapWithLumps create_octomap_goal_;
+    // Publish rajectories to the controller
+    ros::Publisher trajectory_controller_pub_;
+    trajectory_msgs::JointTrajectory latest_trajectory_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
@@ -205,8 +209,7 @@ class SquirrelObjectManipulationServer
     // Joints command callback
     ros::Subscriber joints_command_sub_;
     std::vector<double> current_cmd_;
-    // Recognition callback
-    ros::Subscriber recognition_result_sub_;
+    // Recognition cloud
     sensor_msgs::PointCloud2 recognition_cloud_;
     // Head command publisher
     ros::Publisher head_pub_;
@@ -331,23 +334,6 @@ class SquirrelObjectManipulationServer
     bool hafPickFull ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
-     * \brief Moves the end effector to a 6DOF pose in the map frame
-     * \param[in] x The x coordinate of pose
-     * \param[in] y The y coordinate of pose
-     * \param[in] z The z coordinate of pose
-     * \param[in] roll The roll of the pose
-     * \param[in] pitch The pitch of the pose
-     * \param[in] yaw The yaw of the pose
-     * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
-     * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
-     * \returns True if end effectors is successfully moved to goal pose
-     */
-    /*
-    bool moveArmCartesian ( const double &x, const double &y, const double &z,
-                            const double &roll, const double &pitch, const double &yaw,
-                            const std::string &message = "", const float &tolerance = -1.0 );*/
-
-    /**
      * \brief Moves the end effector to a pose in the map frame specified by a position and orientation (quaternion)
      * \param[in] x The x coordinate of pose
      * \param[in] y The y coordinate of pose
@@ -385,9 +371,24 @@ class SquirrelObjectManipulationServer
     /**
      * \brief Executes the planned joint trajectory by sending commands to the arm controller
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
+     * \param[in] decouple_base_arm Specifiy if base and arm trajectories should be decoupled (executed separately)
      * \returns True if joints successfully follow the trajectory
      */
-    bool sendCommandTrajectory ( const std::string &message = "" );
+    bool sendCommandTrajectory ( const std::string &message = "",
+                                 const bool &decouple_base_arm = false );
+
+    /**
+     * \brief Checks if the 8dof trajectory contains a big spin, if so then the base and arm should be decoupled
+     * \returns True if the base and arm should be decoupled
+     */
+    bool checkTrajectoryHasSpin ();
+
+    /**
+     * \brief Computes the smallest difference between two angles
+     * \returns The computed signed angle difference
+     */
+    float smallestAngleDifference ( const float &from,
+                                    const float &to ) const;
 
     /**
      * \brief Waits until the current commanded trajectory is completed by the robot
