@@ -1463,6 +1463,8 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     // Otherwise, decoupling the base and arm
     else
     {
+        ROS_WARN ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Decoupling base and arm for action '%s'", message.c_str() );
+
         // -- Send the base command first (send the last base pose of the trajectory)
         trajectory_msgs::JointTrajectory base_msg;
         base_msg.joint_names.resize(8);
