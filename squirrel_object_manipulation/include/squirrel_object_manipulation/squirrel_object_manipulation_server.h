@@ -536,6 +536,12 @@ class SquirrelObjectManipulationServer
 
     void publishGoalMarker ( const geometry_msgs::Pose &pose, int id = 0 );
 
+    /**
+     * \brief Publishes the feedback of the action server with a status
+     * \param[in] status The status of the current phase
+     */
+    void publishFeedback ( const std::string &status );
+
 };
 
 /**
