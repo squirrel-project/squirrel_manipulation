@@ -451,7 +451,7 @@ bool SquirrelObjectManipulationServer::actuateHand ( const HandActuation &hand_a
     else if ( hand_type_ == SquirrelObjectManipulationServer::SOFTHAND ) return actuateSofthand ( hand_actuation);
     else ROS_ERROR ( "[SquirrelObjectManipulationServer::actuateHand] Unrecognized hand type" );
 
-    // If made it here then did not reconize the actuation type
+    // If made it here then did not recognize the actuation type
     return false;
 }
 
@@ -750,7 +750,7 @@ bool SquirrelObjectManipulationServer::grasp ( const squirrel_manipulation_msgs:
     // ***
     // Grasp
     // ***
-    if ( !moveArmCartesian(grasp_goal, STR_GRASP_, APPROACH_TOLERANCE_) )
+    if ( !moveArmCartesian(grasp_goal, STR_GRASP_) )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::grasp] Failed to reach grasp pose" );
         return false;
@@ -866,7 +866,7 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
     // Pick
     // ***
     moveHead ( HEAD_TO_HAND_ );
-    if ( !moveArmCartesian(pick_goal, STR_PICK_, APPROACH_TOLERANCE_) )
+    if ( !moveArmCartesian(pick_goal, STR_PICK_) )
     {
         ROS_ERROR ( "[SquirrelObjectManipulationServer::pick] Failed to reach pick up pose" );
         return false;
