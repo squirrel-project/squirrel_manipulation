@@ -1501,6 +1501,13 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
             arm_msg.points.back().positions[2] = joints[2];
             arm_msg.points.back().time_from_start = time;
         }
+        // Make sure it reaches the last position
+        time += time_between_poses;
+        arm_msg.points.push_back ( latest_trajectory_.points.back() );
+        arm_msg.points.back().positions[0] = joints[0];
+        arm_msg.points.back().positions[1] = joints[1];
+        arm_msg.points.back().positions[2] = joints[2];
+        arm_msg.points.back().time_from_start = time;
         // Send the trajectory to the controller
         ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving arm" );
         trajectory_controller_pub_.publish ( arm_msg );
