@@ -1262,9 +1262,6 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
         {
             max_replan = 1;
         }
-        ros::Publisher cmd_pub = n_->advertise<geometry_msgs::Twist> ( "/cmd_vel", 3, this );
-        geometry_msgs::Twist base_cmd;
-        base_cmd.angular.z = -0.7;
         while ( err_x > tolerance || err_y > tolerance || err_z > tolerance )
         {
             publishFeedback ( "retrying" );
@@ -1273,60 +1270,43 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
             ROS_WARN ( "[SquirrelObjectManipulationServer::moveArmCartesian] Error: %.2f %.2f %.2f", 
                        err_x, err_y, err_z );
 
-            //std::cout << "Press y to replan or anything else to command the base" << std::endl;
-            char keyboard_input = 'y';
-            //if ( message.compare(STR_APPROACH_) == 0 )
-            //    std::cin >> keyboard_input;
-            if ( keyboard_input == 'y' || keyboard_input == 'Y' )
+            // Call the service
+            if ( !arm_end_eff_planner_client_->call(end_eff_goal_) )
             {
-                // Call the service
-                if ( !arm_end_eff_planner_client_->call(end_eff_goal_) )
-                {
-                    ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to find a plan to '%s' pose [%.2f %.2f %.2f %.2f %.2f %.2f]",
-                    message.c_str(), x, y, z, roll, pitch, yaw );
-                    publishFeedback ( "failed" );
-                    break;
-                }
-                // Copy the trajectory
-                latest_trajectory_ = end_eff_goal_.response.trajectory;
-                // If not a successful result
-                if ( end_eff_goal_.response.result != 0 )
-                {
-                    ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Planning to '%s' pose returned with result %i",
-                    message.c_str(), end_eff_goal_.response.result );
-                    publishFeedback ( "failed" );
-                    break;
-                }
-
-                //if ( message.compare(STR_APPROACH_) != 0 )
-                //  decouple_base_arm = checkTrajectoryHasSpin();
-
-                // Always true when adjusting
-                decouple_base_arm = true;
-            
-                // Send the command
-                if ( !sendCommandTrajectory(message, decouple_base_arm) )
-                {
-                    ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to send command to '%s' pose",
-                                message.c_str() );
-                    publishFeedback ( "failed" );
-                    //end_eff_goal_.request.min_distance_before_folding = 0.0;
-                    return false;
-                }
-                // Compute the errors
-                transformPose ( PLANNING_LINK_, MAP_FRAME_, link_pose, link_pose_map );
+                ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to find a plan to '%s' pose [%.2f %.2f %.2f %.2f %.2f %.2f]",
+                message.c_str(), x, y, z, roll, pitch, yaw );
+                publishFeedback ( "failed" );
+                break;
             }
-            else
+            // Copy the trajectory
+            latest_trajectory_ = end_eff_goal_.response.trajectory;
+            // If not a successful result
+            if ( end_eff_goal_.response.result != 0 )
             {
-                cmd_pub.publish ( base_cmd );
-                ros::Duration(1.5).sleep();
-                cmd_pub.publish ( base_cmd );
-                ros::Duration(1.5).sleep();
-                base_cmd.angular.z = 0;
-                cmd_pub.publish ( base_cmd );
-                ros::Duration(1.0).sleep();
-                //count = max_replan;
+                ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Planning to '%s' pose returned with result %i",
+                message.c_str(), end_eff_goal_.response.result );
+                publishFeedback ( "failed" );
+                break;
             }
+
+            //if ( message.compare(STR_APPROACH_) != 0 )
+            //  decouple_base_arm = checkTrajectoryHasSpin();
+
+            // Always true when adjusting
+            decouple_base_arm = true;
+
+            // Send the command
+            if ( !sendCommandTrajectory(message, decouple_base_arm) )
+            {
+                ROS_ERROR ( "[SquirrelObjectManipulationServer::moveArmCartesian] Failed to send command to '%s' pose",
+                            message.c_str() );
+                publishFeedback ( "failed" );
+                //end_eff_goal_.request.min_distance_before_folding = 0.0;
+                return false;
+            }
+            // Compute the errors
+            transformPose ( PLANNING_LINK_, MAP_FRAME_, link_pose, link_pose_map );
+
             err_x = std::fabs ( link_pose_map.pose.position.x - x );
             err_y = std::fabs ( link_pose_map.pose.position.y - y );
             err_z = std::fabs ( link_pose_map.pose.position.z - z );
@@ -1488,6 +1468,7 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
         base_msg.points[0].positions[7] = joints[7];
         base_msg.points[0].time_from_start = latest_trajectory_.points[0].time_from_start;
         // Send the trajectory to the controller
+        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving base" );
         trajectory_controller_pub_.publish ( base_msg );
 
         // Sleep
@@ -1503,16 +1484,25 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
         }
 
         // -- Send the arm trajectory (send the full arm trajectory and keep the base stationary)
-        trajectory_msgs::JointTrajectory arm_msg = latest_trajectory_;
+        trajectory_msgs::JointTrajectory arm_msg;
+        arm_msg.header = latest_trajectory_.header;
+        arm_msg.joint_names = latest_trajectory_.joint_names;
+        arm_msg.points.clear ();
         // Override the joint values for the base with the current values
         joints = current_joints_;
-        for ( size_t i = 0; i < arm_msg.points.size(); ++i )
+        ros::Duration time_between_poses = latest_trajectory_.points[0].time_from_start;
+        ros::Duration time ( 0.0 );
+        for ( size_t i = 1; i < latest_trajectory_.points.size(); i+=4 )
         {
-            arm_msg.points[i].positions[0] = joints[0];
-            arm_msg.points[i].positions[1] = joints[1];
-            arm_msg.points[i].positions[2] = joints[2];
+            time += time_between_poses;
+            arm_msg.points.push_back ( latest_trajectory_.points[i] );
+            arm_msg.points.back().positions[0] = joints[0];
+            arm_msg.points.back().positions[1] = joints[1];
+            arm_msg.points.back().positions[2] = joints[2];
+            arm_msg.points.back().time_from_start = time;
         }
         // Send the trajectory to the controller
+        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving arm" );
         trajectory_controller_pub_.publish ( arm_msg );
 
         // Sleep
