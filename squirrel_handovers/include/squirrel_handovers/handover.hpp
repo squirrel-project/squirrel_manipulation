@@ -37,7 +37,8 @@
 #define SAFETY_TOPIC "/reset_safety"
 
 #define TILT_TOPIC "/tilt_controller/command"
-#define PAN_TOPIC "/pan_controller/command"
+#define PAN_TOPIC "/head_controller/command"
+#define PAN_ANGLE 1.0
 
 
 enum Axes

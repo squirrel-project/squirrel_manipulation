@@ -29,7 +29,7 @@ HandoverAction::HandoverAction(ros::NodeHandle &n, const std::string std_Handove
 
     sub_h = nh->subscribe(SENSOR_TOPIC, 1, &HandoverAction::sensorReadCallbackWrist,this);
     //    tiltPub = nh.advertise<std_msgs::Float64>(TILT_TOPIC, 1);
-    //    panPub = nh.advertise<std_msgs::Float64>(PAN_TOPIC, 1);
+    panPub = nh->advertise<std_msgs::Float64>(PAN_TOPIC, 1);
     safety_pub_ = nh->advertise<std_msgs::Bool>(SAFETY_TOPIC,1);
 
 
@@ -112,7 +112,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //assure hand is open for taking something!
         hand_goal.manipulation_type = "open";
         manipulation_client.sendGoal(hand_goal);
-        manipulation_client.waitForResult(ros::Duration(5.0));
+        manipulation_client.waitForResult(ros::Duration(10.0));
         sleep(0.5);
         this->resetSafety();
 
@@ -138,7 +138,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //if(runHandover_)robotinoQueue->jointPtp(end);
         if(runHandover_) moveArm(end);
 
-
+        movePan(PAN_ANGLE);
         ROS_WARN("(Handover) waiting to grasp the object...");
         sleep(1.0);
 
@@ -194,7 +194,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         }
         this->resetSafety();
     }
-    else if(give.compare(goal->action_type.c_str()) ==0 && runHandover_){
+    else if(give.compare(goal->action_type.c_str()) == 0 && runHandover_){
 
 
         // ROS_INFO("(handover) going to the initial pose \n");
@@ -210,6 +210,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
 
         sleep(1.0);
 
+        movePan(PAN_ANGLE);
         ROS_WARN("(Handover) waiting to release the object...");
 
         bool release = false;
@@ -278,7 +279,7 @@ void HandoverAction::executeHandover(const squirrel_manipulation_msgs::HandoverG
         //cout<<endl;
         handover_success_ = false;
     }
-
+    movePan(0.0);
     ROS_INFO("(Handover) handover sequence finished");
 
     //stop arm queue
@@ -436,6 +437,10 @@ void HandoverAction::moveTilt(double val){
 void HandoverAction::movePan(double val){
     std_msgs::Float64 pan_msg;
     pan_msg.data = val;
+    panPub.publish(pan_msg);
+    ros::Duration(0.1).sleep();
+    panPub.publish(pan_msg);
+    ros::Duration(0.1).sleep();
     panPub.publish(pan_msg);
 }
 

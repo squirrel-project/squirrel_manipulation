@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
+#include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <actionlib/server/simple_action_server.h>
@@ -22,13 +24,16 @@
 #include <squirrel_manipulation_msgs/SoftHandGrasp.h>
 #include <haf_grasping/CalcGraspPointsServerAction.h>
 #include <mongodb_store/message_store.h>
+#include <mongodb_store_msgs/MongoInsertMsg.h>
 #include <squirrel_object_perception_msgs/SceneObject.h>
 #include <squirrel_object_perception_msgs/CreateOctomapWithLumps.h>
 #include <dynamic_reconfigure/server.h>
 #include <squirrel_waypoint_msgs/ExamineWaypoint.h>
 #include "move_base_msgs/MoveBaseAction.h"
 #include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 #include <pcl/filters/filter.h>
+#include <pcl/common/common.h>
 
 #define NODE_NAME_ "squirrel_object_manipulation_server"
 #define METAHAND_STRING_ "metahand"
@@ -37,7 +42,7 @@
 #define JOINT_FRAME_ "odom"
 #define PLANNING_LINK_ "hand_wrist_link"
 #define GRASPING_LINK_ "hand_palm_link"
-#define APPROACH_TOLERANCE_ 0.01
+#define APPROACH_TOLERANCE_ 0.005
 #define MAX_REPLAN_TRY_ 3
 #define NUM_BASE_JOINTS_ 3
 #define NUM_ARM_JOINTS_ 5
@@ -45,14 +50,17 @@
 #define DEFAULT_APPROACH_HEIGHT_ 0.10  // meters
 #define MAX_WAIT_TRAJECTORY_COMPLETION_ 60.0  // seconds
 #define JOINT_IN_POSITION_THRESHOLD_ 0.139626 // 8 degrees
-#define METAHAND_MINIMUM_HEIGHT_ 0.05  //22  // meters
+#define METAHAND_MINIMUM_HEIGHT_ 0.11  //22  // meters
 #define SOFTHAND_MINIMUM_HEIGHT_ 0.17  // meters
 #define FINGER_CLEARANCE_ 0.1  // meters
 #define HAF_MIN_DIST_ 0.75
-#define HAF_SEARCH_SIZE_ 40
+#define HAF_SEARCH_SIZE_ 50
 #define LOCK_BASE_VAL_ -10.0 
 #define LOCK_ARM_VAL_ -20.0
 #define BASE_TO_FINAL_VAL_ -30.0
+#define RECOGNITION_RESULT_EXPIRED_ 20.0
+#define HEAD_TO_HAND_ 1.0
+#define SPIN_THRESHOLD_ 1.0f*M_PI
 
 // See KCL hand control
 #define CLOSE_METAHAND_OPERATION_MODE 2
@@ -69,6 +77,7 @@
 #define STR_GRASP_ "grasp"
 #define STR_PICK_ "pick"
 #define STR_RETRACT_ "retract"
+#define STR_CARRY_ "carry"
 #define STR_PLACE_ "place"
 
 /**
@@ -190,6 +199,9 @@ class SquirrelObjectManipulationServer
     squirrel_waypoint_msgs::ExamineWaypoint examine_waypoint_goal_;
     move_base_msgs::MoveBaseGoal move_base_goal_;
     squirrel_object_perception_msgs::CreateOctomapWithLumps create_octomap_goal_;
+    // Publish rajectories to the controller
+    ros::Publisher trajectory_controller_pub_;
+    trajectory_msgs::JointTrajectory latest_trajectory_;
     // Joint callback
     ros::Subscriber joints_state_sub_;
     std::vector<double> current_joints_;
@@ -197,6 +209,10 @@ class SquirrelObjectManipulationServer
     // Joints command callback
     ros::Subscriber joints_command_sub_;
     std::vector<double> current_cmd_;
+    // Recognition cloud
+    sensor_msgs::PointCloud2 recognition_cloud_;
+    // Head command publisher
+    ros::Publisher head_pub_;
     // Marker publisher
     ros::Publisher goal_pose_pub_;
     visualization_msgs::Marker goal_marker_;
@@ -211,6 +227,8 @@ class SquirrelObjectManipulationServer
     bool plan_with_octomap_collisions_;
     bool plan_with_self_collisions_;
     double approach_height_;
+    // To actually place the object
+    bool do_full_placement_;
 
     /**
      * \brief The main action server callback function
@@ -316,23 +334,6 @@ class SquirrelObjectManipulationServer
     bool hafPickFull ( const squirrel_manipulation_msgs::ManipulationGoalConstPtr &goal );
 
     /**
-     * \brief Moves the end effector to a 6DOF pose in the map frame
-     * \param[in] x The x coordinate of pose
-     * \param[in] y The y coordinate of pose
-     * \param[in] z The z coordinate of pose
-     * \param[in] roll The roll of the pose
-     * \param[in] pitch The pitch of the pose
-     * \param[in] yaw The yaw of the pose
-     * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
-     * \param[in] tolerance The minimum positional error, will retry the trajectory until tolerance is met (negative ignores tolerance)
-     * \returns True if end effectors is successfully moved to goal pose
-     */
-    /*
-    bool moveArmCartesian ( const double &x, const double &y, const double &z,
-                            const double &roll, const double &pitch, const double &yaw,
-                            const std::string &message = "", const float &tolerance = -1.0 );*/
-
-    /**
      * \brief Moves the end effector to a pose in the map frame specified by a position and orientation (quaternion)
      * \param[in] x The x coordinate of pose
      * \param[in] y The y coordinate of pose
@@ -370,9 +371,24 @@ class SquirrelObjectManipulationServer
     /**
      * \brief Executes the planned joint trajectory by sending commands to the arm controller
      * \param[in] message A key word to help distinguish type of pose (e.g., approach, grasp, place)
+     * \param[in] decouple_base_arm Specifiy if base and arm trajectories should be decoupled (executed separately)
      * \returns True if joints successfully follow the trajectory
      */
-    bool sendCommandTrajectory ( const std::string &message = "" );
+    bool sendCommandTrajectory ( const std::string &message = "",
+                                 const bool &decouple_base_arm = false );
+
+    /**
+     * \brief Checks if the 8dof trajectory contains a big spin, if so then the base and arm should be decoupled
+     * \returns True if the base and arm should be decoupled
+     */
+    bool checkTrajectoryHasSpin ();
+
+    /**
+     * \brief Computes the smallest difference between two angles
+     * \returns The computed signed angle difference
+     */
+    float smallestAngleDifference ( const float &from,
+                                    const float &to ) const;
 
     /**
      * \brief Waits until the current commanded trajectory is completed by the robot
@@ -394,6 +410,18 @@ class SquirrelObjectManipulationServer
     void jointsCommandCallBack ( const trajectory_msgs::JointTrajectoryConstPtr &cmd );
 
     /**
+     * \brief Callback function to update the recognition result
+     * \param[in] cmd The message from command topic
+     */
+    void recognitionCallBack ( const sensor_msgs::PointCloud2ConstPtr &cloud );
+
+    /**
+     * \brief Publish a message to move the head
+     * \param[in] val The value to move the head
+     */
+    void moveHead ( const float &val = 0.0f ); 
+
+    /**
      * \brief Transforms a pose from one frame to another using the TF tree
      * \param[in] origin_frame The frame to transform from
      * \param[in] target_frame The frame to transform to
@@ -403,6 +431,17 @@ class SquirrelObjectManipulationServer
      */
     bool transformPose ( const std::string &origin_frame, const std::string &target_frame,
                          geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out ) const;
+
+     /**
+     * \brief Transforms a point cloud from one frame to another using the TF tree
+     * \param[in] origin_frame The frame to transform from
+     * \param[in] target_frame The frame to transform to
+     * \param[in] in The point cloud to transform
+     * \param[out] out The transformed point cloud
+     * \returns True if the point cloud is successfully transformed
+     */
+    bool transformPointCloud ( const std::string &origin_frame, const std::string &target_frame,
+                               sensor_msgs::PointCloud2 &in, sensor_msgs::PointCloud2 &out ) const;
 
     /**
      * \brief Transforms a pose from one frame to another using the TF tree
@@ -496,6 +535,12 @@ class SquirrelObjectManipulationServer
     void publishGoalMarker ( const std::vector<double> &pose, int id = 0 );
 
     void publishGoalMarker ( const geometry_msgs::Pose &pose, int id = 0 );
+
+    /**
+     * \brief Publishes the feedback of the action server with a status
+     * \param[in] status The status of the current phase
+     */
+    void publishFeedback ( const std::string &status );
 
 };
 
