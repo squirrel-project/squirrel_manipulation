@@ -1231,6 +1231,10 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     bool decouple_base_arm = false;
     if ( message.compare(STR_APPROACH_) != 0 )
       decouple_base_arm = checkTrajectoryHasSpin();
+    if ( decouple_base_arm ) ROS_WARN ( "Decouple is TRUE" );
+    else                     ROS_WARN ( "Decouple is FALSE" );
+    std::cout << "Press enter to continue..." << std::endl;
+    std::cin.ignore();
 
     // Send the command to the arm controller
     ROS_INFO ( "[SquirrelObjectManipulationServer::moveArmCartesian] Moving to '%s' pose", message.c_str() );
