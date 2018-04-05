@@ -875,7 +875,7 @@ bool SquirrelObjectManipulationServer::pick ( const squirrel_manipulation_msgs::
     // ***
     // Close hand
     // ***
-    ros::Duration(2.0).sleep();
+    ros::Duration(3.0).sleep();
     if ( !actuateHand(SquirrelObjectManipulationServer::CLOSE) )
     {
         ROS_ERROR ( "[SquirrelGraspServer::pick] Failed to close hand" );
@@ -1233,8 +1233,6 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
       decouple_base_arm = checkTrajectoryHasSpin();
     if ( decouple_base_arm ) ROS_WARN ( "Decouple is TRUE" );
     else                     ROS_WARN ( "Decouple is FALSE" );
-    std::cout << "Press enter to continue..." << std::endl;
-    std::cin.ignore();
 
     // Send the command to the arm controller
     ROS_INFO ( "[SquirrelObjectManipulationServer::moveArmCartesian] Moving to '%s' pose", message.c_str() );
@@ -1326,7 +1324,7 @@ bool SquirrelObjectManipulationServer::moveArmCartesian ( const double &x, const
     }
 
     // Successfully moved the arm
-   publishFeedback ( "success" );
+    publishFeedback ( "success" );
     return true;
 }
 
@@ -1449,7 +1447,7 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
     {
         ROS_WARN ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Decoupling base and arm for action '%s'", message.c_str() );
 
-        // -- Send the base command first (send the last base pose of the trajectory)
+        // Base trajectory (the last base pose of the input trajectory)
         trajectory_msgs::JointTrajectory base_msg;
         base_msg.joint_names.resize(8);
         base_msg.joint_names[0] = "base_jointx";
@@ -1461,73 +1459,112 @@ bool SquirrelObjectManipulationServer::sendCommandTrajectory ( const std::string
         base_msg.joint_names[6] = "arm_joint4";
         base_msg.joint_names[7] = "arm_joint5";
         base_msg.points.resize ( 1 );
-        // Set the point as the last point in latest_trajectory
+        // Set the position as the last position in latest_trajectory
         base_msg.points[0].positions = latest_trajectory_.points.back().positions;
-        // Override the joint values for the arm with the current values
-        std::vector<double> joints = current_joints_;
-        base_msg.points[0].positions[3] = joints[3];
-        base_msg.points[0].positions[4] = joints[4];
-        base_msg.points[0].positions[5] = joints[5];
-        base_msg.points[0].positions[6] = joints[6];
-        base_msg.points[0].positions[7] = joints[7];
         base_msg.points[0].time_from_start = latest_trajectory_.points[0].time_from_start;
-        // Send the trajectory to the controller
-        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving base" );
-        trajectory_controller_pub_.publish ( base_msg );
-
-        // Sleep
-        ros::Duration(2.0).sleep();
-        // Wait for trajectory to finish
-        publishFeedback ( "waiting for base completion" );
-        if ( !waitForTrajectoryCompletion() )
-        {
-            ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Base trajectory for '%s' did not complete in time",
-                        message.c_str() );
-            publishFeedback ( "failed" );
-            return false;
-        }
-
-        // -- Send the arm trajectory (send the full arm trajectory and keep the base stationary)
+        
+        // Arm trajectory (the full arm trajectory and keep the base stationary)
         trajectory_msgs::JointTrajectory arm_msg;
         arm_msg.header = latest_trajectory_.header;
         arm_msg.joint_names = latest_trajectory_.joint_names;
         arm_msg.points.clear ();
-        // Override the joint values for the base with the current values
-        joints = current_joints_;
+        // Reduce the number of points to account for long base rotation
         ros::Duration time_between_poses = latest_trajectory_.points[0].time_from_start;
         ros::Duration time ( 0.0 );
         for ( size_t i = 1; i < latest_trajectory_.points.size(); i+=4 )
         {
             time += time_between_poses;
             arm_msg.points.push_back ( latest_trajectory_.points[i] );
-            arm_msg.points.back().positions[0] = joints[0];
-            arm_msg.points.back().positions[1] = joints[1];
-            arm_msg.points.back().positions[2] = joints[2];
             arm_msg.points.back().time_from_start = time;
         }
         // Make sure it reaches the last position
         time += time_between_poses;
         arm_msg.points.push_back ( latest_trajectory_.points.back() );
-        arm_msg.points.back().positions[0] = joints[0];
-        arm_msg.points.back().positions[1] = joints[1];
-        arm_msg.points.back().positions[2] = joints[2];
         arm_msg.points.back().time_from_start = time;
-        // Send the trajectory to the controller
-        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving arm" );
-        trajectory_controller_pub_.publish ( arm_msg );
 
+        // Store the current joints
+        std::vector<double> joints = current_joints_;
+
+        // -- Send first trajectory
+        trajectory_msgs::JointTrajectory first_msg = base_msg;
+        std::string first_name = "BASE";
+        // If not retracting, move BASE then arm
+        if ( message.compare(STR_RETRACT_) != 0 )
+        {
+            // Override the arm positions with the current values
+            first_msg.points[0].positions[3] = joints[3];
+            first_msg.points[0].positions[4] = joints[4];
+            first_msg.points[0].positions[5] = joints[5];
+            first_msg.points[0].positions[6] = joints[6];
+            first_msg.points[0].positions[7] = joints[7];
+        }
+        // Otherwise, if retracting, move ARM then base
+        else
+        {
+            first_msg = arm_msg;
+            for ( size_t i = 0; i < first_msg.points.size(); ++i )
+            {
+                first_msg.points[i].positions[0] = joints[0];
+                first_msg.points[i].positions[1] = joints[1];
+                first_msg.points[i].positions[2] = joints[2];
+            }
+            first_name = "ARM";
+        }
+        // Send the trajectory to the controller
+        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving %s", first_name.c_str() );
+        trajectory_controller_pub_.publish ( first_msg );
         // Sleep
         ros::Duration(2.0).sleep();
         // Wait for trajectory to finish
-        publishFeedback ( "waiting for arm completion" );
+        publishFeedback ( "waiting for completion" );
         if ( !waitForTrajectoryCompletion() )
         {
-            ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Arm trajectory for '%s' did not complete in time",
-                        message.c_str() );
+            ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] %s trajectory for '%s' did not complete in time",
+                        first_name.c_str(), message.c_str() );
             publishFeedback ( "failed" );
             return false;
         }
 
+        // -- Send the second trajectory
+        trajectory_msgs::JointTrajectory second_msg = arm_msg;
+        std::string second_name = "ARM";
+        joints = current_joints_;
+        // If not retracting, move base then ARM
+        if ( message.compare(STR_RETRACT_) != 0 )
+        {
+            // Override the base positions
+            for ( size_t i = 0; i < second_msg.points.size(); ++i )
+            {
+                second_msg.points[i].positions[0] = joints[0];
+                second_msg.points[i].positions[1] = joints[1];
+                second_msg.points[i].positions[2] = joints[2];
+            }
+        }
+        // Otherwise, if retracting, move arm then BASE
+        else
+        {
+            second_msg = base_msg;
+            second_msg.points[0].positions[3] = joints[3];
+            second_msg.points[0].positions[4] = joints[4];
+            second_msg.points[0].positions[5] = joints[5];
+            second_msg.points[0].positions[6] = joints[6];
+            second_msg.points[0].positions[7] = joints[7];
+            second_name = "BASE";
+        }
+        // Send the trajectory to the controller
+        ROS_INFO ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] Moving %s", second_name.c_str() );
+        trajectory_controller_pub_.publish ( second_msg );
+        // Sleep
+        ros::Duration(2.0).sleep();
+        // Wait for trajectory to finish
+        publishFeedback ( "waiting for completion" );
+        if ( !waitForTrajectoryCompletion() )
+        {
+            ROS_ERROR ( "[SquirrelObjectManipulationServer::sendCommandTrajectory] %s trajectory for '%s' did not complete in time",
+                        second_name.c_str(), message.c_str() );
+            publishFeedback ( "failed" );
+            return false;
+        }
     }
 
     // Successfully commanded the arm
